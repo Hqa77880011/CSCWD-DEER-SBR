@@ -6,6 +6,7 @@
 |---|---|
 | Python 静态编译、Shell 语法检查 | 通过 |
 | 全部 unittest（启用已准备的真实数据） | **155 项全部通过，无 skip** |
+| GitHub 重新克隆 + 独立 Python 环境 | 2 项可移植入口回归和参考结果核算通过；不依赖原项目的 editable 安装 |
 | Cython 及四个 CUDA 扩展重新编译 | 通过；GPU 架构 7.5 |
 | GPU 环境检查 | 导入、spconv 前向/反向、IoU/NMS、points-in-boxes、合成检测训练与 checkpoint 均通过 |
 | 固定数据版本在线探测 | Hugging Face 元数据下载及固定源校验通过 |

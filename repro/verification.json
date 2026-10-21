@@ -67,5 +67,12 @@
   "reference_results_arithmetic": "passed",
   "full_fresh_training_performed": false,
   "full_fresh_dependency_install_performed": false,
-  "full_fresh_download_performed": false
+  "full_fresh_download_performed": false,
+  "github_clone_portable_check": {
+    "fresh_clone": true,
+    "independent_python_venv": true,
+    "tests_run": 2,
+    "tests_passed": 2,
+    "reference_results_arithmetic": "passed"
+  }
 }
