@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-21",
+  "timezone": "Asia/Shanghai",
+  "release_tag": "v1.0.0",
+  "release_id": 419477115,
+  "release_url": "https://github.com/Hqa77880011/CSCWD-DEER-SBR/releases/tag/v1.0.0",
+  "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+  "regression": {
+    "run": 159,
+    "passed": 159,
+    "skipped": 0
+  },
+  "all_seven_original_checkpoints_loaded_with_exact_config_artifact_and_bn_contracts": true,
+  "all_ten_github_assets_match_local_sizes_and_server_sha256": true,
+  "github_assets": [
+    {
+      "digest": "sha256:070982d389ab6e97815edf2c936e79ca0359f52a4b617629f93e2ef2ba0f15b7",
+      "name": "A-selected.pt",
+      "size": 301836758,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:7423fe2c2a4305a1d3549060abe94b79481bf5648c39d3ed4bf41d5e88789a8c",
+      "name": "AB-selected.pt",
+      "size": 301902854,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:e047b7f0807ad1de756c6d1d800931b53993deb3c2d52c05913bd244082c5ec3",
+      "name": "B-selected.pt",
+      "size": 301832222,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:9e5b7293fae0f95aa6ad6a87a3514cbc55f4b4b2c831beddece17ef5c9afc23f",
+      "name": "evaluation-metadata.tar.gz",
+      "size": 53677418,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:f4353db9c03b3c62acd7143f2f62651af3dd2187b75f4548450e2c04a4b9c248",
+      "name": "N1-selected.pt",
+      "size": 301902854,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:b0c6c8abe8c2e4b289a5b380b8a1d063b57402e783a004eee2b57a2d7248dda1",
+      "name": "N2-selected.pt",
+      "size": 301902854,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:9b3b14ab0ce79f542b04ac6b3cb672350100f330f494a370c3e0428f24217f17",
+      "name": "pretrained-release.json",
+      "size": 5247,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:b8905e8beb41e2218cb6a04f193a43f7e71b1b9c1e281d18db4a65856d380876",
+      "name": "S0-selected.pt",
+      "size": 301766062,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:84b4b202449f58376c14729c70a6531b31a63c3ceb3b58a5b8eb5a0e741ba49f",
+      "name": "SHA256SUMS",
+      "size": 749,
+      "state": "uploaded"
+    },
+    {
+      "digest": "sha256:b36751f8262e828c9bec7175c5fe0540e361046cda1b6556a7be25190311de8e",
+      "name": "SUP-selected.pt",
+      "size": 301884966,
+      "state": "uploaded"
+    }
+  ],
+  "download_command_verified": [
+    "evaluation-metadata.tar.gz",
+    "AB-selected.pt"
+  ],
+  "fresh_github_clone_loaded_downloaded_checkpoint_at_relocated_paths": true,
+  "fresh_clone_portable_tests_passed": 4,
+  "full_evaluation": {
+    "variant": "AB",
+    "weather": "snow",
+    "num_samples": 3166,
+    "num_gt": 30296,
+    "selected_epoch": 20,
+    "checkpoint_sha256": "7423fe2c2a4305a1d3549060abe94b79481bf5648c39d3ed4bf41d5e88789a8c",
+    "bn_unchanged": true,
+    "AP3D": {
+      "0.3": 0.8287171339993211,
+      "0.5": 0.7736547803019809,
+      "0.7": 0.49193822689096717
+    },
+    "APBEV": {
+      "0.3": 0.8438700084153722,
+      "0.5": 0.8098770691726273,
+      "0.7": 0.6541929891368526
+    },
+    "elapsed_seconds": 863.0106672309339,
+    "reference_AP3D07": 0.4919382268909672,
+    "AP3D07_delta_pp": -5.551115123125783e-15,
+    "reference_AP3D07_matches_1e_6": true
+  },
+  "all_six_ap_metrics_exactly_match_original_full_test": true,
+  "prediction_equivalence": {
+    "variant": "AB",
+    "weather": "snow",
+    "new_sha256": "dd13771fa8ca73b92b297fdc25375d2371a3d162b613433406d821fffb248de4",
+    "reference_sha256": "dd13771fa8ca73b92b297fdc25375d2371a3d162b613433406d821fffb248de4",
+    "byte_identical": true
+  },
+  "other_twenty_full_test_cases_rerun": false
+}

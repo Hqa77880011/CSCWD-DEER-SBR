@@ -31,3 +31,15 @@
 本次复用了现有 Python 训练环境，并在导出目录重新编译扩展、运行真实数据测试；没有重新安装整套 CUDA 依赖，没有重复下载约 161GB 数据，也没有重新训练七组 20 epoch 或重新跑 21 项完整测试。表格中的 AP 来自保留的原始正式实验记录，不能将本次 smoke 当作新的 AP 测量。GitHub Actions 模板尚未激活。
 
 机器可读的检查摘要见 `repro/verification.json`。完整本地日志位于忽略上传的 `outputs/verification/`。
+
+## v1.0.0 训练权重 Release 验证
+
+本次扩展通过 **159 项回归测试，无 skip**。七份原始 selected checkpoint 全部通过 SHA256、内嵌配置、数据文件身份和精确 BN 统计加载校验；10 个 Release 附件的 GitHub 服务端 SHA256 和大小与本地清单一致。已用 README 的下载入口重新下载 AB 权重与共享元数据，并在重新克隆的仓库、新数据视图路径下完成加载；独立 Python 环境中的 4 项 Release 入口回归也通过。
+
+直接评测入口实际重跑了 AB/Snow 的完整测试：**3166 样本、30296 GT，AP3D@0.7=49.19382268909672%**。三个 IoU 阈值的 AP3D 与 APBEV 共六项数值均与原正式测试完全相同，冻结 BN 未变。预测 JSONL 的 SHA256 也与原正式实验完全相同，即逐字节一致：
+
+```text
+dd13771fa8ca73b92b297fdc25375d2371a3d162b613433406d821fffb248de4
+```
+
+其余 20 项完整测试未重复执行；它们的原始权重、配置、数据和评测身份保持不变。机器可读记录见 `repro/pretrained_release_verification.json`，原并行导出流程的完整验证等价记录见 `repro/pretrained_parallel_equivalence.json`。

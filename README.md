@@ -9,12 +9,16 @@ V2X-R LiDAR–Radar 协同三维检测的可复现代码：**DEER**（缺失/伪
 环境：Linux x86_64、Python 3.10、NVIDIA GPU、CUDA 12.1 开发工具链（含 `nvcc`）及 GCC/G++。原实验使用 RTX 2080 Ti，服务器显示每卡约 22GB 显存；普通 11GB 版本需要单独验证内存预算。预留至少约 220GiB 数据盘空间，下载并行度较高时需要更多空间。
 
 ```bash
+sudo apt-get update
+sudo apt-get install -y git gh
+# 私有仓库需要有访问权限的 GitHub 账号
+gh auth login
+gh auth setup-git
 git clone https://github.com/Hqa77880011/CSCWD-DEER-SBR.git
 cd CSCWD-DEER-SBR
 conda env create -f environment.yml
 conda activate cscwd-repro
-sudo apt-get update
-sudo apt-get install -y build-essential git gh aria2 p7zip-full libgl1 libglib2.0-0
+sudo apt-get install -y build-essential aria2 p7zip-full libgl1 libglib2.0-0
 bash scripts/install.sh
 ```
 
