@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-21",
+  "pages": 6,
+  "figure_count": 1,
+  "table_count": 5,
+  "equation_labels": 15,
+  "references": 11,
+  "anonymous_text_and_metadata": true,
+  "all_fonts_embedded": true,
+  "type3_fonts": false,
+  "latex_warnings": false,
+  "overfull_boxes": false,
+  "underfull_boxes": false,
+  "pdf_sha256": "2dd3ed5f06c1c8499f3768f245e9f1dbdab7a5f95177489e99f53bd712c09932",
+  "figure": {
+    "native_editable_shapes": 59,
+    "raster_images": 0,
+    "font": "Arial",
+    "text_width_reserve_percent": 10,
+    "feature_line_width_pt": 3.2,
+    "arrowheads": "large",
+    "pdf_vector_only": true,
+    "pptx_sha256": "3369be85a2a76133830d5c5ccc0a756ae5828f1f89740e16252a458aca6e936f"
+  },
+  "scientific_preservation": {
+    "displayed_equations_unchanged": true,
+    "numeric_tables_unchanged": true,
+    "bibliography_entries_unchanged": true,
+    "models_or_experiments_modified": false
+  },
+  "supporting_documents_anonymous": true
+}

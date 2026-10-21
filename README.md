@@ -1,10 +1,8 @@
 # Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception
 
-**Qinao Hu**
+**Anonymous Authors**
 
-School of Communication and Electronic Engineering, East China Normal University, Shanghai, China
-
-[Paper](paper/paper.pdf) · [Pretrained Models](https://github.com/Hqa77880011/CSCWD-DEER-SBR/releases/tag/v1.0.0) · [Experimental Protocol](#experimental-protocol) · [Citation](#citation)
+[Paper](paper/paper.pdf) · [LaTeX source](paper/source/) · [Editable Fig. 1](paper/source/figures/architecture.pptx) · [Pretrained Models](https://github.com/Hqa77880011/CSCWD-DEER-SBR/releases/tag/v1.0.0) · [Experimental Protocol](#experimental-protocol) · [Citation](#citation)
 
 This repository provides the reference implementation, pretrained models, and reproducible evaluation pipeline for the accompanying manuscript, **Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception**.
 
@@ -17,7 +15,7 @@ Missing LiDAR returns and spurious echoes require different responses when const
 
 ![Architecture of the evidence-routing and supported-residual modules](assets/architecture.png)
 
-*Local feature processing is followed by the common AttFuse cooperative backbone and Vehicle detection head. The architecture figure is reproduced from the accompanying manuscript.*
+*Local feature processing is followed by the common AttFuse cooperative backbone and Vehicle detection head. The architecture figure is available as an [editable PowerPoint](paper/source/figures/architecture.pptx) and [vector PDF](paper/source/figures/architecture.pdf).*
 
 The implementation includes seven configurations: an internal baseline (**S0**), the individual modules (**A**, **B**), their combination (**AB**), an ordinary gating/residual control (**SUP**), and amplitude/type-prior controls (**N1**, **N2**).
 
@@ -35,7 +33,7 @@ Vehicle **AP3D at IoU = 0.7 (%)** on the V2X-R test split. All configurations us
 | N1 — normalized-mean descriptor | 64.37 | 51.03 | 48.69 | 49.86 |
 | N2 — multiplicative type prior | **65.87** | **52.52** | 48.73 | **50.62** |
 
-AB improves Snow AP3D@0.7 by **3.52 percentage points** and the Fog/Snow mean by **1.67 points** relative to S0, with small decreases in Normal and Fog. N2 achieves the highest weather mean. These single-seed results characterize the tradeoff between weather conditions within the shared experimental framework.
+AB improves Snow AP3D@0.7 by **3.52 percentage points** and the Fog/Snow mean by **1.67 points** relative to S0, with small decreases in Normal and Fog. N2 achieves the highest weather mean. The largest AB gain occurs at strict 3D overlap in Snow, which is held out from training and model selection.
 
 Full-precision results, AP3D/APBEV at IoU thresholds 0.3/0.5/0.7, checkpoint identities, and experiment manifests are available in [`results/reference/`](results/reference/).
 
@@ -212,7 +210,7 @@ python scripts/reproduce.py results
 
 ```text
 assets/              Architecture figure from the manuscript
-paper/               Accompanying manuscript PDF
+paper/               Anonymous manuscript, LaTeX source, editable figure, supporting documents
 opencood/            Models, datasets, training protocol, and evaluation
 project_tools/       Training, prediction export, and diagnostic utilities
 scripts/             Installation, data preparation, and reproduction entrypoints
@@ -230,11 +228,11 @@ Raw datasets, local environments, generated predictions, and compiled extensions
 If you use this implementation or its experimental artifacts, please cite the accompanying manuscript:
 
 ```bibtex
-@unpublished{hu2026evidence,
-  author = {Hu, Qinao},
+@unpublished{anonymous2026evidence,
+  author = {{Anonymous Authors}},
   title  = {Evidence Routing and Supported Residuals for Cooperative {LiDAR}--{Radar} Perception},
   year   = {2026},
-  note   = {Manuscript},
+  note   = {Anonymous manuscript; authorship to be confirmed},
   url    = {https://github.com/Hqa77880011/CSCWD-DEER-SBR/blob/main/paper/paper.pdf}
 }
 ```

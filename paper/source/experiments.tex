@@ -1,0 +1,124 @@
+\section{Experiments}
+\subsection{Experimental Setup}\label{sec:setup}
+\subsubsection{Data and weather}
+We evaluate on the simulated V2X-R dataset~\cite{v2xr}. Table~\ref{tab:data} gives the verified inventory, including 8,083 training samples. Sensor frames belong to cooperative samples and are not counted as independent examples.
+
+\begin{table}[b]
+\caption{Actual Split Inventory and Fixed Vehicle Ground Truth}
+\label{tab:data}
+\centering
+\begin{tabular}{|l|r|r|r|}
+\hline
+Split & Coop. samples & Sensor frames & Fixed GT \\
+\hline
+Train & 8,083 & 24,088 & 69,757 \\
+Validation & 829 & 3,041 & 6,414 \\
+Test & 3,166 & 10,598 & 30,296 \\
+\hline
+\end{tabular}
+\end{table}
+
+We use the supplied paired Normal/Fog/Snow clouds, with unchanged radar. The weather versions are \texttt{\_fog\_0.060} and \texttt{\_snow\_2.5\_2.0}. During training, each agent uses Fog with probability $3/7$ and Normal otherwise, indexed deterministically by seed, epoch, sample, and agent. Snow is held out from training, validation, and model selection.
+
+All groups apply the same provenance augmentation to Normal slots with probability 0.5: independently delete original points with probability 0.2 and inject $\lceil0.05N\rceil$ copies of sampled originals, including the scalar field. Offsets have isotropic directions and uniform radii in $[0.075,0.3]$~m. Injected points pass through the same self-mask, FOV, and range filters. The resulting deletion/injection fractions provide traceable supervision.
+
+\subsubsection{Configurations and implementation}
+Table~\ref{tab:variants} defines seven configurations built on the shared pillar/AttFuse detector in Fig.~\ref{fig:architecture}. S0 is the internal baseline. SUP retains the observation encoder, type loss, augmentation, and residual penalties, but uses ordinary gating and a residual from current normalized radar features. It removes type control, local donor attention, hard output support, and the $\tanh$ bound; penalties still use the common support mask. This approximately capacity-matched control tests the structured design as a whole.
+
+\begin{table}[t]
+\caption{Completed Configurations; Shared Protocol in Sec.~\ref{sec:setup}}
+\label{tab:variants}
+\centering
+\begin{tabular}{|l|p{0.77\columnwidth}|}
+\hline
+Group & Local mechanism or controlled change \\
+\hline
+S0 & Shared detector and radar bypass; A/B disabled. \\
+\hline
+A & DEER only. \\
+\hline
+B & SBR only; no A predictions or type inputs. \\
+\hline
+AB & Joint model; detached types enter B as inputs. \\
+\hline
+SUP & Ordinary gating/residual control (Sec.~\ref{sec:setup}). \\
+\hline
+N1 & AB with occupied mean/RMS replacing the RMS descriptor; same size and initialization. \\
+\hline
+N2 & AB with the multiplicative type prior in~\eqref{eq:prior}; all other settings unchanged. \\
+\hline
+\end{tabular}
+\end{table}
+
+Pillars are $0.4\times0.4\times4$~m over $[-140.8,140.8)\times[-40,40)\times[-3,1)$~m, with up to 32 points each and 32,000/70,000 pillars per modality in training/evaluation. Backbone stages have 128/256/512 channels, each with a stride-2 $3\times3$ convolution and 3/5/8 stride-1 layers. AttFuse aggregates at each scale; upsampling produces three 128-channel maps for the classification/regression heads. Vehicle anchors are $3.9/1.6/1.56$~m in length/width/height, with $0/90$-degree headings and output stride 2. Assignment uses continuous stand-up BEV IoU: positive at 0.6 or above, negative below 0.45, and ignored otherwise, plus a positive-overlap best anchor per GT.
+
+Geometric augmentation applies an $x$-axis world flip, rotation in $[-\pi/4,\pi/4]$, and scaling in $[0.95,1.05]$. Optional local branches use activation checkpointing during training.
+
+\subsubsection{Training and selection}
+Each group trains for 20 epochs and 20,200 optimizer updates with seed 17. FP32 microbatch 4 with two accumulation steps gives effective batch 8; incomplete effective batches are dropped. Runs use individual RTX 2080 Ti GPUs. S0 resumes an audited checkpoint at update 1,000 within the same total budget; other groups share initialization of common parameters. Adam uses learning rate 0.002, weight decay $10^{-4}$, and $\epsilon=10^{-10}$; the rate decreases tenfold at epochs 10 and 15.
+
+Every epoch is validated on all 829 Normal and Fog samples. BN buffers are first reset and refitted by cumulative averaging over eight microbatches of four fixed training samples (32 samples total), drawn by uniform midpoint sampling from the epoch-0 Normal/Fog/provenance stream without geometric augmentation. Only BN statistics update; parameters and other modules remain fixed. BN uses $\epsilon=0.001$ and online momentum 0.01.
+
+Selection maximizes mean Normal/Fog validation AP3D at IoU 0.7, retaining the earlier epoch for ties within $10^{-6}$. N1/N2 select epoch 18; all others select epoch 20. Selected weights and BN statistics are frozen across all three test conditions.
+
+\subsubsection{Scoring}
+We report Vehicle AP3D and BEV average precision (APBEV) at IoU 0.3/0.5/0.7 using global confidence ordering, one-to-one matching within each sample, and VOC2010 all-point interpolation. The fixed GT set retains boxes with ego-frame centers in $x\in[0,140)$~m and $y\in[-40,40)$~m and a camera-geometric FOV defined by calibration and image dimensions. GT acceptance is independent of point count; zero-target samples remain.
+
+Postprocessing uses confidence floor 0.001, rotated BEV non-maximum suppression IoU 0.15, and at most 500 detections. All 21 tests cover 3,166 samples and 30,296 fixed GT boxes. The adverse-weather summary is
+\begin{equation}
+M_{\mathrm{weather}}=\tfrac12\left(\mathrm{AP3D}^{\mathrm{Fog}}_{0.7}+\mathrm{AP3D}^{\mathrm{Snow}}_{0.7}\right). \label{eq:weather}
+\end{equation}
+This Fog/Snow mean differs from the Normal/Fog validation selection score. AP is reported in percent; differences are percentage points calculated from unrounded CSV values.
+
+\subsection{Detection Across Weather Conditions}
+AB achieves the highest Snow AP3D at IoU 0.7 among the seven configurations: \ABSsnow\ percent, up \ABSnowGain\ points from S0 (Table~\ref{tab:main}). Its Fog/Snow mean improves by \ABMeanGain\ points, while Normal/Fog decrease by \ABNormalLoss/\ABFogLoss\ points. N2 leads Normal, Fog, and the weather mean, improving the latter by \PriorGain\ points over S0. AB leads N2 by \ABPriorSnowGain\ in Snow, whereas N2 leads AB by \ABPriorMeanLoss\ on the mean.
+
+\begin{table}[t]
+\caption{Test Vehicle AP3D at IoU 0.7 (\%; Higher Is Better). $M_{\mathrm{weather}}$ Is Defined in~\eqref{eq:weather}; $\Delta M$ Is Its Change from S0 in Percentage Points. Bold Indicates Column Maxima.}
+\label{tab:main}
+\centering
+\input{tables/main_results}
+\end{table}
+
+AB's Snow gain grows from 0.24 points at IoU 0.3 to 0.75 at 0.5 and \ABSnowGain\ at 0.7. The largest improvement therefore occurs under the strictest 3D overlap criterion, making high-overlap Snow detection the clearest benefit of the joint design.
+
+\subsection{Module Interaction and Design Controls}
+\subsubsection{Separate and joint modules}
+Table~\ref{tab:factorial} compares S0, A, B, and AB. A improves the weather mean by 0.45 points; B decreases it by 0.40, including a 0.96-point Snow loss. Combining the modules raises Snow AP3D by 2.98/4.48 points over A/B and the weather mean by 1.22/2.07. The descriptive interaction is
+\begin{equation}
+I=\mathrm{AP}_{AB}-\mathrm{AP}_{A}-\mathrm{AP}_{B}+\mathrm{AP}_{S0}. \label{eq:interaction}
+\end{equation}
+The interaction is +3.93 points in Snow and $-0.69$ in Fog. The positive joint effect is thus concentrated in Snow: routing and supported correction together outperform either module alone in that condition.
+
+\begin{table}[t]
+\caption{Derived Four-Cell Effects at IoU 0.7 (Percentage Points). $I$ Is Defined in~\eqref{eq:interaction}; Values Are Derived from the Runs in Table~\ref{tab:main}.}
+\label{tab:factorial}
+\centering
+\input{tables/factorial}
+\end{table}
+
+\subsubsection{Ordinary control SUP}
+AB exceeds SUP by 2.96 points in Snow and 1.33 on the weather mean, with a 0.35-point Normal gain and a 0.29-point Fog loss. The structured routing/correction design therefore improves on ordinary gating and residual prediction under the same augmentation and type supervision.
+
+\subsubsection{Amplitude descriptor N1}
+AB exceeds N1 by 0.82 points in Normal, 0.04 in Fog, and 0.50 in Snow, with a 0.27-point gain on the weather mean. The RMS amplitude descriptor performs better than the equally parameterized occupied-mean/RMS alternative in all three conditions, with the smallest difference in Fog.
+
+\subsubsection{Type-prior control N2}
+N2 adds only the multiplier in~\eqref{eq:prior} to AB. Its higher Normal/Fog scores and weather mean show that explicit type-dependent amplitude modulation remains useful, while AB retains the strongest Snow AP3D. Type conditioning therefore offers a concrete design choice between strict-overlap Snow performance and average weather performance.
+
+\subsection{Metric and Selection Sensitivity}
+Table~\ref{tab:auxiliary} places the strict-overlap result in context. N2 leads Snow APBEV at IoU 0.7 (65.56 versus AB's 65.42), while SUP leads Snow AP3D at 0.3/0.5 (83.78/77.81 versus 82.87/77.37). The complete six-metric results for all three weather conditions accompany the paper.
+
+\begin{table}[t]
+\caption{Auxiliary Test AP (\%; Higher Is Better). Left: Snow AP3D at IoU 0.3/0.5; Right: APBEV at IoU 0.7 for Each Weather Condition. Bold Indicates Column Maxima.}
+\label{tab:auxiliary}
+\centering
+\input{tables/auxiliary}
+\end{table}
+
+AB's Normal/Fog validation mean is 49.54 versus S0's 49.15; SUP leads at 51.22. The corresponding test mean is 58.13 for AB and 58.36 for S0. These rankings differ from the Fog/Snow test mean, where N2 ranks first and AB second, because the conditions and splits differ. Selection remains fixed throughout.
+
+\section{Discussion and Conclusion}
+DEER and SBR separate degradation-aware routing from observation-supported correction. DEER turns independent missing/spurious supervision into retained modality gains; SBR turns measured radar support and current feature scale into explicit constraints on the residual. Together they improve Snow AP3D at IoU 0.7 by \ABSnowGain\ points and the Fog/Snow mean by \ABMeanGain\ over the shared baseline. The type-prior control achieves the highest weather mean, highlighting the value of tailoring correction strength to the target conditions.
+
+The study uses one seed, 20 epochs, and one simulated dataset with unchanged radar. Small control differences and the descriptive interaction require repeated runs; SUP tests several mechanisms jointly. Same-protocol external baselines, real-road data, joint sensor degradation, and deployment-cost measurements are the next evaluation priorities.

@@ -2,10 +2,25 @@
 
 **Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception**
 
-- **Author:** Qinao Hu
-- **Affiliation:** School of Communication and Electronic Engineering, East China Normal University, Shanghai, China
-- **Year:** 2026
+**Anonymous Authors** · 2026
 
-[Read the manuscript](paper.pdf) · [Code and pretrained models](../README.md) · [BibTeX citation](../CITATION.bib)
+[Read the six-page manuscript](paper.pdf) · [LaTeX source](source/) · [Editable Fig. 1](source/figures/architecture.pptx) · [Vector figure](source/figures/architecture.pdf) · [Citation](../CITATION.bib)
 
-The manuscript describes the DEER and SBR modules and the seven-configuration V2X-R study reproduced by this repository. The PDF is included as the accompanying manuscript; the repository's preferred paper citation is defined in [`CITATION.cff`](../CITATION.cff).
+The manuscript introduces degradation-specific evidence routing (DEER) and radar-supported, amplitude-bounded residual correction (SBR) before cooperative aggregation. Seven configurations share the V2X-R training and selection protocol. AB improves Snow AP3D@0.7 by 3.52 percentage points; N2 achieves the highest Fog/Snow mean.
+
+The current paper, supporting documents, and citation metadata use anonymous author information while authorship is being confirmed. The scientific title is retained.
+
+## Build the paper
+
+The checked-in source includes the IEEE conference class, all tables, and the vector figure. It builds without model inference or private experiment records:
+
+```bash
+cd paper/source
+bash scripts/build.sh
+```
+
+The output is `main.pdf`. The source also imports directly into Overleaf with `main.tex` as the main document.
+
+To regenerate Fig. 1, install `python-pptx`, `PyMuPDF`, LibreOffice Impress, and Liberation Sans, then run `python scripts/draw_architecture.py` from the source directory. The PowerPoint uses editable native shapes, text, and connectors; the manuscript embeds its vector PDF export.
+
+[Supporting documents](supporting/) include the anonymous title page, abstract, highlights, and cover-letter draft. Their inclusion here does not imply that the conference requires them.

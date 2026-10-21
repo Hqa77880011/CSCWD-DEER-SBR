@@ -1,0 +1,179 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{url}
+\DeclareMathOperator{\sg}{sg}
+\DeclareMathOperator{\clip}{clip}
+\newcommand{\R}{\mathbb{R}}
+\input{numbers}
+\pdfinfo{/Title (Evidence Routing and Supported Residuals for Cooperative LiDAR-Radar Perception)
+/Author (Anonymous Authors)
+/Subject (Cooperative perception with evidence routing and supported residuals)
+/Keywords (cooperative perception, LiDAR-radar fusion, adverse weather)}
+
+\begin{document}
+
+\title{Evidence Routing and Supported Residuals for Cooperative LiDAR--Radar Perception}
+\author{\IEEEauthorblockN{Anonymous Authors}}
+\maketitle
+
+\begin{abstract}
+Cooperative perception depends on the quality of the local features that agents share. In adverse weather, missing LiDAR returns call for complementary evidence, whereas spurious returns call for suppression. We introduce DEER and SBR to separate these decisions from the support and amplitude of radar-based corrections. DEER learns independent missing and spurious scores from traceable point deletion and injection, then uses detached scores to route features while retaining each available modality. SBR selects local measured radar donors with a null option and bounds the resulting residual by observation support and current feature amplitude. Detection supervision learns the correction without a feature teacher. Seven configurations use a common 20-epoch, single-seed V2X-R protocol, with Snow held out from training and model selection. The joint model improves Snow Vehicle 3D average precision (AP3D) at intersection over union (IoU) 0.7 from \BaseSnow\ to \ABSsnow\ percent and the Fog/Snow mean by \ABMeanGain\ percentage points, with Normal/Fog decreases of \ABNormalLoss/\ABFogLoss\ points. A multiplicative type prior achieves the highest weather mean, \PriorMean\ percent. The joint design is strongest at strict 3D overlap in held-out Snow, while type-dependent amplitude modulation improves average weather performance.
+\end{abstract}
+
+\begin{IEEEkeywords}
+cooperative perception, LiDAR--radar fusion, adverse weather, evidence routing, bounded residual
+\end{IEEEkeywords}
+
+\section{Introduction}
+Cooperative perception extends an agent's sensing coverage by exchanging features across connected vehicles. Attentive aggregation, heterogeneous interactions, and selective communication improve this exchange~\cite{opv2v,v2xvit,where2comm}. Yet collaboration also distributes local measurement errors: an agent that shares corrupted features can degrade the joint detector. Preparing reliable local features is therefore a central part of cooperative perception.
+
+Adverse weather poses two distinct problems for LiDAR: attenuation removes returns, while backscatter adds spurious returns~\cite{fog,snow}. A single suppression gate conflates these effects. It can reduce clutter but cannot supply missing evidence. Radar offers complementary measurements, although sparse coverage leaves some regions without a useful donor. A local fusion module must decide both how to route degraded observations and where radar can support a correction.
+
+We address these decisions with DEER and SBR, inserted before a shared cooperative backbone. DEER learns independent missing and spurious scores from traceable point perturbations and uses them as detached routing signals. Positive modality gains preserve available evidence. SBR then selects nearby measured radar donors, including a null donor, and predicts a residual constrained by measured support and current feature scale. This separation gives degradation evidence, donor selection, and correction magnitude distinct roles. The detector learns the signed update directly, without a normal-feature teacher.
+
+Our contributions are threefold:
+\begin{itemize}
+\item We introduce degradation-specific feature routing with independent deletion/injection supervision, detached type control, and retained modality gains. A current-amplitude descriptor preserves scale information in the normalized control path.
+\item We formulate radar-guided correction with explicit spatial and amplitude constraints: local measured donors, a null option, a hard support mask, and a channelwise bound. The module operates before the common cooperative aggregation stage.
+\item We evaluate seven configurations under a fixed training and selection protocol. The joint design gains \ABSnowGain\ percentage points in held-out Snow AP3D at IoU 0.7 and \ABMeanGain\ on the Fog/Snow mean; the controls reveal how routing, residual repair, and type conditioning affect the weather tradeoff.
+\end{itemize}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/architecture.pdf}
+\caption{DEER and SBR prepare local features before cooperative detection. DEER routes LiDAR/radar features using detached missing/spurious evidence; SBR adds a radar-supported, amplitude-bounded residual. Solid arrows carry features, and the dashed arrow carries detached type scores. The dotted paths supply current observation maps; the lower solid path carries the original radar feature. All configurations share the radar bypass, output projection, backbone, and detection head. Type targets supervise training only.}
+\label{fig:architecture}
+\end{figure*}
+
+\section{Related Work}
+\subsection{Cooperative Three-Dimensional Perception}
+OPV2V uses attentive intermediate fusion~\cite{opv2v}, V2X-ViT models heterogeneous inter-agent and spatial interactions~\cite{v2xvit}, and Where2comm selects transmitted regions through spatial confidence~\cite{where2comm}. CoAlign addresses pose errors with agent--object pose graphs and multiscale fusion~\cite{coalign}. Our method targets the local multimodal representation supplied to cooperation, while retaining the same aggregation stage and dataset poses across configurations.
+
+\subsection{Weather-Aware LiDAR--Radar Fusion}
+Physical weather models distinguish LiDAR attenuation from added returns~\cite{fog,snow}. L4DR combines foreground-aware radar filtering, shared-pillar information exchange, and gated fusion~\cite{l4dr}. V2X-R applies radar-conditioned denoising diffusion with a noise-masked reference-feature loss~\cite{v2xr}. HRCP couples opposite-modality sigmoid gates with channel-attentive residual enhancement and hybrid collaboration~\cite{hrcp}. DEER adds explicit provenance supervision for two degradation types; SBR makes measured radar support and current feature amplitude enforceable constraints on a directly predicted residual. These mechanisms distinguish our local processing from generic gating and residual enhancement.
+
+\subsection{Reliability and Correction Support}
+RAF supervises camera reliability and uses calibration-aware local matching for camera, LiDAR, and radar fusion~\cite{raf}. Our point-cloud model instead predicts controlled deletion/injection fractions and separates routing evidence from correction support. In SBR, null attention governs donor acceptance, a hard mask fixes where corrections are permitted, and an amplitude bound limits their size. These controls act at different stages of the same update.
+
+\section{Method}
+\subsection{Problem Definition}
+For each agent $i$, current LiDAR and radar clouds are $P_i^L\in\R^{N_i^L\times4}$ and $P_i^R\in\R^{N_i^R\times4}$. Points contain coordinates and the source framework's red-channel scalar divided by 255, rather than calibrated velocity. Using supplied poses and calibration, the loader projects points once onto the ego grid and retains up to five agents within 70~m, including the ego. The detector outputs scored ego-frame Vehicle boxes with seven geometric parameters. Inputs exclude RGB pixels, weather-label color channels, provenance IDs, and reference features.
+
+Separate pillar encoders and scatter operations~\cite{pointpillars} produce $F_i^L,F_i^R\in\R^{C\times H\times W}$, with $C=64$, $H=200$, and $W=704$. For each modality, the ten-channel observation tensor $\Omega$ records point count, occupancy, geometric field-of-view (FOV) validity, sensor-relative distance, and a broadcast availability flag $v_i^m\in\{0,1\}$. Counts enter the control encoder as $\log(1+\cdot)$; distance is divided by the bird's-eye-view (BEV) range diagonal. Occupancy is measured after geometric filtering and before voxel sampling; validity includes accepted boundary cells. Empty cells and unavailable frames remain distinct, and both retain the sample and its ground-truth (GT) boxes. Below, $b$ indexes a grid cell.
+
+\subsection{Overall Architecture and Feature Units}
+Fig.~\ref{fig:architecture} shows the insertion point between scatter and the common cooperative backbone.
+
+
+Suppressing the agent index where unambiguous, the shared local path is
+\begin{align}
+Z_0 &= \Phi_{\mathrm{base}}([F^L,F^R]), \label{eq:base}\\
+X &= \Phi_{\mathrm{out}}([Z',F^R]),\qquad
+\widehat{\mathcal B}=\mathcal H(\mathcal C(\{X_i\}_{i=1}^n)), \label{eq:shared}
+\end{align}
+Here, $Z'$ is the corrected local feature, $\mathcal C$ is the multiscale AttFuse backbone, and $\mathcal H$ is the detection head; brackets concatenate channels. The bias-free pointwise projection $\Phi_{\mathrm{base}}$ maps $2C$ channels to $C$, and $\Phi_{\mathrm{out}}$ maps $2C$ to $2C$. Initialized at $[I,0]$ and $I$, both remain trainable in all configurations. S0 also shares the original radar bypass.
+
+For any feature $F$, let $U(b)$ mark valid occupied cells and $\sg$ denote stop-gradient. The implemented per-agent, per-channel root-mean-square (RMS) operator $s=\mathcal R(F,U)$ is
+\begin{align}
+e_c&=\frac{\sum_b U(b)\sg(F_c(b))^2}{\max(\sum_b U(b),1)},\nonumber\\
+\bar s&=\clip\!\left(\sqrt{C^{-1}\textstyle\sum_c e_c},\epsilon,M\right),\nonumber\\
+s_c&=\clip\!\left(\clip(\sqrt{e_c},0.1\bar s,10\bar s),\epsilon,M\right), \label{eq:rms}
+\end{align}
+with $\epsilon=10^{-3}$ and $M=10^3$. This detached operator uses current observations, with a positive numerical floor for empty support. It normalizes control inputs and correction units; detection features and the radar bypass retain their learned units.
+
+\subsection{DEER: Missing and Spurious Evidence Routing}
+\subsubsection{Independent targets and predictions}
+On a Normal training slot, the controlled deletion/injection process tracks the source identities of original LiDAR points. For each geometrically filtered cell, let $N_{\mathrm{ref}}$, $N_{\mathrm{del}}$, $N_{\mathrm{obs}}$, and $N_{\mathrm{inj}}$ count reference, deleted, observed, and injected points. The targets are
+\begin{equation}
+y_{\mathrm{miss}}=\frac{N_{\mathrm{del}}}{\max(N_{\mathrm{ref}},1)},\qquad
+y_{\mathrm{spur}}=\frac{N_{\mathrm{inj}}}{\max(N_{\mathrm{obs}},1)}. \label{eq:targets}
+\end{equation}
+The validity masks are $U_{\mathrm{miss}}=\mathbf1[N_{\mathrm{ref}}>0]$ and $U_{\mathrm{spur}}=\mathbf1[N_{\mathrm{obs}}>0]$. Deletion and injection can coexist; unknown cells are masked. Targets use recorded source events, not changes in total point count. Unperturbed Normal observations have zero targets on valid occupied cells. Fog type targets are masked because their point-origin labels are unverified. Normal raw points provide training labels only.
+
+Compute $s_L=\mathcal R(F^L,U_L)$ and $s_R=\mathcal R(F^R,U_R)$ on valid measured occupancy. The control representation is
+\begin{align}
+a_{\mathrm{amp}}&=[\log(1+s_L),\log(1+s_R)],\nonumber\\
+E&=f_E\!\left(W_C[F^L/s_L,F^R/s_R,\Omega]+W_Aa_{\mathrm{amp}}\right). \label{eq:evidence}
+\end{align}
+Here $W_C$ projects $2C+10$ channels to 16 with bias. Bias-free $W_A$ projects $2C$ amplitude values to 16 and broadcasts them spatially, adding 2,048 parameters. The encoder uses SiLU, a 16-channel depthwise $3\times3$ convolution, SiLU, a $16\!\to\!16$ pointwise convolution, and SiLU. Separate two-channel pointwise heads predict type and route logits; independent sigmoids yield $d_{\mathrm{miss}}$ and $d_{\mathrm{spur}}$.
+
+\subsubsection{Detached control and retained gains}
+Learned route logits $h_L(E),h_R(E)$ receive type biases:
+\begin{equation}
+\ell_L=h_L(E)-\sg(d_{\mathrm{spur}}),\qquad
+\ell_R=h_R(E)+\sg(d_{\mathrm{miss}}). \label{eq:route}
+\end{equation}
+For an available modality, define
+\begin{equation}
+\begin{aligned}
+a_m&=\frac{v^m\exp(\ell_m)}{\sum_{k\in\{L,R\}}v^k\exp(\ell_k)},\\
+g_m&=v^m[1+\alpha(2a_m-1)],
+\end{aligned}\label{eq:gain}
+\end{equation}
+where $\alpha=0.5$. If both modalities are unavailable, weights and gains are set to zero. The routed representation is
+\begin{equation}
+Z_A=\Phi_{\mathrm{base}}([g_LF^L,g_RF^R]). \label{eq:routed}
+\end{equation}
+An available branch retains gain in $[0.5,1.5]$; an unavailable branch stays zero. Zero type-head weights/biases and compensated route-head biases initialize both gains to one, or to 1.5 for a sole available branch. Stop-gradient blocks detection gradients through type outputs, while both objectives train the shared encoder.
+
+The descriptor in~\eqref{eq:evidence} restores amplitude information removed by normalization. Control N1 replaces it with occupied channel mean divided by the same RMS, preserving projection size and initialization.
+
+\subsection{SBR: Observed Support and Bounded Residual Repair}
+\subsubsection{Local donors and rejection}
+SBR receives $Z=Z_A$ with A enabled and $Z=Z_0$ otherwise. The donor set $\mathcal K(b)$ contains measured radar cells within 0.8~m, checked by occupancy, FOV validity, and frame availability. On the 0.4~m grid, this gives 13 disk offsets within a $5\times5$ window.
+
+The scale $s=\mathcal R(Z,U_L\lor U_R)$ uses the union of available valid occupancies. If the unguarded overall RMS of $Z$ is at most $\epsilon$ and radar is present, $s$ falls back to the current occupied radar RMS $s_R$. This permits radar correction when the LiDAR-led base feature is zero. Let $\widehat Z=Z/s$ and $\widehat R=F^R/s_R$.
+
+Bias-free pointwise projections produce $q=Q\widehat Z$ and $k=K\widehat R$ in eight channels; $h_{\varnothing}$ is a zero-initialized affine $C\!\to\!1$ projection. The unit-ball map $\nu(x)=x/\max(\lVert x\rVert_2,1)$ gives real-donor scores
+\begin{align}
+t_u(b)&=2\nu(q(b))^\top\nu(k(u)),\quad u\in\mathcal K(b),\nonumber\\
+t_{\varnothing}(b)&=h_{\varnothing}(\widehat Z(b))+\log\max(|\mathcal K(b)|,1). \label{eq:donorlogits}
+\end{align}
+Real scores lie in $[-2,2]$. A softmax over the valid candidates and always-valid null donor yields $\pi$. The normalized donor feature and hard support mask are
+\begin{equation}
+\widehat D(b)=\sum_{u\in\mathcal K(b)}\pi_u(b)\widehat R(u),\quad
+S_R(b)=\mathbf1[|\mathcal K(b)|>0]. \label{eq:donor}
+\end{equation}
+The null feature is zero, and its mass is retained when summing real donors. The count term in~\eqref{eq:donorlogits} gives null mass $1/2$ when all uncorrected logits are zero and candidates exist. Without a candidate, null mass is one and $\widehat D=0$.
+
+\subsubsection{Correction and explicit bound}
+Let $h_A$ indicate that A supplies scores, and let $o_L$ be LiDAR occupancy. SBR's residual network reads
+\begin{align}
+r&=f_B([\widehat Z,\widehat D,\sg(d_{\mathrm{miss}}),\sg(d_{\mathrm{spur}}),o_L,S_R,h_A]),\nonumber\\
+\Delta_c(b)&=S_R(b)\rho s_c\tanh(r_c(b)),\quad Z'=Z+\Delta, \label{eq:residual}
+\end{align}
+where $\rho=0.25$. The residual network uses a $2C+5\!\to\!16$ pointwise projection, SiLU, a depthwise $3\times3$ convolution, SiLU, and a $16\!\to\!C$ pointwise output. Without A, type scores and $h_A$ are zero; without B, $Z'=Z$.
+
+The construction guarantees $\Delta=0$ where $S_R=0$ and $|\Delta_c(b)|\leq\rho s_c$ everywhere. A zero-initialized final layer starts with an identity update. The mask governs output support; null attention controls donor evidence but allows a residual where real support exists.
+
+N2 tests an additional amplitude prior by multiplying~\eqref{eq:residual} by
+\begin{equation}
+G_A=0.25+0.75\max(\sg(d_{\mathrm{miss}}),\sg(d_{\mathrm{spur}})). \label{eq:prior}
+\end{equation}
+AB uses type scores as inputs only; N2 additionally applies this multiplier.
+
+\subsection{Joint Training and Losses}
+The detection loss combines focal classification (parameters 0.25 and 2) with twice smooth-$L_1$ regression (transition $1/9$). Regression sums seven anchor-relative codes with a sine yaw difference. Each sample's sums are divided by its positive-anchor count, clamped to one, and averaged across cooperative samples. Regression uses positive anchors; classification excludes ignored anchors.
+
+For a mask $U$, $\langle V\rangle_U$ sums masked entries over all agents, cells, and applicable channels in the microbatch, divided by the broadcast mask sum clamped to one. With $n_i$ marking an unperturbed Normal agent slot, the auxiliary losses are
+\begin{align}
+\mathcal L_{\mathrm{type}}&=\sum_{t\in\{\mathrm{miss},\mathrm{spur}\}}\langle\operatorname{BCE}(d_t,y_t)\rangle_{U_t},\nonumber\\
+\mathcal L_{\mathrm{size}}&=\langle(\Delta/\sg(s))^2\rangle_{S_R},\qquad
+\mathcal L_{\mathrm{id}}=\langle|\Delta/\sg(s)|\rangle_{n_iS_R},\nonumber\\
+\mathcal L&=\mathcal L_{\mathrm{det}}+0.1\mathcal L_{\mathrm{type}}
+ +0.001\mathcal L_{\mathrm{size}}+0.01\mathcal L_{\mathrm{id}}. \label{eq:loss}
+\end{align}
+Binary cross-entropy operates on logits. Empty masks and inactive modules contribute zero. Fixed loss weights train the signed correction through detection, penalize its squared size on supported cells, and encourage identity on unperturbed Normal support. Training uses no reconstruction or feature-teacher loss.
+
+At inference, the same feature path recomputes current RMS scales with fixed weights and batch-normalization (BN) statistics, then decodes and suppresses boxes. Perturbations and auxiliary targets are used only during training.
+
+\input{experiments}
+% Balance the final bibliography columns without changing the IEEE type size.
+\IEEEtriggeratref{7}
+\input{references}
+\end{document}

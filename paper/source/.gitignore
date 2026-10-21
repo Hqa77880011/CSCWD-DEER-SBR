@@ -1,0 +1,5 @@
+main.pdf
+*.aux
+*.log
+*.out
+__pycache__/

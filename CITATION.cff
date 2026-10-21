@@ -3,9 +3,7 @@ message: "If you use this implementation or its experimental artifacts, please c
 type: software
 title: "Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception: Reference Implementation"
 authors:
-  - family-names: Hu
-    given-names: Qinao
-    affiliation: "School of Communication and Electronic Engineering, East China Normal University, Shanghai, China"
+  - name: "Anonymous Authors"
 version: "1.0.0"
 date-released: "2026-10-21"
 repository-code: "https://github.com/Hqa77880011/CSCWD-DEER-SBR"
@@ -19,9 +17,7 @@ preferred-citation:
   type: unpublished
   title: "Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception"
   authors:
-    - family-names: Hu
-      given-names: Qinao
-      affiliation: "School of Communication and Electronic Engineering, East China Normal University, Shanghai, China"
+    - name: "Anonymous Authors"
   year: 2026
-  notes: "Manuscript."
+  notes: "Anonymous manuscript; authorship to be confirmed."
   url: "https://github.com/Hqa77880011/CSCWD-DEER-SBR/blob/main/paper/paper.pdf"
