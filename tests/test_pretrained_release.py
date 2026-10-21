@@ -14,6 +14,9 @@ spec.loader.exec_module(pretrained)
 
 
 class PretrainedReleaseTests(unittest.TestCase):
+    def test_parallel_pipeline_matches_the_full_exact_equivalence_evidence(self):
+        pretrained.verify_parallel_pipeline(pretrained.load_release())
+
     def test_release_pins_the_actual_seven_selected_checkpoint_hashes(self):
         release = pretrained.load_release()
         selections = json.loads((ROOT / "results/reference/manifest.json").read_text())["selections"]

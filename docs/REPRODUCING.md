@@ -97,7 +97,7 @@ CUDA_VISIBLE_DEVICES=0 python scripts/pretrained.py evaluate \
 
 直接评测入口首先以仓库中的固定 Release 清单校验所有输入，再验证 checkpoint 内嵌的原配置和原配置哈希、源码哈希、selected 角色和 epoch、BN 统计哈希及训练校准记录。只有数据根目录、metadata 路径、监督审计路径和输出目录允许重定位；科学参数、GT、样本集合、后处理和 BN 均保持原身份。工具将原始 metadata 链接到输出目录的独立 `data/` 视图，保持原文件字节与哈希；原始点云/标注从你的数据目录读取，并由数据集加载器核验哈希。不需要重训或重新生成辅助监督审计，也不会在测试集上更新 BN。
 
-每项测试输出 `predictions.jsonl`、对应 metadata sidecar、`scores.json.gz` 和 `summary.json`。摘要中的 AP 使用 0–1 数值，`AP3D07_delta_pp` 为与参考表相差的百分点，`reference_AP3D07_matches_1e_6` 给出该指标是否在 1e-6 的 AP 容差内。该字段不替代对跨硬件数值差异的检查。每项仍必须覆盖全部 3166 个样本和 30296 个 GT。工具拒绝覆盖已有预测，失败后保留现场；重试可使用新的输出目录。
+每项测试输出 `predictions.jsonl`、对应 metadata sidecar、`scores.json.gz` 和 `summary.json`。摘要中的 AP 使用 0–1 数值，`AP3D07_delta_pp` 为与参考表相差的百分点，`reference_AP3D07_matches_1e_6` 给出该指标是否在 1e-6 的 AP 容差内。该字段不替代对跨硬件数值差异的检查。每项仍必须覆盖全部 3166 个样本和 30296 个 GT。工具拒绝覆盖已有预测，失败后保留现场；重试可使用新的输出目录。默认使用原最终测试采用过的 8 个 CPU 后处理进程；`--postprocess-workers 1` 可切换为相同科学实现的串行导出器。已有完整 Normal/Fog 验证等价记录保存在 `repro/pretrained_parallel_equivalence.json`，并行调度不改变解码、NMS、样本顺序或 AP 定义。
 
 ### 评测自己从头训练的权重
 

@@ -114,6 +114,15 @@ def relocated_config(original, view, metadata, output_root):
     return config
 
 
+def verify_parallel_pipeline(release):
+    proof = json.loads((REPO / "repro/pretrained_parallel_equivalence.json").read_text())
+    if (not proof.get("passed") or proof.get("source_sha256") != release["source_sha256"]
+            or proof.get("pipeline_sha256") != sha256(REPO / "scripts/parallel_export.py")
+            or any(not proof.get("weather", {}).get(weather, {}).get("exact_full_result_equal")
+                   for weather in ("normal", "fog"))):
+        raise ValueError("Parallel export source/equivalence evidence changed")
+
+
 def load_selected(release, directory, variant, config):
     """Prove the original checkpoint/config identity before accepting path relocation."""
     import torch
@@ -189,7 +198,13 @@ def evaluate(release, directory, metadata, variants, args):
                     completed[0] += 1
                     if completed[0] % 100 == 0:
                         print(f"{variant}/{condition}: {completed[0]}/{len(dataset)} samples", flush=True)
-            records = export_loader(model, loader, dataset, device, profile_callback=progress)
+            if args.postprocess_workers == 1:
+                records = export_loader(model, loader, dataset, device, profile_callback=progress)
+            else:
+                verify_parallel_pipeline(release)
+                from parallel_export import export_loader_parallel
+                records = export_loader_parallel(model, loader, dataset, device, profile_callback=progress,
+                    workers=args.postprocess_workers, max_inflight=4 * args.postprocess_workers)
             if batchnorm_statistics_hashes(model) != bn_before:
                 raise ValueError("Selected BN buffers changed during inference")
             entry = release["variants"][variant]
@@ -238,7 +253,11 @@ def main():
     parser.add_argument("--data-root", type=Path, default=REPO / "datasets/v2xr")
     parser.add_argument("--output-root", type=Path, default=REPO / "outputs/pretrained_evaluation")
     parser.add_argument("--allow-test-evaluation", action="store_true")
+    parser.add_argument("--postprocess-workers", type=int, default=8,
+                        help="Exact CPU postprocessing workers; 1 uses the serial reference exporter")
     args = parser.parse_args()
+    if args.postprocess_workers < 1:
+        parser.error("--postprocess-workers must be positive")
     if args.action == "evaluate" and not args.allow_test_evaluation:
         parser.error("Frozen final test requires --allow-test-evaluation")
     args.weights_dir, args.output_root = args.weights_dir.resolve(), args.output_root.resolve()
