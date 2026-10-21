@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this implementation or its experimental artifacts, please cite the accompanying manuscript."
+type: software
+title: "Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception: Reference Implementation"
+authors:
+  - family-names: Hu
+    given-names: Qinao
+    affiliation: "School of Communication and Electronic Engineering, East China Normal University, Shanghai, China"
+version: "1.0.0"
+date-released: "2026-10-21"
+repository-code: "https://github.com/Hqa77880011/CSCWD-DEER-SBR"
+url: "https://github.com/Hqa77880011/CSCWD-DEER-SBR"
+keywords:
+  - cooperative perception
+  - LiDAR–radar fusion
+  - adverse weather
+  - 3D object detection
+preferred-citation:
+  type: unpublished
+  title: "Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception"
+  authors:
+    - family-names: Hu
+      given-names: Qinao
+      affiliation: "School of Communication and Electronic Engineering, East China Normal University, Shanghai, China"
+  year: 2026
+  notes: "Manuscript."
+  url: "https://github.com/Hqa77880011/CSCWD-DEER-SBR/blob/main/paper/paper.pdf"
