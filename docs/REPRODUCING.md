@@ -80,6 +80,27 @@ CUDA_VISIBLE_DEVICES=0 python scripts/reproduce.py train --variant AB \
 
 ## 测试和结果
 
+### 使用 Release 权重直接评测
+
+[v1.0.0 Release](https://github.com/Hqa77880011/CSCWD-DEER-SBR/releases/tag/v1.0.0) 提供七份原始 `selected.pt`、`evaluation-metadata.tar.gz`、`pretrained-release.json` 和 `SHA256SUMS`。权重未裁剪、未重写，SHA256 与 `results/reference/manifest.json` 的最终测试选择记录一致。N1/N2 选中第 18 轮，其余五组第 20 轮。
+
+```bash
+gh auth login
+python scripts/pretrained.py download --variant all
+python scripts/pretrained.py verify --variant all
+CUDA_VISIBLE_DEVICES=0 python scripts/pretrained.py evaluate \
+  --variant all --weather all --data-root /disk/v2xr \
+  --output-root /disk/eval/pretrained-v1 --allow-test-evaluation
+```
+
+仅需一组时把 `--variant all` 改为 `--variant AB` 等名称；天气可选 `normal`、`fog`、`snow`、`all`。原始点云和标注按 README 准备，不包含在 Release 中。私有仓库的下载要求 `gh` 已登录且账号有仓库权限。手动下载时，权重和 `evaluation-metadata.tar.gz` 必须位于同一个 `--weights-dir`；默认是仓库内 `checkpoints/v1.0.0/`，已排除 Git 跟踪。
+
+直接评测入口首先以仓库中的固定 Release 清单校验所有输入，再验证 checkpoint 内嵌的原配置和原配置哈希、源码哈希、selected 角色和 epoch、BN 统计哈希及训练校准记录。只有数据根目录、metadata 路径、监督审计路径和输出目录允许重定位；科学参数、GT、样本集合、后处理和 BN 均保持原身份。工具将原始 metadata 链接到输出目录的独立 `data/` 视图，保持原文件字节与哈希；原始点云/标注从你的数据目录读取，并由数据集加载器核验哈希。不需要重训或重新生成辅助监督审计，也不会在测试集上更新 BN。
+
+每项测试输出 `predictions.jsonl`、对应 metadata sidecar、`scores.json.gz` 和 `summary.json`。摘要中的 AP 使用 0–1 数值，`AP3D07_delta_pp` 为与参考表相差的百分点，`reference_AP3D07_matches_1e_6` 给出该指标是否在 1e-6 的 AP 容差内。该字段不替代对跨硬件数值差异的检查。每项仍必须覆盖全部 3166 个样本和 30296 个 GT。工具拒绝覆盖已有预测，失败后保留现场；重试可使用新的输出目录。
+
+### 评测自己从头训练的权重
+
 ```bash
 CUDA_VISIBLE_DEVICES=0 python scripts/reproduce.py evaluate --variant all \
   --output-root /disk/runs/seed17 --allow-test-evaluation
@@ -89,7 +110,7 @@ CUDA_VISIBLE_DEVICES=0 python scripts/reproduce.py evaluate --variant all \
 
 固定 GT 使用原始标注与标定，ego 中心 ROI 为 x∈[0,140)、y∈[-40,40)，固定 camera0 几何 FOV；不按天气点数删 GT，不截断 GT。评分是全局排序的 VOC2010 全点插值 AP，置信度下限 0.001、BEV NMS IoU=0.15、每样本最多 500 个预测。三天气共用同一组选中权重。测试为 3166 样本、30296 GT，天气均值为 Fog/Snow AP3D@0.7 算术均值。
 
-`python scripts/reproduce.py results` 仅复核已有结果表的均值和增益。现有仓库没有上传原始数据、数十 GB 训练输出或预训练权重；从头训练可重建可评测 checkpoint。原始结果 manifest 中的绝对路径和旧 SHA256 是历史证据；迁移路径后新实验会生成新的文件身份，不能拿历史权重绕过配置/来源校验。
+`python scripts/reproduce.py results` 仅复核已有结果表的均值和增益。原始数据和数十 GB 训练输出不上传，原始选中权重通过 Release 提供。`scripts/reproduce.py evaluate` 评测本次配置下从头训练得到的 checkpoint；`scripts/pretrained.py evaluate` 在验证原始身份后迁移路径，评测 Release 中的原权重。两个入口分别记录相应配置和权重身份。
 
 ## 验证
 
