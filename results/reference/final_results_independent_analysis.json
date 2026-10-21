@@ -1,0 +1,414 @@
+{
+  "checked_at_beijing": "2026-10-21T18:35:06.275655+08:00",
+  "complete": true,
+  "rows_verified": 21,
+  "all_expected_pairs_present": true,
+  "one_weight_per_group": true,
+  "one_protocol": true,
+  "one_postprocess": true,
+  "one_gt_manifest": true,
+  "FP32_tf32_disabled": true,
+  "all_sample_counts": 3166,
+  "all_gt_counts": 30296,
+  "independent_arithmetic": "Decimal recomputation from exported CSV cross-checked with task reports and prediction metadata",
+  "weather_means": {
+    "S0": "48.462700684859678",
+    "A": "48.9097951868913025",
+    "B": "48.062381168852758",
+    "AB": "50.129862241189592",
+    "SUP": "48.795663413952835",
+    "N1": "49.86005629615040",
+    "N2": "50.622441760118533"
+  },
+  "normal_fog_means": {
+    "S0": "58.355139640990353",
+    "A": "58.13516514382539",
+    "B": "58.291413023670963",
+    "AB": "58.129877374804957",
+    "SUP": "58.09909354909398",
+    "N1": "57.697614136225475",
+    "N2": "59.190718749055195"
+  },
+  "AB_minus_control_pp": {
+    "S0": {
+      "normal": "-0.26468033276447",
+      "fog": "-0.185844199606322",
+      "snow": "3.52016731226615",
+      "weather_mean": "1.667161556329914"
+    },
+    "A": {
+      "normal": "0.52461109646821",
+      "fog": "-0.535186634509076",
+      "snow": "2.975320743105655",
+      "weather_mean": "1.2200670542982895"
+    },
+    "B": {
+      "normal": "0.01880856693292",
+      "fog": "-0.341879864664932",
+      "snow": "4.47684200933860",
+      "weather_mean": "2.067481072336834"
+    },
+    "SUP": {
+      "normal": "0.35116726723335",
+      "fog": "-0.289599615811396",
+      "snow": "2.95799727028491",
+      "weather_mean": "1.334198827236757"
+    },
+    "N1": {
+      "normal": "0.82465382251734",
+      "fog": "0.039872654641624",
+      "snow": "0.49973923543676",
+      "weather_mean": "0.269805945039192"
+    },
+    "N2": {
+      "normal": "-0.67161010909591",
+      "fog": "-1.450072639404566",
+      "snow": "0.464913601546684",
+      "weather_mean": "-0.492579518928941"
+    }
+  },
+  "interaction_pp": {
+    "normal": "0.80809999616560",
+    "fog": "-0.691222299567686",
+    "snow": "3.931995440178105",
+    "weather_mean": "1.6203865703052095"
+  },
+  "full_metrics": [
+    {
+      "variant": "S0",
+      "weather": "normal",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 87.4269488226669,
+        "0.5": 84.65835328006796,
+        "0.7": 65.45853328909192
+      },
+      "APBEV_percent": {
+        "0.3": 88.15541586546509,
+        "0.5": 86.285158694068,
+        "0.7": 77.58757111354213
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/S0_normal/attempt001/report.json"
+    },
+    {
+      "variant": "A",
+      "weather": "normal",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 87.42601810257001,
+        "0.5": 84.75232885839736,
+        "0.7": 64.66924185985924
+      },
+      "APBEV_percent": {
+        "0.3": 88.20343093162339,
+        "0.5": 86.39785553964415,
+        "0.7": 77.19971224633
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/A_normal/attempt001/report.json"
+    },
+    {
+      "variant": "B",
+      "weather": "normal",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 87.47260608184332,
+        "0.5": 84.6290249484599,
+        "0.7": 65.17504438939453
+      },
+      "APBEV_percent": {
+        "0.3": 88.23542367313544,
+        "0.5": 86.2105722985988,
+        "0.7": 76.71406129891776
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/B_normal/attempt001/report.json"
+    },
+    {
+      "variant": "AB",
+      "weather": "normal",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 87.22244594762158,
+        "0.5": 84.51965653831762,
+        "0.7": 65.19385295632745
+      },
+      "APBEV_percent": {
+        "0.3": 87.95247677560644,
+        "0.5": 86.02700065161213,
+        "0.7": 77.39949226616615
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/AB_normal/attempt001/report.json"
+    },
+    {
+      "variant": "SUP",
+      "weather": "normal",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 87.47561308817352,
+        "0.5": 84.46540884137615,
+        "0.7": 64.8426856890941
+      },
+      "APBEV_percent": {
+        "0.3": 88.51674975019978,
+        "0.5": 86.30452595621827,
+        "0.7": 77.60839619747286
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/SUP_normal/attempt001/report.json"
+    },
+    {
+      "variant": "N1",
+      "weather": "normal",
+      "selected_epoch": 18,
+      "AP3D_percent": {
+        "0.3": 87.32261335451422,
+        "0.5": 84.50271152603163,
+        "0.7": 64.36919913381011
+      },
+      "APBEV_percent": {
+        "0.3": 88.04914180088224,
+        "0.5": 86.14839570181611,
+        "0.7": 77.25624666961014
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/N1_normal/attempt001/report.json"
+    },
+    {
+      "variant": "N2",
+      "weather": "normal",
+      "selected_epoch": 18,
+      "AP3D_percent": {
+        "0.3": 87.34018210793838,
+        "0.5": 84.59132296977529,
+        "0.7": 65.86546306542336
+      },
+      "APBEV_percent": {
+        "0.3": 88.12210661209681,
+        "0.5": 86.1617896344408,
+        "0.7": 77.47659127223136
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/N2_normal/attempt001/report.json"
+    },
+    {
+      "variant": "S0",
+      "weather": "fog",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 80.83918783133358,
+        "0.5": 74.50216900784716,
+        "0.7": 51.251745992888786
+      },
+      "APBEV_percent": {
+        "0.3": 82.30493037238516,
+        "0.5": 77.61114280117233,
+        "0.7": 62.99331326358413
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/S0_fog/attempt001/report.json"
+    },
+    {
+      "variant": "A",
+      "weather": "fog",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 81.36412905545353,
+        "0.5": 74.90599939356699,
+        "0.7": 51.60108842779154
+      },
+      "APBEV_percent": {
+        "0.3": 82.76220099137976,
+        "0.5": 78.16947524658983,
+        "0.7": 63.60915856398704
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/A_fog/attempt001/report.json"
+    },
+    {
+      "variant": "B",
+      "weather": "fog",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 81.14642317395939,
+        "0.5": 74.52499253346815,
+        "0.7": 51.407781657947396
+      },
+      "APBEV_percent": {
+        "0.3": 82.64877077019884,
+        "0.5": 77.48904400288794,
+        "0.7": 62.621548177428224
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/B_fog/attempt001/report.json"
+    },
+    {
+      "variant": "AB",
+      "weather": "fog",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 80.7623985054666,
+        "0.5": 74.7426913942425,
+        "0.7": 51.065901793282464
+      },
+      "APBEV_percent": {
+        "0.3": 82.25464674119996,
+        "0.5": 77.6947847933114,
+        "0.7": 63.735137226364444
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/AB_fog/attempt001/report.json"
+    },
+    {
+      "variant": "SUP",
+      "weather": "fog",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 80.47733231762379,
+        "0.5": 74.17396491075584,
+        "0.7": 51.35550140909386
+      },
+      "APBEV_percent": {
+        "0.3": 82.11311272656472,
+        "0.5": 77.20356225693696,
+        "0.7": 63.362969411089466
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/SUP_fog/attempt001/report.json"
+    },
+    {
+      "variant": "N1",
+      "weather": "fog",
+      "selected_epoch": 18,
+      "AP3D_percent": {
+        "0.3": 80.91329473973052,
+        "0.5": 74.76206047352044,
+        "0.7": 51.02602913864084
+      },
+      "APBEV_percent": {
+        "0.3": 82.40930163632858,
+        "0.5": 77.67600908340087,
+        "0.7": 63.072312678828546
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/N1_fog/attempt001/report.json"
+    },
+    {
+      "variant": "N2",
+      "weather": "fog",
+      "selected_epoch": 18,
+      "AP3D_percent": {
+        "0.3": 81.23874158115129,
+        "0.5": 75.0496503393732,
+        "0.7": 52.51597443268703
+      },
+      "APBEV_percent": {
+        "0.3": 82.67199289685396,
+        "0.5": 78.12983445255826,
+        "0.7": 63.97781257521565
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/N2_fog/attempt001/report.json"
+    },
+    {
+      "variant": "S0",
+      "weather": "snow",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 82.63530729307833,
+        "0.5": 76.61154646323256,
+        "0.7": 45.67365537683057
+      },
+      "APBEV_percent": {
+        "0.3": 84.07686530437944,
+        "0.5": 80.47670283895725,
+        "0.7": 63.86152268940215
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/S0_snow/attempt001/report.json"
+    },
+    {
+      "variant": "A",
+      "weather": "snow",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 83.16934258562293,
+        "0.5": 77.18308995712788,
+        "0.7": 46.218501945991065
+      },
+      "APBEV_percent": {
+        "0.3": 84.63804219951719,
+        "0.5": 81.2267558253822,
+        "0.7": 64.87497522638589
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/A_snow/attempt001/report.json"
+    },
+    {
+      "variant": "B",
+      "weather": "snow",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 82.72825166324911,
+        "0.5": 76.1356466135989,
+        "0.7": 44.71698067975812
+      },
+      "APBEV_percent": {
+        "0.3": 84.22641820447919,
+        "0.5": 80.3975043449141,
+        "0.7": 62.629769996881
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/B_snow/attempt001/report.json"
+    },
+    {
+      "variant": "AB",
+      "weather": "snow",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 82.8717133999321,
+        "0.5": 77.36547803019809,
+        "0.7": 49.19382268909672
+      },
+      "APBEV_percent": {
+        "0.3": 84.38700084153722,
+        "0.5": 80.98770691726273,
+        "0.7": 65.41929891368527
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/AB_snow/attempt001/report.json"
+    },
+    {
+      "variant": "SUP",
+      "weather": "snow",
+      "selected_epoch": 20,
+      "AP3D_percent": {
+        "0.3": 83.77970334209259,
+        "0.5": 77.80822355454553,
+        "0.7": 46.23582541881181
+      },
+      "APBEV_percent": {
+        "0.3": 85.31615721842286,
+        "0.5": 81.6955410508309,
+        "0.7": 65.1978196483247
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/SUP_snow/attempt001/report.json"
+    },
+    {
+      "variant": "N1",
+      "weather": "snow",
+      "selected_epoch": 18,
+      "AP3D_percent": {
+        "0.3": 83.52450874485449,
+        "0.5": 77.78075315327762,
+        "0.7": 48.69408345365996
+      },
+      "APBEV_percent": {
+        "0.3": 84.8278245406708,
+        "0.5": 81.18425698349678,
+        "0.7": 65.11478326620583
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/N1_snow/attempt001/report.json"
+    },
+    {
+      "variant": "N2",
+      "weather": "snow",
+      "selected_epoch": 18,
+      "AP3D_percent": {
+        "0.3": 83.37398299114187,
+        "0.5": 77.5685406242497,
+        "0.7": 48.728909087550036
+      },
+      "APBEV_percent": {
+        "0.3": 84.78306660480293,
+        "0.5": 81.15184399207854,
+        "0.7": 65.55606067628459
+      },
+      "report": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/jobs/N2_snow/attempt001/report.json"
+    }
+  ]
+}

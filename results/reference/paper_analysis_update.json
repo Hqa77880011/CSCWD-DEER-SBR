@@ -1,0 +1,8 @@
+{
+  "checked_at_beijing": "2026-10-21T18:36:43.106483+08:00",
+  "complete": true,
+  "verified_test_jobs": 21,
+  "document": "/root/autodl-tmp/CSCWD/docs/11_\u8bba\u6587\u5b9e\u9a8c\u5206\u6790_\u73b0\u6709\u4e03\u7ec4_2026-10-21.md",
+  "backup": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_parallel_20261021T092310Z/paper_updates/20261021T183643106842/11_\u8bba\u6587\u5b9e\u9a8c\u5206\u6790_\u73b0\u6709\u4e03\u7ec4_2026-10-21.md",
+  "verification": "All available completed reports checked against full scoring archives, frozen weights/configs, prediction file hashes and complete test sample-ID hash."
+}

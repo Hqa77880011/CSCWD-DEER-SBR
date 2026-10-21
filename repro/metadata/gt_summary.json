@@ -1,0 +1,35 @@
+{
+  "test": {
+    "num_samples": 3166,
+    "num_gt": 30296,
+    "max_gt_per_sample": 24,
+    "num_zero_gt_samples": 97,
+    "num_original_gt": 72745,
+    "num_source_objects": 187844,
+    "duplicate_raw_disagreements": 0,
+    "sample_ids_sha256": "2e488acc18eb35ce76f906661cd38bda98caeae2b7fc0ffb9b1607d3b82b6ddd",
+    "gt_sha256": "b7ce745338c01c462b17ce683ea1684c046d8eec38d76ce1a9de9b19a6335d9e"
+  },
+  "train": {
+    "num_samples": 8083,
+    "num_gt": 69757,
+    "max_gt_per_sample": 48,
+    "num_zero_gt_samples": 1236,
+    "num_original_gt": 184714,
+    "num_source_objects": 373813,
+    "duplicate_raw_disagreements": 0,
+    "sample_ids_sha256": "923c5ad4378cf92faa33031b29a14f5a8b0ddbbfcccd640ddfef70d03f8aaab2",
+    "gt_sha256": "51d0472dfd35c1259ec0ceadd98e9a6c8292003c1f5c790e3c16fb83e5bb1759"
+  },
+  "validate": {
+    "num_samples": 829,
+    "num_gt": 6414,
+    "max_gt_per_sample": 23,
+    "num_zero_gt_samples": 57,
+    "num_original_gt": 20572,
+    "num_source_objects": 51198,
+    "duplicate_raw_disagreements": 0,
+    "sample_ids_sha256": "1bdf845746652d786cfd8ec069cd59e66f546f4e6aab548e2fdc5e5764d98b03",
+    "gt_sha256": "0f068ae27c44ac6797623444fb41248f30e38c488714c01378148ecd36dc7788"
+  }
+}

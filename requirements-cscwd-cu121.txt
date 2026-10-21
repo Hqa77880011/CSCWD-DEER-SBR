@@ -1,0 +1,28 @@
+# RTX 4090 preparation; Python 3.10.8, torch 2.1.2+cu121 / torchvision 0.16.2+cu121.
+# Install torch separately using https://download.pytorch.org/whl/cu121.
+# The original requirements.txt is retained as the historical upstream recipe.
+torch==2.1.2+cu121
+torchvision==0.16.2+cu121
+numpy==1.26.3
+numba==0.58.1
+scipy==1.11.4
+matplotlib==3.8.2
+opencv-python==4.8.1.78
+scikit-image==0.22.0
+Cython==0.29.37
+easydict==1.13
+PyYAML==6.0.1
+tqdm==4.66.5
+open3d==0.18.0
+tensorboardX==2.6.2.2
+shapely==1.8.5.post1
+einops==0.7.0
+efficientnet-pytorch==0.7.1
+mmcv==1.7.2
+timm==0.6.7
+pyquaternion==0.9.9
+spconv-cu120==2.3.6
+cumm-cu120==0.4.11
+python-lzf==0.2.6
+ninja==1.11.1.1
+pypcd @ git+https://github.com/klintan/pypcd.git@796e545df2ee5e7836df6fe2f274aae3428d1ac2

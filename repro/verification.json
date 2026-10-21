@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-21",
+  "timezone": "Asia/Shanghai",
+  "regression": {
+    "run": 155,
+    "passed": 155,
+    "skipped": 0
+  },
+  "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+  "extension_build": "passed",
+  "environment": "passed",
+  "pinned_endpoint_probe": "passed",
+  "rebuilt_gt_matches_reference_summary": true,
+  "rebuilt_gt_summary": {
+    "test": {
+      "num_samples": 3166,
+      "num_gt": 30296,
+      "max_gt_per_sample": 24,
+      "num_zero_gt_samples": 97,
+      "num_original_gt": 72745,
+      "num_source_objects": 187844,
+      "duplicate_raw_disagreements": 0,
+      "sample_ids_sha256": "2e488acc18eb35ce76f906661cd38bda98caeae2b7fc0ffb9b1607d3b82b6ddd",
+      "gt_sha256": "b7ce745338c01c462b17ce683ea1684c046d8eec38d76ce1a9de9b19a6335d9e"
+    },
+    "train": {
+      "num_samples": 8083,
+      "num_gt": 69757,
+      "max_gt_per_sample": 48,
+      "num_zero_gt_samples": 1236,
+      "num_original_gt": 184714,
+      "num_source_objects": 373813,
+      "duplicate_raw_disagreements": 0,
+      "sample_ids_sha256": "923c5ad4378cf92faa33031b29a14f5a8b0ddbbfcccd640ddfef70d03f8aaab2",
+      "gt_sha256": "51d0472dfd35c1259ec0ceadd98e9a6c8292003c1f5c790e3c16fb83e5bb1759"
+    },
+    "validate": {
+      "num_samples": 829,
+      "num_gt": 6414,
+      "max_gt_per_sample": 23,
+      "num_zero_gt_samples": 57,
+      "num_original_gt": 20572,
+      "num_source_objects": 51198,
+      "duplicate_raw_disagreements": 0,
+      "sample_ids_sha256": "1bdf845746652d786cfd8ec069cd59e66f546f4e6aab548e2fdc5e5764d98b03",
+      "gt_sha256": "0f068ae27c44ac6797623444fb41248f30e38c488714c01378148ecd36dc7788"
+    }
+  },
+  "provenance_audit": {
+    "samples": 32,
+    "formal_positive_supervision_ready": true
+  },
+  "preflight": {
+    "formal_blockers": [],
+    "paths_exist": true
+  },
+  "gpu_smoke": {
+    "status": "diagnostic_completed",
+    "passed": true,
+    "all_losses_and_gradients_finite": true,
+    "completed_optimizer_updates": 1,
+    "training_micro_steps": 2,
+    "source_unchanged": true,
+    "peak_allocated_gib": 12.782074451446533,
+    "peak_reserved_gib": 13.94921875
+  },
+  "reference_results_arithmetic": "passed",
+  "full_fresh_training_performed": false,
+  "full_fresh_dependency_install_performed": false,
+  "full_fresh_download_performed": false
+}

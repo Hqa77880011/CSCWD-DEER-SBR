@@ -1,0 +1,94 @@
+# Teacher-free v4: train-only frozen-weight BN statistics refit before evaluation.
+# Formal runs remain pending; online training keeps FP32 / EMA .01 / micro4 accumulation2.
+version: 4
+experiment:
+  run_id: v2xr_tf4_C_S0_s17_prepared
+  dataset_id: v2xr
+  protocol: project_fix_v1
+  training_protocol: teacher_free_v4
+  track: C
+  seed: 17
+  variant: S0
+data:
+  root: /root/autodl-tmp/CSCWD/datasets/v2xr
+  manifest_dir: /root/autodl-tmp/CSCWD/datasets/v2xr
+  base_hypes: cscwd_configs/baseline_full_data_check.yaml
+  paired_supervision: false
+  supervision_source: none
+  supervision_audit: null
+  controlled_corruption:
+    probability: 0.5
+    drop_fraction: 0.2
+    inject_fraction: 0.05
+    max_offset_m: 0.3
+  matching:
+    max_distance: 0.002
+    ambiguity_margin: 0.001
+    unmatched_min_distance: 0.05
+training:
+  epochs: 30
+  effective_batch_size: 8
+  micro_batch_size: 4
+  world_size: 1
+  accumulation_steps: 2
+  lr: 0.002
+  weight_decay: 0.0001
+  adam_eps: 1.0e-10
+  milestones:
+  - 10
+  - 15
+  gamma: 0.1
+  checkpoint_interval_updates: 100
+  precision: fp32
+  normalization: batchnorm
+  deterministic: true
+  batchnorm:
+    eps: 0.001
+    momentum: 0.01
+    evaluation_statistics: train_refit_cma_v1
+    refit_samples: 32
+    refit_sampling: uniform_midpoints_v1
+    refit_epoch: 0
+    refit_augment: false
+    refit_micro_batch_size: 4
+resources:
+  num_workers: 8
+  prefetch_factor: 2
+  pin_memory: true
+  persistent_workers: true
+  raw_cache_gib_per_worker: 0.5
+  ram_budget_gib: 64
+  cpu_threads: 4
+model:
+  hidden_channels: 16
+  attention_channels: 8
+  rho: 0.25
+  g_min: 0.25
+  scale_mode: current_observation_rms
+  scale_floor: 0.001
+  scale_ceiling: 1000.0
+  support_radius_m: 0.8
+  route_strength: 0.5
+  activation_checkpoint: true
+  amplitude_context: rms
+  type_prior_mode: input_only
+  efficient_features: true
+loss:
+  type_weight: 0.1
+  correction_weight: 0.001
+  identity_weight: 0.01
+artifacts:
+  output_root: /root/autodl-tmp/CSCWD/outputs/teacher_free_v4
+  amp_audit: null
+selection:
+  metric: ap3d
+  iou: 0.7
+  tie_tolerance: 1.0e-06
+scoring:
+  iou_thresholds:
+  - 0.3
+  - 0.5
+  - 0.7
+  score_floor: 0.001
+  nms_bev_iou: 0.15
+  max_detections: 500

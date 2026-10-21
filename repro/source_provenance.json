@@ -1,0 +1,7 @@
+{
+  "upstream_url": "https://github.com/ylwhxht/V2X-R",
+  "local_source_commit": "b7fcfe75b0272819b72615ca58d1abdef658e670",
+  "dataset_revision": "4c9ff1773b49517464714368d30778b5252bdbd0",
+  "reference_source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+  "note": "Current source includes uncommitted teacher_free_v4 implementation. Portable preparation/runner scripts change source-tree fingerprints; re-audit and train fresh in this checkout."
+}

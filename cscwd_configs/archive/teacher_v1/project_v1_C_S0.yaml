@@ -1,0 +1,71 @@
+# Verified RTX 4090 profile; default invocation is preflight. No formal runs have started.
+version: 1
+experiment:
+  run_id: v2xr_C_S0_s17_prepared
+  dataset_id: v2xr
+  protocol: project_fix_v1
+  track: C
+  seed: 17
+  variant: S0
+data:
+  root: /root/autodl-tmp/CSCWD/datasets/v2xr
+  manifest_dir: /root/autodl-tmp/CSCWD/datasets/v2xr
+  base_hypes: cscwd_configs/baseline_full_data_check.yaml
+  paired_supervision: false
+  supervision_source: none
+  supervision_audit: null
+  matching:
+    max_distance: 0.002
+    ambiguity_margin: 0.001
+    unmatched_min_distance: 0.05
+training:
+  epochs: 30
+  effective_batch_size: 8
+  micro_batch_size: 4
+  world_size: 1
+  accumulation_steps: 2
+  lr: 0.002
+  weight_decay: 0.0001
+  adam_eps: 1.0e-10
+  milestones:
+  - 10
+  - 15
+  gamma: 0.1
+  checkpoint_interval_updates: 100
+  precision: fp32
+  normalization: batchnorm
+  deterministic: true
+resources:
+  num_workers: 8
+  prefetch_factor: 2
+  pin_memory: true
+  persistent_workers: true
+  raw_cache_gib_per_worker: 0.5
+  ram_budget_gib: 64
+  cpu_threads: 4
+model:
+  hidden_channels: 16
+  attention_channels: 8
+  rho: 0.25
+  g_min: 0.25
+loss:
+  type_weight: 0.1
+  repair_weight: 0.05
+  identity_weight: 0.01
+artifacts:
+  output_root: /root/autodl-tmp/CSCWD/outputs/project_v1
+  teacher_checkpoint: null
+  feature_scale: null
+  amp_audit: null
+selection:
+  metric: ap3d
+  iou: 0.7
+  tie_tolerance: 1.0e-06
+scoring:
+  iou_thresholds:
+  - 0.3
+  - 0.5
+  - 0.7
+  score_floor: 0.001
+  nms_bev_iou: 0.15
+  max_detections: 500

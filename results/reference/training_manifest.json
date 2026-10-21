@@ -1,0 +1,199 @@
+{
+  "schema": "v4_formal_queue_v1",
+  "repo": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project",
+  "python": "/root/autodl-tmp/CSCWD/envs/cscwd/bin/python",
+  "campaign": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z",
+  "seed": 17,
+  "track": "W",
+  "epochs": 20,
+  "expected_optimizer_steps": 20200,
+  "variants": [
+    "S0",
+    "A",
+    "B",
+    "AB",
+    "SUP",
+    "N1",
+    "N2"
+  ],
+  "selection": {
+    "split": "validate",
+    "weather": [
+      "normal",
+      "fog"
+    ],
+    "metric": "mean_ap3d_iou_0.7",
+    "bn_statistics": "train_refit_cma_v1"
+  },
+  "forbidden_evaluation": [
+    "test",
+    "snow"
+  ],
+  "runs": [
+    {
+      "variant": "S0",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/S0.yaml",
+      "output": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_S0_s17/train",
+      "template": "/root/autodl-tmp/CSCWD/V2X-R_project/cscwd_configs/project_v4_W_S0.yaml",
+      "amplitude_context": "rms",
+      "type_prior_mode": "input_only",
+      "config_sha256": "00866a1f37eb29395b8e8f14597dacbb4c97e05ff7d92a68c34d227ea26895cc"
+    },
+    {
+      "variant": "A",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/A.yaml",
+      "output": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_A_s17/train",
+      "template": "/root/autodl-tmp/CSCWD/V2X-R_project/cscwd_configs/project_v4_W_A.yaml",
+      "amplitude_context": "rms",
+      "type_prior_mode": "input_only",
+      "config_sha256": "26b701fbbdbc5368cc610b8f4f4330aceb1d108fcde68d594acf949fb8a2bb48"
+    },
+    {
+      "variant": "B",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/B.yaml",
+      "output": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_B_s17/train",
+      "template": "/root/autodl-tmp/CSCWD/V2X-R_project/cscwd_configs/project_v4_W_B.yaml",
+      "amplitude_context": "rms",
+      "type_prior_mode": "input_only",
+      "config_sha256": "416a907fc25b8227ad362f037dee4b7ebc4b483699e530ce7116826faaa39b3d"
+    },
+    {
+      "variant": "AB",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/AB.yaml",
+      "output": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_AB_s17/train",
+      "template": "/root/autodl-tmp/CSCWD/V2X-R_project/cscwd_configs/project_v4_W_AB.yaml",
+      "amplitude_context": "rms",
+      "type_prior_mode": "input_only",
+      "config_sha256": "8156945b0df75d02eadd7226cc916b69a98fe3d566f3fb97c3163792740a88ea"
+    },
+    {
+      "variant": "SUP",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/SUP.yaml",
+      "output": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_SUP_s17/train",
+      "template": "/root/autodl-tmp/CSCWD/V2X-R_project/cscwd_configs/project_v4_W_SUP.yaml",
+      "amplitude_context": "rms",
+      "type_prior_mode": "input_only",
+      "config_sha256": "9abfbc9c03e41317056d5d97b86e31d5923a606dee0a6520502491416e080d7b"
+    },
+    {
+      "variant": "N1",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/N1.yaml",
+      "output": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N1_s17/train",
+      "template": "/root/autodl-tmp/CSCWD/V2X-R_project/cscwd_configs/project_v4_W_N1.yaml",
+      "amplitude_context": "normalized_mean",
+      "type_prior_mode": "input_only",
+      "config_sha256": "5852aa4d04123576c2238fd155874b26e515dd497ac290cd525e9b5c5ccfba36"
+    },
+    {
+      "variant": "N2",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/N2.yaml",
+      "output": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N2_s17/train",
+      "template": "/root/autodl-tmp/CSCWD/V2X-R_project/cscwd_configs/project_v4_W_N2.yaml",
+      "amplitude_context": "rms",
+      "type_prior_mode": "multiplicative",
+      "config_sha256": "ffc226b45144c785a6df6091518a408bcc643da20bf0cc3ddb7851184a3c7927"
+    }
+  ],
+  "original_repo": "/root/autodl-tmp/CSCWD/V2X-R_project",
+  "state_dir": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/queue",
+  "poll_seconds": 5,
+  "max_auto_retries": 2,
+  "shared_initialization_sha256": "9a0399c966817a4e3824c37b39abdaf2f3c4bd65bd1def6da799e9bfc2edf3ff",
+  "parent_campaign": "/root/autodl-tmp/CSCWD/outputs/teacher_free_v4/W_seed17_30ep_20261019T141806Z",
+  "optimization_equivalence_required": true,
+  "authorization": "User: each group trains 20 epochs; full Normal/Fog validation every epoch; optimize CPU/NMS with equal validation results; no test/Snow.",
+  "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+  "frozen_at_utc": "2026-10-19T15:06:45.314204+00:00",
+  "supervision_audit": {
+    "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/provenance_supervision_audit.json",
+    "sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642"
+  },
+  "immutable_files": [
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/provenance_supervision_audit.json",
+      "sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/cscwd_configs/baseline_full_data_check.yaml",
+      "sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/datasets/v2xr/eval_gt_manifest.json",
+      "sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/datasets/v2xr/data_manifest.json",
+      "sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/datasets/v2xr/split_manifest.json",
+      "sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/datasets/v2xr/weather_manifest.json",
+      "sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/datasets/v2xr/protocol_manifest.json",
+      "sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/datasets/v2xr/image_sizes.json",
+      "sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/control/run_v4_formal_queue.py",
+      "sha256": "a98fe0c66da39f04f24d0d66a102f489b838493980cb4fbd6a6f3e52e8862496"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/iou3d_nms/iou3d_nms_cuda.cpython-310-x86_64-linux-gnu.so",
+      "sha256": "feb1e9f65870a5812212eddbb83e79b5b7b50b90b74d15a2364a99ea49062d4b"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/pointnet2_batch_cuda.cpython-310-x86_64-linux-gnu.so",
+      "sha256": "0557cb9d2945edd8a0a76f1a53544db4b3fb3e6f8b2814fe3014c5f0c525d8e3"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/pointnet2_stack_cuda.cpython-310-x86_64-linux-gnu.so",
+      "sha256": "e68cf3f06d4349b49a11dacc5279896d878abb53279a9ea8d3ad59a86baf66bb"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/roiaware_pool3d/roiaware_pool3d_cuda.cpython-310-x86_64-linux-gnu.so",
+      "sha256": "af95f965cf96ad5b552b29eeb4654f0148127b21d2f3740468e057a380d22eac"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/utils/box_overlaps.cpython-310-x86_64-linux-gnu.so",
+      "sha256": "381656f4faa784a50157e9cce8973724dd360e3d93eec0e511881b21e934d08e"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/project_tools/build_extensions.sh",
+      "sha256": "fd26ddda9d12317d28818d97c543d8010fdfb2fd2278323cce6f29be71287c90"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/control/start_2080ti_nohup.sh",
+      "sha256": "8495793ee66f1d33e9b2d5544c073e3ccedd89844de99b1cca205abb10bc66d1"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/control/pause_2080ti.sh",
+      "sha256": "6e85c90966c19f1bb7255cfc59ad97575b371bb4a348e32805018f63957e88cf"
+    },
+    {
+      "path": "/root/autodl-tmp/CSCWD/setup/run_2080ti.py",
+      "sha256": "7af6603aef15ec27a524aa0af9165618379b6a961add43c62c622b6916e937af"
+    }
+  ],
+  "preflight_all_passed": true,
+  "prepared_from": "/root/autodl-tmp/CSCWD/outputs/teacher_free_v4/W_seed17_20ep_fastval_20261019T145838Z",
+  "prepared_for": "5x RTX 2080 Ti; independent experiments",
+  "multi_gpu_queue_script": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/control/run_v4_formal_queue.py",
+  "server_authorization": "User requested adaptation of the migrated 4090 experiments to this 2080 Ti server.",
+  "validation_equivalence": {
+    "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/migration/validation_equivalence.json",
+    "sha256": "f3ae3d836a74068824bda893f81e593b9fd4da54101a8aa0d247ed3a95fcb1ff"
+  },
+  "migration_receipt": {
+    "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/migration/receipt.json",
+    "sha256": "281854f849ddb0bf9aa41b4285cb3f279c2056564f2bcd5991f7fc6650477bb8"
+  },
+  "formal_start_authorization": "User explicitly authorized checks, audited S0 update1000 migration, and nohup five-GPU formal training for S0/A/B/AB/SUP/N1/N2; total20 epochs each; no test/Snow."
+}

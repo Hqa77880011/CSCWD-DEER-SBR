@@ -1,0 +1,11 @@
+{
+  "archive_sha256": "31d509c5696eeab1d9ecdbb4f0499a0e331b5356887add76c4de6f0cf7af92ec",
+  "source_tree_sha256": "c02a351174bd9736e5e7240d4ebe6df9e6ff6093a1a0d1691a4166dd1817105c",
+  "all_member_hashes_match": true,
+  "source_tree_matches_previous_v3_acceptance": true,
+  "file_count": 440,
+  "config_count": 19,
+  "archive_size_bytes": 768106,
+  "v2_archive_untouched": true,
+  "formal_experiment_started": false
+}

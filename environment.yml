@@ -1,0 +1,8 @@
+name: cscwd-repro
+channels:
+  - defaults
+dependencies:
+  - python=3.10.8
+  - pip=24.0
+  - setuptools=65.5.0
+  - wheel=0.42.0

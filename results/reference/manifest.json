@@ -1,0 +1,847 @@
+{
+  "schema": "v4_frozen_final_test_v1",
+  "created_at_utc": "2026-10-21T09:23:10.948774+00:00",
+  "campaign": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z",
+  "repo": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project",
+  "python": "/root/autodl-tmp/CSCWD/envs/cscwd/bin/python",
+  "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+  "training_manifest_sha256": "4f7dcc8348b9a5ef2035a41956aed1fbbeaf16e6bb25f14a162b188a56da662a",
+  "frozen_files": {
+    "/root/autodl-tmp/CSCWD/datasets/v2xr/data_manifest.json": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+    "/root/autodl-tmp/CSCWD/datasets/v2xr/eval_gt_manifest.json": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+    "/root/autodl-tmp/CSCWD/datasets/v2xr/image_sizes.json": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+    "/root/autodl-tmp/CSCWD/datasets/v2xr/protocol_manifest.json": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+    "/root/autodl-tmp/CSCWD/datasets/v2xr/split_manifest.json": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+    "/root/autodl-tmp/CSCWD/datasets/v2xr/weather_manifest.json": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/control/pause_2080ti.sh": "6e85c90966c19f1bb7255cfc59ad97575b371bb4a348e32805018f63957e88cf",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/control/run_v4_formal_queue.py": "a98fe0c66da39f04f24d0d66a102f489b838493980cb4fbd6a6f3e52e8862496",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/control/start_2080ti_nohup.sh": "8495793ee66f1d33e9b2d5544c073e3ccedd89844de99b1cca205abb10bc66d1",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/migration/receipt.json": "281854f849ddb0bf9aa41b4285cb3f279c2056564f2bcd5991f7fc6650477bb8",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/migration/validation_equivalence.json": "f3ae3d836a74068824bda893f81e593b9fd4da54101a8aa0d247ed3a95fcb1ff",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/provenance_supervision_audit.json": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/cscwd_configs/baseline_full_data_check.yaml": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/iou3d_nms/iou3d_nms_cuda.cpython-310-x86_64-linux-gnu.so": "feb1e9f65870a5812212eddbb83e79b5b7b50b90b74d15a2364a99ea49062d4b",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/pointnet2_batch_cuda.cpython-310-x86_64-linux-gnu.so": "0557cb9d2945edd8a0a76f1a53544db4b3fb3e6f8b2814fe3014c5f0c525d8e3",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/pointnet2_stack_cuda.cpython-310-x86_64-linux-gnu.so": "e68cf3f06d4349b49a11dacc5279896d878abb53279a9ea8d3ad59a86baf66bb",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/pcdet_utils/roiaware_pool3d/roiaware_pool3d_cuda.cpython-310-x86_64-linux-gnu.so": "af95f965cf96ad5b552b29eeb4654f0148127b21d2f3740468e057a380d22eac",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/opencood/utils/box_overlaps.cpython-310-x86_64-linux-gnu.so": "381656f4faa784a50157e9cce8973724dd360e3d93eec0e511881b21e934d08e",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/source/V2X-R_project/project_tools/build_extensions.sh": "fd26ddda9d12317d28818d97c543d8010fdfb2fd2278323cce6f29be71287c90",
+    "/root/autodl-tmp/CSCWD/setup/run_2080ti.py": "7af6603aef15ec27a524aa0af9165618379b6a961add43c62c622b6916e937af",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/manifest.json": "4f7dcc8348b9a5ef2035a41956aed1fbbeaf16e6bb25f14a162b188a56da662a",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/S0.yaml": "00866a1f37eb29395b8e8f14597dacbb4c97e05ff7d92a68c34d227ea26895cc",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_S0_s17/train/selected.pt": "b8905e8beb41e2218cb6a04f193a43f7e71b1b9c1e281d18db4a65856d380876",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/A.yaml": "26b701fbbdbc5368cc610b8f4f4330aceb1d108fcde68d594acf949fb8a2bb48",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_A_s17/train/selected.pt": "070982d389ab6e97815edf2c936e79ca0359f52a4b617629f93e2ef2ba0f15b7",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/B.yaml": "416a907fc25b8227ad362f037dee4b7ebc4b483699e530ce7116826faaa39b3d",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_B_s17/train/selected.pt": "e047b7f0807ad1de756c6d1d800931b53993deb3c2d52c05913bd244082c5ec3",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/AB.yaml": "8156945b0df75d02eadd7226cc916b69a98fe3d566f3fb97c3163792740a88ea",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_AB_s17/train/selected.pt": "7423fe2c2a4305a1d3549060abe94b79481bf5648c39d3ed4bf41d5e88789a8c",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/SUP.yaml": "9abfbc9c03e41317056d5d97b86e31d5923a606dee0a6520502491416e080d7b",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_SUP_s17/train/selected.pt": "b36751f8262e828c9bec7175c5fe0540e361046cda1b6556a7be25190311de8e",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/N1.yaml": "5852aa4d04123576c2238fd155874b26e515dd497ac290cd525e9b5c5ccfba36",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N1_s17/train/selected.pt": "f4353db9c03b3c62acd7143f2f62651af3dd2187b75f4548450e2c04a4b9c248",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/N2.yaml": "ffc226b45144c785a6df6091518a408bcc643da20bf0cc3ddb7851184a3c7927",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N2_s17/train/selected.pt": "b0c6c8abe8c2e4b289a5b380b8a1d063b57402e783a004eee2b57a2d7248dda1",
+    "/root/autodl-tmp/CSCWD/setup/run_v4_final_test.py": "f98796344aaa3210c1e1bfaa0088d60df745d2d4bdb94807038f78ceb6f2767d",
+    "/root/autodl-tmp/CSCWD/setup/run_v4_final_test_parallel.py": "4593b8bbcc31a3f72d6d1219f1612f67f559f13cfb948f73ac09d33182eb717a",
+    "/root/autodl-tmp/CSCWD/setup/v4_parallel_export.py": "324a6f03c646e9db841147ac59546eecec2debe39d4945430f343b4a5059df3a",
+    "/root/autodl-tmp/CSCWD/setup/finalize_v4_test_analysis.py": "2b431531c852375ae39dc65d3f64e6a6eaff7831a832bdbdb045ef62e689413b",
+    "/root/autodl-tmp/CSCWD/setup/verify_v4_parallel_export.py": "c6b9bf5fab3f20fd07b0d88de024b8809a253f47b678ed6f8200b98c94548bff",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test_acceleration/equivalence_20261021T091419Z/equivalence.json": "16d06a92477f30edd786f849777aab159c58ed2a118888e33b72eb8316092ffe",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_AB_s17/train/validation_epoch020.json.gz": "cd96c4be6c32216582087d1d361b2dfbbfd1a4f0fc9c0f29cb7dc749e2f6fb47",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test_acceleration/equivalence_20261021T091419Z/normal.json.gz": "fab14b8db30d1c8641d4dd58359710ab4894744101287db3a75f10ef7445c479",
+    "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test_acceleration/equivalence_20261021T091419Z/fog.json.gz": "1bc1512bbe6ea1e6f646ef21e586991a3627b646f6bc52cf0c8029a1f6cdb071"
+  },
+  "selections": [
+    {
+      "variant": "S0",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/S0.yaml",
+      "config_file_sha256": "00866a1f37eb29395b8e8f14597dacbb4c97e05ff7d92a68c34d227ea26895cc",
+      "config_sha256": "76d6b49de0a164711d6f95a727fbba70f896f4ee58fead31221415f2222cb3bf",
+      "checkpoint": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_S0_s17/train/selected.pt",
+      "checkpoint_sha256": "b8905e8beb41e2218cb6a04f193a43f7e71b1b9c1e281d18db4a65856d380876",
+      "selected_epoch": 20,
+      "validation_scores": {
+        "normal": 0.5699994023445363,
+        "fog": 0.41301877069766835
+      },
+      "validation_archive": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_S0_s17/train/validation_epoch020.json.gz",
+      "validation_archive_sha256": "cce31f7d7afe279c87b0ac4efece8893bc25ef734958e4380d08699d62a392e8",
+      "training_completion_checks": {
+        "registered_budget": true,
+        "passed": true,
+        "status": true,
+        "optimizer_steps": true,
+        "selected_checkpoint": true,
+        "online_checkpoint": true,
+        "validation_epoch020": true,
+        "source_unchanged": true,
+        "formal_mode": true,
+        "micro_steps": true,
+        "finite_training": true,
+        "all_validation_epochs": true,
+        "checkpoint_registered_budget": true,
+        "checkpoint_epoch": true,
+        "checkpoint_optimizer_steps": true,
+        "checkpoint_micro_steps": true,
+        "checkpoint_samples_seen": true,
+        "checkpoint_selected_epoch": true,
+        "checkpoint_sampler_epoch": true,
+        "checkpoint_sampler_cursor": true,
+        "checkpoint_online_role": true,
+        "checkpoint_protocol": true,
+        "checkpoint_source": true
+      },
+      "artifacts": {
+        "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+        "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+        "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+        "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+        "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+        "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+        "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+        "amp_audit_sha256": null,
+        "supervision_audit_sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+        "training_protocol": "teacher_free_v4",
+        "supervision_contract": {
+          "dataset_id": "v2xr",
+          "split": "train",
+          "supervision_source": "provenance_v1",
+          "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+          "data_contract": {
+            "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+            "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+            "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+            "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+            "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+            "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+            "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+          },
+          "controlled_corruption": {
+            "probability": 0.5,
+            "drop_fraction": 0.2,
+            "inject_fraction": 0.05,
+            "max_offset_m": 0.3
+          },
+          "seed": 17,
+          "epoch": 0,
+          "audit_samples": 32
+        },
+        "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1"
+      }
+    },
+    {
+      "variant": "A",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/A.yaml",
+      "config_file_sha256": "26b701fbbdbc5368cc610b8f4f4330aceb1d108fcde68d594acf949fb8a2bb48",
+      "config_sha256": "0c01ddc9d00704527d6ac8466e7cd6e6e16f85c127fec8d28e858cbe52e11874",
+      "checkpoint": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_A_s17/train/selected.pt",
+      "checkpoint_sha256": "070982d389ab6e97815edf2c936e79ca0359f52a4b617629f93e2ef2ba0f15b7",
+      "selected_epoch": 20,
+      "validation_scores": {
+        "normal": 0.5762607171393686,
+        "fog": 0.4200061657343185
+      },
+      "validation_archive": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_A_s17/train/validation_epoch020.json.gz",
+      "validation_archive_sha256": "c4400583439f85d4c0deb1e85c74b527dd77f3ee877dc17108127dddc23f2b00",
+      "training_completion_checks": {
+        "registered_budget": true,
+        "passed": true,
+        "status": true,
+        "optimizer_steps": true,
+        "selected_checkpoint": true,
+        "online_checkpoint": true,
+        "validation_epoch020": true,
+        "source_unchanged": true,
+        "formal_mode": true,
+        "micro_steps": true,
+        "finite_training": true,
+        "all_validation_epochs": true,
+        "checkpoint_registered_budget": true,
+        "checkpoint_epoch": true,
+        "checkpoint_optimizer_steps": true,
+        "checkpoint_micro_steps": true,
+        "checkpoint_samples_seen": true,
+        "checkpoint_selected_epoch": true,
+        "checkpoint_sampler_epoch": true,
+        "checkpoint_sampler_cursor": true,
+        "checkpoint_online_role": true,
+        "checkpoint_protocol": true,
+        "checkpoint_source": true
+      },
+      "artifacts": {
+        "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+        "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+        "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+        "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+        "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+        "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+        "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+        "amp_audit_sha256": null,
+        "supervision_audit_sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+        "training_protocol": "teacher_free_v4",
+        "supervision_contract": {
+          "dataset_id": "v2xr",
+          "split": "train",
+          "supervision_source": "provenance_v1",
+          "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+          "data_contract": {
+            "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+            "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+            "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+            "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+            "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+            "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+            "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+          },
+          "controlled_corruption": {
+            "probability": 0.5,
+            "drop_fraction": 0.2,
+            "inject_fraction": 0.05,
+            "max_offset_m": 0.3
+          },
+          "seed": 17,
+          "epoch": 0,
+          "audit_samples": 32
+        },
+        "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1"
+      }
+    },
+    {
+      "variant": "B",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/B.yaml",
+      "config_file_sha256": "416a907fc25b8227ad362f037dee4b7ebc4b483699e530ce7116826faaa39b3d",
+      "config_sha256": "13305c94659642e72b89b70e46caf80e2211bb6fd9bcc47e66743bec1b36674f",
+      "checkpoint": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_B_s17/train/selected.pt",
+      "checkpoint_sha256": "e047b7f0807ad1de756c6d1d800931b53993deb3c2d52c05913bd244082c5ec3",
+      "selected_epoch": 20,
+      "validation_scores": {
+        "normal": 0.5760987145921391,
+        "fog": 0.40468777415650875
+      },
+      "validation_archive": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_B_s17/train/validation_epoch020.json.gz",
+      "validation_archive_sha256": "1db34f695a5c5dc4b40afd78cb4697a189787903f73ee9bd9b01cf8acf3b324e",
+      "training_completion_checks": {
+        "registered_budget": true,
+        "passed": true,
+        "status": true,
+        "optimizer_steps": true,
+        "selected_checkpoint": true,
+        "online_checkpoint": true,
+        "validation_epoch020": true,
+        "source_unchanged": true,
+        "formal_mode": true,
+        "micro_steps": true,
+        "finite_training": true,
+        "all_validation_epochs": true,
+        "checkpoint_registered_budget": true,
+        "checkpoint_epoch": true,
+        "checkpoint_optimizer_steps": true,
+        "checkpoint_micro_steps": true,
+        "checkpoint_samples_seen": true,
+        "checkpoint_selected_epoch": true,
+        "checkpoint_sampler_epoch": true,
+        "checkpoint_sampler_cursor": true,
+        "checkpoint_online_role": true,
+        "checkpoint_protocol": true,
+        "checkpoint_source": true
+      },
+      "artifacts": {
+        "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+        "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+        "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+        "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+        "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+        "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+        "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+        "amp_audit_sha256": null,
+        "supervision_audit_sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+        "training_protocol": "teacher_free_v4",
+        "supervision_contract": {
+          "dataset_id": "v2xr",
+          "split": "train",
+          "supervision_source": "provenance_v1",
+          "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+          "data_contract": {
+            "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+            "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+            "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+            "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+            "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+            "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+            "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+          },
+          "controlled_corruption": {
+            "probability": 0.5,
+            "drop_fraction": 0.2,
+            "inject_fraction": 0.05,
+            "max_offset_m": 0.3
+          },
+          "seed": 17,
+          "epoch": 0,
+          "audit_samples": 32
+        },
+        "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1"
+      }
+    },
+    {
+      "variant": "AB",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/AB.yaml",
+      "config_file_sha256": "8156945b0df75d02eadd7226cc916b69a98fe3d566f3fb97c3163792740a88ea",
+      "config_sha256": "1b13081fe0d0dc469d251b9ba321a024de4a95f5d40307cac4a207f6062dd429",
+      "checkpoint": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_AB_s17/train/selected.pt",
+      "checkpoint_sha256": "7423fe2c2a4305a1d3549060abe94b79481bf5648c39d3ed4bf41d5e88789a8c",
+      "selected_epoch": 20,
+      "validation_scores": {
+        "normal": 0.5767412768432238,
+        "fog": 0.41411743244824695
+      },
+      "validation_archive": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_AB_s17/train/validation_epoch020.json.gz",
+      "validation_archive_sha256": "cd96c4be6c32216582087d1d361b2dfbbfd1a4f0fc9c0f29cb7dc749e2f6fb47",
+      "training_completion_checks": {
+        "registered_budget": true,
+        "passed": true,
+        "status": true,
+        "optimizer_steps": true,
+        "selected_checkpoint": true,
+        "online_checkpoint": true,
+        "validation_epoch020": true,
+        "source_unchanged": true,
+        "formal_mode": true,
+        "micro_steps": true,
+        "finite_training": true,
+        "all_validation_epochs": true,
+        "checkpoint_registered_budget": true,
+        "checkpoint_epoch": true,
+        "checkpoint_optimizer_steps": true,
+        "checkpoint_micro_steps": true,
+        "checkpoint_samples_seen": true,
+        "checkpoint_selected_epoch": true,
+        "checkpoint_sampler_epoch": true,
+        "checkpoint_sampler_cursor": true,
+        "checkpoint_online_role": true,
+        "checkpoint_protocol": true,
+        "checkpoint_source": true
+      },
+      "artifacts": {
+        "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+        "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+        "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+        "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+        "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+        "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+        "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+        "amp_audit_sha256": null,
+        "supervision_audit_sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+        "training_protocol": "teacher_free_v4",
+        "supervision_contract": {
+          "dataset_id": "v2xr",
+          "split": "train",
+          "supervision_source": "provenance_v1",
+          "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+          "data_contract": {
+            "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+            "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+            "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+            "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+            "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+            "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+            "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+          },
+          "controlled_corruption": {
+            "probability": 0.5,
+            "drop_fraction": 0.2,
+            "inject_fraction": 0.05,
+            "max_offset_m": 0.3
+          },
+          "seed": 17,
+          "epoch": 0,
+          "audit_samples": 32
+        },
+        "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1"
+      }
+    },
+    {
+      "variant": "SUP",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/SUP.yaml",
+      "config_file_sha256": "9abfbc9c03e41317056d5d97b86e31d5923a606dee0a6520502491416e080d7b",
+      "config_sha256": "b7de090670306c4fa7f6afb41c1048c8164c95a9cf867b978b3e6879ccc9eaa1",
+      "checkpoint": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_SUP_s17/train/selected.pt",
+      "checkpoint_sha256": "b36751f8262e828c9bec7175c5fe0540e361046cda1b6556a7be25190311de8e",
+      "selected_epoch": 20,
+      "validation_scores": {
+        "normal": 0.5857755679239823,
+        "fog": 0.4386823040548048
+      },
+      "validation_archive": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_SUP_s17/train/validation_epoch020.json.gz",
+      "validation_archive_sha256": "edac78294a2b1545fb113a46e33bd7b081edfdf20b8dec01ee2c1a9cf1f37df4",
+      "training_completion_checks": {
+        "registered_budget": true,
+        "passed": true,
+        "status": true,
+        "optimizer_steps": true,
+        "selected_checkpoint": true,
+        "online_checkpoint": true,
+        "validation_epoch020": true,
+        "source_unchanged": true,
+        "formal_mode": true,
+        "micro_steps": true,
+        "finite_training": true,
+        "all_validation_epochs": true,
+        "checkpoint_registered_budget": true,
+        "checkpoint_epoch": true,
+        "checkpoint_optimizer_steps": true,
+        "checkpoint_micro_steps": true,
+        "checkpoint_samples_seen": true,
+        "checkpoint_selected_epoch": true,
+        "checkpoint_sampler_epoch": true,
+        "checkpoint_sampler_cursor": true,
+        "checkpoint_online_role": true,
+        "checkpoint_protocol": true,
+        "checkpoint_source": true
+      },
+      "artifacts": {
+        "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+        "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+        "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+        "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+        "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+        "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+        "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+        "amp_audit_sha256": null,
+        "supervision_audit_sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+        "training_protocol": "teacher_free_v4",
+        "supervision_contract": {
+          "dataset_id": "v2xr",
+          "split": "train",
+          "supervision_source": "provenance_v1",
+          "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+          "data_contract": {
+            "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+            "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+            "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+            "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+            "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+            "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+            "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+          },
+          "controlled_corruption": {
+            "probability": 0.5,
+            "drop_fraction": 0.2,
+            "inject_fraction": 0.05,
+            "max_offset_m": 0.3
+          },
+          "seed": 17,
+          "epoch": 0,
+          "audit_samples": 32
+        },
+        "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1"
+      }
+    },
+    {
+      "variant": "N1",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/N1.yaml",
+      "config_file_sha256": "5852aa4d04123576c2238fd155874b26e515dd497ac290cd525e9b5c5ccfba36",
+      "config_sha256": "a3e7e6f5de4d73d88eade24dcdc25a672918b7f2986ca5013b57fad79794022a",
+      "checkpoint": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N1_s17/train/selected.pt",
+      "checkpoint_sha256": "f4353db9c03b3c62acd7143f2f62651af3dd2187b75f4548450e2c04a4b9c248",
+      "selected_epoch": 18,
+      "validation_scores": {
+        "normal": 0.5849976603065841,
+        "fog": 0.4260732516547346
+      },
+      "validation_archive": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N1_s17/train/validation_epoch018.json.gz",
+      "validation_archive_sha256": "401b75b405a3f61329534ed6f5d81b5a9b07c755ffb184563ad73d9c25b2b61c",
+      "training_completion_checks": {
+        "registered_budget": true,
+        "passed": true,
+        "status": true,
+        "optimizer_steps": true,
+        "selected_checkpoint": true,
+        "online_checkpoint": true,
+        "validation_epoch020": true,
+        "source_unchanged": true,
+        "formal_mode": true,
+        "micro_steps": true,
+        "finite_training": true,
+        "all_validation_epochs": true,
+        "checkpoint_registered_budget": true,
+        "checkpoint_epoch": true,
+        "checkpoint_optimizer_steps": true,
+        "checkpoint_micro_steps": true,
+        "checkpoint_samples_seen": true,
+        "checkpoint_selected_epoch": true,
+        "checkpoint_sampler_epoch": true,
+        "checkpoint_sampler_cursor": true,
+        "checkpoint_online_role": true,
+        "checkpoint_protocol": true,
+        "checkpoint_source": true
+      },
+      "artifacts": {
+        "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+        "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+        "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+        "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+        "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+        "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+        "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+        "amp_audit_sha256": null,
+        "supervision_audit_sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+        "training_protocol": "teacher_free_v4",
+        "supervision_contract": {
+          "dataset_id": "v2xr",
+          "split": "train",
+          "supervision_source": "provenance_v1",
+          "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+          "data_contract": {
+            "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+            "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+            "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+            "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+            "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+            "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+            "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+          },
+          "controlled_corruption": {
+            "probability": 0.5,
+            "drop_fraction": 0.2,
+            "inject_fraction": 0.05,
+            "max_offset_m": 0.3
+          },
+          "seed": 17,
+          "epoch": 0,
+          "audit_samples": 32
+        },
+        "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1"
+      }
+    },
+    {
+      "variant": "N2",
+      "config": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/configs/N2.yaml",
+      "config_file_sha256": "ffc226b45144c785a6df6091518a408bcc643da20bf0cc3ddb7851184a3c7927",
+      "config_sha256": "0b761b52fc3664e444fb97af2fb03529f36cc14ac7deaae2ba0759279e1a5694",
+      "checkpoint": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N2_s17/train/selected.pt",
+      "checkpoint_sha256": "b0c6c8abe8c2e4b289a5b380b8a1d063b57402e783a004eee2b57a2d7248dda1",
+      "selected_epoch": 18,
+      "validation_scores": {
+        "normal": 0.5952534705039252,
+        "fog": 0.4160002104350046
+      },
+      "validation_archive": "/root/autodl-tmp/CSCWD/outputs/2080ti_v4/W_seed17_20ep_20261019T155357Z/v2xr_tf4_W_N2_s17/train/validation_epoch018.json.gz",
+      "validation_archive_sha256": "5cc01cce660129315b3164b826cf57130187bf048ed130cfd4c8bf278505c088",
+      "training_completion_checks": {
+        "registered_budget": true,
+        "passed": true,
+        "status": true,
+        "optimizer_steps": true,
+        "selected_checkpoint": true,
+        "online_checkpoint": true,
+        "validation_epoch020": true,
+        "source_unchanged": true,
+        "formal_mode": true,
+        "micro_steps": true,
+        "finite_training": true,
+        "all_validation_epochs": true,
+        "checkpoint_registered_budget": true,
+        "checkpoint_epoch": true,
+        "checkpoint_optimizer_steps": true,
+        "checkpoint_micro_steps": true,
+        "checkpoint_samples_seen": true,
+        "checkpoint_selected_epoch": true,
+        "checkpoint_sampler_epoch": true,
+        "checkpoint_sampler_cursor": true,
+        "checkpoint_online_role": true,
+        "checkpoint_protocol": true,
+        "checkpoint_source": true
+      },
+      "artifacts": {
+        "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+        "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+        "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+        "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+        "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+        "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+        "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921",
+        "amp_audit_sha256": null,
+        "supervision_audit_sha256": "bf23c852e9db0e52f6648abeef31497b30646dab3682b6c7dd690ec1623da642",
+        "training_protocol": "teacher_free_v4",
+        "supervision_contract": {
+          "dataset_id": "v2xr",
+          "split": "train",
+          "supervision_source": "provenance_v1",
+          "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1",
+          "data_contract": {
+            "base_hypes_sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16",
+            "gt_manifest_sha256": "6ca29cd7501ffde33d9027c03085429a3854408fc9d8071123fe8bcec9dc722c",
+            "data_manifest_sha256": "743ab8e665a38a682165698edb41785015eec0f1e469ad63061a2d4accff472c",
+            "split_manifest_sha256": "e6ab0b99680b60700205dc01120df88100a8910043b500053cdb27f0996c4542",
+            "weather_manifest_sha256": "4f377a851e8951a6acad9fb4992ed4271e4f3fe64873bfb9d6300b1d8e7ab1b5",
+            "protocol_manifest_sha256": "8acb41b94031bee57e5a3e6619dbccb693ef59944b3d657ad8e1a1ffae5d3ebe",
+            "image_sizes_sha256": "6460c25215b79159e0a3cb834084c4290da8aac5f51961c3d890f90420831921"
+          },
+          "controlled_corruption": {
+            "probability": 0.5,
+            "drop_fraction": 0.2,
+            "inject_fraction": 0.05,
+            "max_offset_m": 0.3
+          },
+          "seed": 17,
+          "epoch": 0,
+          "audit_samples": 32
+        },
+        "source_sha256": "71459fab18d8ad489c84cf3002bd283750b15444964f09f359b0772fcbf697e1"
+      }
+    }
+  ],
+  "gt_manifest": "/root/autodl-tmp/CSCWD/datasets/v2xr/eval_gt_manifest.json",
+  "expected_samples": 3166,
+  "expected_gt": 30296,
+  "checked_test_files": 52990,
+  "data_check": "full test inventory existence/size plus preexisting hashed data audits",
+  "hardware": {
+    "gpus": [
+      {
+        "index": 0,
+        "uuid": "GPU-62440729-6dbd-79f0-b764-c22c8fd25a5a",
+        "name": "NVIDIA GeForce RTX 2080 Ti",
+        "memory_mib": 22528.0,
+        "numa_node": 0,
+        "cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ]
+      },
+      {
+        "index": 1,
+        "uuid": "GPU-e7d01508-896d-716a-4dd8-a814ee8485b7",
+        "name": "NVIDIA GeForce RTX 2080 Ti",
+        "memory_mib": 22528.0,
+        "numa_node": 0,
+        "cpus": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "index": 2,
+        "uuid": "GPU-25c93d9a-0a03-eb9c-d90f-8f0443b4fbee",
+        "name": "NVIDIA GeForce RTX 2080 Ti",
+        "memory_mib": 22528.0,
+        "numa_node": 0,
+        "cpus": [
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          64,
+          65,
+          66,
+          67
+        ]
+      },
+      {
+        "index": 3,
+        "uuid": "GPU-0612efef-5d2f-5fc6-c897-f7e59c5b8e08",
+        "name": "NVIDIA GeForce RTX 2080 Ti",
+        "memory_mib": 22528.0,
+        "numa_node": 1,
+        "cpus": [
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43
+        ]
+      },
+      {
+        "index": 4,
+        "uuid": "GPU-b00ad97b-9fed-ba17-2ac6-c3024d2f6383",
+        "name": "NVIDIA GeForce RTX 2080 Ti",
+        "memory_mib": 22528.0,
+        "numa_node": 1,
+        "cpus": [
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55
+        ]
+      }
+    ],
+    "cpu_quota_cores": 60.0,
+    "memory_limit_gib": 225.0,
+    "resources_per_job": {
+      "cpu_threads": 4,
+      "num_workers": 8,
+      "prefetch_factor": 2,
+      "pin_memory": true,
+      "persistent_workers": true,
+      "raw_cache_gib_per_worker": 0.5,
+      "ram_budget_gib": 40
+    }
+  },
+  "max_auto_retries": 2,
+  "selection": "Frozen Normal/Fog validation mean; earliest ties; same weight and BN for all test weather",
+  "authorization": "User requested test; narrowed remaining work to analysis of the existing seven runs. No new training.",
+  "jobs": [
+    {
+      "id": "S0_normal",
+      "variant": "S0",
+      "weather": "normal"
+    },
+    {
+      "id": "A_normal",
+      "variant": "A",
+      "weather": "normal"
+    },
+    {
+      "id": "B_normal",
+      "variant": "B",
+      "weather": "normal"
+    },
+    {
+      "id": "AB_normal",
+      "variant": "AB",
+      "weather": "normal"
+    },
+    {
+      "id": "SUP_normal",
+      "variant": "SUP",
+      "weather": "normal"
+    },
+    {
+      "id": "N1_normal",
+      "variant": "N1",
+      "weather": "normal"
+    },
+    {
+      "id": "N2_normal",
+      "variant": "N2",
+      "weather": "normal"
+    },
+    {
+      "id": "S0_fog",
+      "variant": "S0",
+      "weather": "fog"
+    },
+    {
+      "id": "A_fog",
+      "variant": "A",
+      "weather": "fog"
+    },
+    {
+      "id": "B_fog",
+      "variant": "B",
+      "weather": "fog"
+    },
+    {
+      "id": "AB_fog",
+      "variant": "AB",
+      "weather": "fog"
+    },
+    {
+      "id": "SUP_fog",
+      "variant": "SUP",
+      "weather": "fog"
+    },
+    {
+      "id": "N1_fog",
+      "variant": "N1",
+      "weather": "fog"
+    },
+    {
+      "id": "N2_fog",
+      "variant": "N2",
+      "weather": "fog"
+    },
+    {
+      "id": "S0_snow",
+      "variant": "S0",
+      "weather": "snow"
+    },
+    {
+      "id": "A_snow",
+      "variant": "A",
+      "weather": "snow"
+    },
+    {
+      "id": "B_snow",
+      "variant": "B",
+      "weather": "snow"
+    },
+    {
+      "id": "AB_snow",
+      "variant": "AB",
+      "weather": "snow"
+    },
+    {
+      "id": "SUP_snow",
+      "variant": "SUP",
+      "weather": "snow"
+    },
+    {
+      "id": "N1_snow",
+      "variant": "N1",
+      "weather": "snow"
+    },
+    {
+      "id": "N2_snow",
+      "variant": "N2",
+      "weather": "snow"
+    }
+  ],
+  "pipeline_equivalence": {
+    "path": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test_acceleration/equivalence_20261021T091419Z/equivalence.json",
+    "sha256": "16d06a92477f30edd786f849777aab159c58ed2a118888e33b72eb8316092ffe"
+  },
+  "orchestration_migration": {
+    "previous_test_root": "/root/autodl-tmp/CSCWD/outputs/2080ti_final_test/W_seed17_20ep_20261021T085855Z",
+    "previous_manifest_sha256": "0bf639b23072052e9313f2659033340d541bd7bb6e469db90806c63a278fe2b5",
+    "reason": "User requested fastest test completion; overlap original batch1 FP32 GPU forward with eight unchanged CPU postprocessors; bounded inflight32.",
+    "scientific_parameters_unchanged": true,
+    "selected_weights_unchanged": true,
+    "precision": "fp32",
+    "inference_batch": 1,
+    "cpu_postprocess_workers_per_gpu": 8,
+    "max_inflight_per_gpu": 32,
+    "no_new_training": true
+  }
+}

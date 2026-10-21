@@ -1,0 +1,2225 @@
+{
+  "schema": "teacher_free_v3_minimal_archive_v1",
+  "frozen_at_utc": "2026-10-19T13:41:13.907233+00:00",
+  "source_tree_sha256": "c02a351174bd9736e5e7240d4ebe6df9e6ff6093a1a0d1691a4166dd1817105c",
+  "archive_sha256": "31d509c5696eeab1d9ecdbb4f0499a0e331b5356887add76c4de6f0cf7af92ec",
+  "archive_size_bytes": 768106,
+  "file_count": 440,
+  "files": [
+    {
+      "path": "V2X-R_project/cscwd_configs/README.md",
+      "size_bytes": 3024,
+      "sha256": "427635dbd6df22d14229195aa67f3225bbc2061230e4ae292b1173b91127e539"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/baseline_full_data_check.yaml",
+      "size_bytes": 2248,
+      "sha256": "0dd6d66962671dc5632ee5e5f41c96911c12051cd27e24090b8b2e66722e7d16"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/experiment_matrix.json",
+      "size_bytes": 50686,
+      "sha256": "6a905a35ba86a3299b5fe48c9a0a0113fe0de44bee04c2f448076b6801491d02"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3.yaml",
+      "size_bytes": 1846,
+      "sha256": "69b813c879e3b5062bdd3df07a243f95950a99d3473425a0c9f64831e854bb74"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_4090_C_AB.yaml",
+      "size_bytes": 1846,
+      "sha256": "69b813c879e3b5062bdd3df07a243f95950a99d3473425a0c9f64831e854bb74"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_C_A.yaml",
+      "size_bytes": 1844,
+      "sha256": "2da9af13c889017ac87affd67e6333a6afa6164c3964fdd707023ea809753d82"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_C_AB.yaml",
+      "size_bytes": 1846,
+      "sha256": "69b813c879e3b5062bdd3df07a243f95950a99d3473425a0c9f64831e854bb74"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_C_B.yaml",
+      "size_bytes": 1844,
+      "sha256": "7f81ef9a92927e1bf6efba0015be9041b39bacafcc53546985d405f17eb0e86f"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_C_S0.yaml",
+      "size_bytes": 1846,
+      "sha256": "882707f46db9244604dfde9149e788ec512271cc927e9130a39c247d1ee6cc72"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_A.yaml",
+      "size_bytes": 1914,
+      "sha256": "7e2406d02966df7b89ab84e6edc9d63e8e70757546be19a825b85d25cfac5a87"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_AB.yaml",
+      "size_bytes": 1916,
+      "sha256": "5ac538254c9a9954bb646d504b0f3b38aeee9afd29eef8f917f2c9cd9a82ca8f"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_B.yaml",
+      "size_bytes": 1914,
+      "sha256": "8d7e654c4d22de1f03fb0d97807ded836938d8816d012cb0791d6b8062466aef"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_M1.yaml",
+      "size_bytes": 1916,
+      "sha256": "47d0bbe483afd00bc4baeae4d9d05be8f88dda0d5f731b2163e20d18e6bc0acb"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_M2.yaml",
+      "size_bytes": 1916,
+      "sha256": "c12ff6440fac05acd5b3c5e2eced88f79cdfc19d3743abd4a082613da0f660b4"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_M3.yaml",
+      "size_bytes": 1916,
+      "sha256": "b8ce5e76140e0e50437d7670b1874b6543df7b6b89bebe818ef59d6d17c02e99"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_M4.yaml",
+      "size_bytes": 1916,
+      "sha256": "1fe92a83927df6624eeff8053eabeac9386e3938cbb7516eac1ef9f5ba5ea16c"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_M5.yaml",
+      "size_bytes": 1916,
+      "sha256": "8fb17d8b28b857bcf737b0effd783357e2d11bb568395bd6adc40de7d98bad99"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_M6.yaml",
+      "size_bytes": 1916,
+      "sha256": "8fc025792ca7dcdd53683c907f1d44fe25c60661a37293f836703984483202e2"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_N1.yaml",
+      "size_bytes": 1855,
+      "sha256": "b8f012731eb2f6fc43a0840d57730cd32ffa198151e3c5988de98c93b5289788"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_N2.yaml",
+      "size_bytes": 1847,
+      "sha256": "da7db5aad071943c6e66ab2417595568c0fd2c39031d4cd2e2cfc46d19db8624"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_S0.yaml",
+      "size_bytes": 1916,
+      "sha256": "efaf2676c9a7660b5f120e9e53b6ee406436c0f6b852b33b159fbc75f4dff5ed"
+    },
+    {
+      "path": "V2X-R_project/cscwd_configs/project_v3_W_SUP.yaml",
+      "size_bytes": 1918,
+      "sha256": "9ee3d943e7c04798bbc0532d766e949b8889694e91218acd69bb1f9e473a3608"
+    },
+    {
+      "path": "V2X-R_project/opencood/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/augmentor/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/augmentor/augment_utils.py",
+      "size_bytes": 2543,
+      "sha256": "2d3e4bd189a8fc1b65b966bc0c5f0159cdfe9f72b0783eb35017b22dcac9e06a"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/augmentor/data_augmentor.py",
+      "size_bytes": 3900,
+      "sha256": "7eaf0c1c7b8e3e97e04e40fe851d83afa35b9eea6eee9d2c925fc47697263ebf"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/__init__.py",
+      "size_bytes": 3994,
+      "sha256": "7fd826cfe16c794be04d60764cc4b8e6251d7f8369ac3f2ab5c4c3d25cdc4d20"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/basedataset.py",
+      "size_bytes": 17252,
+      "sha256": "37f2a2fbacfcdf702922967b99e36285326124491d60cd94af731b1396531829"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/camera_basedataset.py",
+      "size_bytes": 27632,
+      "sha256": "04582fcab96a7cacb3dd207ef6e730a88d0932b93aa7a36e6d28810869251669"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/early_fusion_dataset.py",
+      "size_bytes": 17094,
+      "sha256": "5315d5816f20f7e37d160717b78b644af684f4c252af4235a9235d8f4faad3d9"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/intermediate_fusion_dataset.py",
+      "size_bytes": 31320,
+      "sha256": "394ea6f6241f67f2b06b72ef65109c578c816823b1e7d42080823c8325c3b915"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/intermediate_fusion_dataset_multi_frame.py",
+      "size_bytes": 29600,
+      "sha256": "f16b61989a21615b0c7eb1d48cf67cf6869c9a51eee78adafc095d46f0f227e4"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/late_fusion_dataset.py",
+      "size_bytes": 21325,
+      "sha256": "051e7dc4d0f180323f750bd3df74b541ae948241b293dd51a4bbe6b09088581c"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/lidar_camera_intermediate_fusion_dataset.py",
+      "size_bytes": 35532,
+      "sha256": "febcb9ad9f4a118b023ce5ad6cbb74a1eb24acf7ee870eb5c8346e79a27f5aaa"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/dair/lidar_camera_intermediate_fusion_dataset_v2.py",
+      "size_bytes": 40506,
+      "sha256": "d8553d480ccb6bc42f97267d42612745d84e223622d13e697f024c9c6adb1779"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/4DRadar/basedataset.py",
+      "size_bytes": 26444,
+      "sha256": "fc6b7de265b70b2c2c180136349c56bc08b8d6b31e1503f9d0fbccf5c115f4f5"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/4DRadar/intermediate_fusion_dataset.py",
+      "size_bytes": 26909,
+      "sha256": "c3d9965b71919527f16b7e498fc2585725879358c77e8786c1bbd6c6c3cc3af1"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/basedataset.py",
+      "size_bytes": 31302,
+      "sha256": "a233f5488715777757eb549c2fa78e5006250d710f692ad3154e6d647fe33155"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/basedataset_bm2cp.py",
+      "size_bytes": 27191,
+      "sha256": "2677e1f754d1d0e7c0700086dd2b155bb969459b3eb068c5ad1c5f44e713ba01"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/basedataset_lidar&radar.py",
+      "size_bytes": 28599,
+      "sha256": "7db2cb01defd7655d4e66273698abacf8c1a202bf2086fabd893411b59998a39"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/early_fusion_dataset.py",
+      "size_bytes": 11235,
+      "sha256": "dfdd29f5cfa4c88369500cf13dd51ad3e90c74335d0ba2493dab4306b4339f98"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/early_fusion_vis_dataset.py",
+      "size_bytes": 7676,
+      "sha256": "16a027e06c7c2e494fafa66f1a96d4dc37b12306bb1bd10baf796ca39eb3ef97"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_dataset-bm2cp.py",
+      "size_bytes": 21037,
+      "sha256": "8020d7efe6a0f58bb4b01500e8bcd6dbdd463051c7bec80da963edc5a7f6079c"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_dataset.py",
+      "size_bytes": 32068,
+      "sha256": "1a5b9d90db2e60d7561043e0fd56941e282d62369ff3203ac2c2b8b3c4af990e"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_dataset_multi_frame copy.py",
+      "size_bytes": 18029,
+      "sha256": "174cb7cc4f023e6eac7d7847b3b2e082f7a681f7d2f0ea5a702b7f4b0a1431a8"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_dataset_multi_frame.py",
+      "size_bytes": 28981,
+      "sha256": "c1743c52d27bfbf09de13781e480c7bb7a0757f5c0f84d4ea694b5605287e591"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_dataset_multi_frame_how2comm.py",
+      "size_bytes": 19927,
+      "sha256": "07251337f900792aa1b7a0dba44242ff82b8c15022073bba98e2496c57d0dd76"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_dataset_v2.py",
+      "size_bytes": 15874,
+      "sha256": "26411dbe55c1f1217c9179f9df154e14fc3e4fe34f45e68d5e86001a2df9e8aa"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_sicp_dataset copy.py",
+      "size_bytes": 20682,
+      "sha256": "288ff83832a1d8b9c514b28f02985c4a8981d39636063ab9413568448d444ea5"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/intermediate_fusion_sicp_dataset.py",
+      "size_bytes": 30771,
+      "sha256": "fffc0bdcc6764dc442633a6af3fd42387cba2192fc95c570def4e3b809dc01d1"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/late_fusion_dataset.py",
+      "size_bytes": 11013,
+      "sha256": "bbf815ba1e4c95dac7e7eac4303154de5b0f171b8119e4df996690e6226985d4"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/late_fusion_dataset_bm2cp.py",
+      "size_bytes": 10682,
+      "sha256": "f1fcdcc37a8afddaff410c89d49d20d27d5aac2c24b20e6d02b220fd266769f2"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/lidar_camera_intermediate_fusion_dataset.py",
+      "size_bytes": 38910,
+      "sha256": "476a634b64f58bf5b73e62b18e956b59c7cda2a2cba7fb3514d53981ce3b450b"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/opv2v/lidar_camera_intermediate_fusion_dataset_v2.py",
+      "size_bytes": 42991,
+      "sha256": "52b086d692a43e589d36a95bc5491daf341d21a3d8fe3b7d9d2fd223a22c6e8f"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/datasets/project_v2xr_dataset.py",
+      "size_bytes": 14664,
+      "sha256": "e75eaa145d373bdba5cbb39b427ee9bfda7398acc8f44de921bd3c3c2b071ab1"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/post_processor/__init__.py",
+      "size_bytes": 594,
+      "sha256": "bc6d6d54c01e5c654b77ec0ee40a3b55a17cc130674256a96dc041692b5dca9f"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/post_processor/base_postprocessor.py",
+      "size_bytes": 17520,
+      "sha256": "35cf6c58d961d81a1d8730b30619785432f6704696b61dcefdaff2a4c7dffc19"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/post_processor/voxel_postprocessor.py",
+      "size_bytes": 17166,
+      "sha256": "ed097b005e37dd96046898bf21b8de2f505ba1a5d25f579669e3231a039d8c81"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/pre_processor/__init__.py",
+      "size_bytes": 1002,
+      "sha256": "c3b51bfcbec83c535304064b4662afe3798210a87cd031389394a8a18de31f05"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/pre_processor/base_preprocessor.py",
+      "size_bytes": 2207,
+      "sha256": "5ac3781540e9c9d8b09d5f330ddb9e5bf463d6954ee806ac6daffc6e6fd18342"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/pre_processor/sp_voxel_preprocessor.py",
+      "size_bytes": 5656,
+      "sha256": "9359c344cee1722abcae6eb95b21de06bed33669fbd26c45665a96d6c121c5de"
+    },
+    {
+      "path": "V2X-R_project/opencood/data_utils/pre_processor/voxel_preprocessor.py",
+      "size_bytes": 4928,
+      "sha256": "7a4c3315320d4c29f754056cbcfa99c519dfba2097a37bd057debf1b52a4129c"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_PFA_net.yaml",
+      "size_bytes": 2584,
+      "sha256": "54ded67c2d50e634b57a92c61d1926c9adaf7fa9be6b4f9d39bcd64ae925c84d"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_RTNH.yaml",
+      "size_bytes": 7077,
+      "sha256": "661a4b0aff480d9e8ec9eac8b25fba2fabcab2fe97e4dfef6a9a072e8ec3d02e"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_adafusion.yaml",
+      "size_bytes": 2788,
+      "sha256": "065ec0a62e8eba6ea9cad8d0f15f088c29b0508a65ff64241c0640e8c3dc5fd1"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_attfuse.yaml",
+      "size_bytes": 2601,
+      "sha256": "52ac790e7b4b3d1fcb7c7aef917572faa5066b35d0c2ff212334798a6a16dddf"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_coalign.yaml",
+      "size_bytes": 2774,
+      "sha256": "24118f903d8c0eca1513e990d2a80df26eacce25db111472b150bb5f95292a71"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_cobevt.yaml",
+      "size_bytes": 3275,
+      "sha256": "dbd9f1880a180baffc1c882cee2271e060be607d13e5cb2872522e6b1ce45ca6"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_scope.yaml",
+      "size_bytes": 3391,
+      "sha256": "640f8f20d72cab8d47606fe2e0a7771fa3cc92f2948f1807d3afba74b65116af"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_sicp.yaml",
+      "size_bytes": 2893,
+      "sha256": "22431003fae50471c27903355f7646c1aeebcce6b6903b87c49dc31fe0e07ff8"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_v2xvit.yaml",
+      "size_bytes": 4409,
+      "sha256": "a46c8eaa68834ba25320475ada7246705bc05675ceac0e4def5417c49b6da0ce"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/4DRadar/V2XR_where2comm.yaml",
+      "size_bytes": 4090,
+      "sha256": "6a981562a9637736f8897e22362a1f28daa1746530b525be161c14dea85d7f9c"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AdaFusion.yaml",
+      "size_bytes": 2723,
+      "sha256": "af4bf5641f1d680fdb560da0f44283eaf78f658387f76036b0f8b882d4fe5104"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AttFuse.yaml",
+      "size_bytes": 2529,
+      "sha256": "296a37a15a779f60d7903990cde270a533fa09d5002f69e492b356dfd74ac6ae"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_CoAlign.yaml",
+      "size_bytes": 2918,
+      "sha256": "1949bd147a5fe651c3ce0c58178a80e4bf6c9e430d0a15d638fb4a99a4c95a1d"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Cobevt.yaml",
+      "size_bytes": 3131,
+      "sha256": "73ff0bcfe2848bf4c62a1c334b1f42957bcbe605a23c51aec13ffdf063cd2440"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_InterFusion.yaml",
+      "size_bytes": 2445,
+      "sha256": "83d5d424000985524d608a48968672ef5b71fdfe853499ea58ac9fb638b0b13b"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_L4DR.yaml",
+      "size_bytes": 2451,
+      "sha256": "e22acdfa529a0e9204c180d896c86701b2546d8da392d38e91a0142066092398"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Scope.yaml",
+      "size_bytes": 3399,
+      "sha256": "051ebfe44d13f3d9f7225771b432bd072a259bb9c34cd083e3d7497bb814f4fb"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Sicp.yaml",
+      "size_bytes": 2828,
+      "sha256": "7d61ea47ab7458a409a0ffcf42e1477417efd63747582fc141f707c70189a640"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_V2XViT.yaml",
+      "size_bytes": 4379,
+      "sha256": "0c598b9d8a0153baf4ae10e315506c7c09799713dc7fa03f1969aca6956ffd93"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_where2comm.yaml",
+      "size_bytes": 3432,
+      "sha256": "fd303ec6fbca5ebf60b593c50a39bf9d5a3bc7d6e4e36db0f9b7549a46ab2b48"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/L_4DR_Fusion_with_MDD/V2XR_AttFuse.yaml",
+      "size_bytes": 2909,
+      "sha256": "c87640ad04fa875614592184a8fb85d32a2fc6a54d8eefeb752811bd7a5af9f4"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_adafusion.yaml",
+      "size_bytes": 2642,
+      "sha256": "01cf70f97ec9835a2e2ab62bfdad34d28af87b769aaae702a6038f04a64b7b4f"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_attfuse.yaml",
+      "size_bytes": 2602,
+      "sha256": "7e1ce936d779138b5b1ca6462ebc79d9e604920d9a29b7ef1c3a64e50d96e346"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_coalign.yaml",
+      "size_bytes": 2708,
+      "sha256": "abceceab04329543f26dcbbe2ebef1f109233b9384347d6de2f1fcedd34e811d"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_cobevt.yaml",
+      "size_bytes": 3205,
+      "sha256": "073435e99f6a7782487f1c183b4ff9ba37461f2eb3a1a390a1cf0c386924b9b9"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_scope.yaml",
+      "size_bytes": 3357,
+      "sha256": "b66e9b5a0f42c780357aa59f9063ba2b6a4d54b1b8233ed8335d17bf76626c0b"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_sicp.yaml",
+      "size_bytes": 2824,
+      "sha256": "0f7a462154791b74cac43a02dc2eee7cad75bfdd495a72e31456dcd897205f68"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_v2xvit.yaml",
+      "size_bytes": 4369,
+      "sha256": "137807992979a3bb29e8e1f0386bfadf75cef7e0cd3fc5450b22adc78c9e1658"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/V2X-R/LiDAR/V2XR_where2comm.yaml",
+      "size_bytes": 4089,
+      "sha256": "b488c3746864c0370c44145e7ed63dd0d87656ea3d8bcbe3ebbf119042c5468c"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_bm2cp.yaml",
+      "size_bytes": 5193,
+      "sha256": "75f0bcfee3f58b5dc561fe8fd2129defa9e94649e733c1886356e2b017e767bc"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_coalign.yaml",
+      "size_bytes": 3858,
+      "sha256": "aa7b59994de0aecab82e9ee825825f097fea09f4bbbff07f46dbc0f5743b2e72"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_cobevt.yaml",
+      "size_bytes": 3227,
+      "sha256": "0c2a61f4f61407f8faf5e103d635c97e7e7c01116fa3ecb734a53009f5ddfb8b"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_disconet.yaml",
+      "size_bytes": 3063,
+      "sha256": "d5e5ae4adfa37e735e589ee175234242d40c5f1bf596381c729a5a2c892dd665"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_early.yaml",
+      "size_bytes": 2929,
+      "sha256": "db9d504841e844e377e5d5f9d55730408bef7570e389bcea26e925c6d34c6c9d"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_fcooper.yaml",
+      "size_bytes": 3082,
+      "sha256": "394cd6d490aa332d5dba5d871a3fad513dd848cbfa6cfd4e49ef855d3d59c21d"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_how2comm.yaml",
+      "size_bytes": 3621,
+      "sha256": "6e5e1f66f36d48e800fe852fae54804da0fcbec9c603aea21cd7b1405bcf9434"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_scope.yaml",
+      "size_bytes": 3384,
+      "sha256": "7880fc96cf83b04868ca1020cc2ae5f0aafd70b9465060b34da162842751db79"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_single.yaml",
+      "size_bytes": 2855,
+      "sha256": "24ea8037bc98416319f8a8f5c0ba29342abf102075c5650fa51bec81ba682cef"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_v2vnet.yaml",
+      "size_bytes": 3266,
+      "sha256": "7a357197434ce26f5ef890d7b0ecd8fda5a9378ec1eaaf9ac75733997eaa3039"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_v2xvit.yaml",
+      "size_bytes": 4097,
+      "sha256": "e27b1c7280db6eec19df0414291c281f56f25dd87be5c7625a885b11b4591612"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_when2com.yaml",
+      "size_bytes": 3179,
+      "sha256": "e9749c02c505f187cba69221c3af8c029956f129dc7af8629c4b5c0354e8a400"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/dair-v2x/dair_where2comm.yaml",
+      "size_bytes": 3774,
+      "sha256": "2d29e08be7a470b5be979f6aa3e4dd553fdc1f42475cb0bc41db64b735529609"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_bm2cp.yaml",
+      "size_bytes": 4962,
+      "sha256": "2afe7b4328e7cc490a65cd781ad0014a93be52bb1a0923d7fe8bfdcf712d3d57"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_coalign.yaml",
+      "size_bytes": 2636,
+      "sha256": "486720faa0f1570f8f07d3943c6835dde3d80c5daed030631e42a5d1cd0f37fb"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_cobevt.yaml",
+      "size_bytes": 3097,
+      "sha256": "f800ed09771393044eb4e2229f9f6d3968db34c3a7e0690d996a289d0a7160f9"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_disconet.yaml",
+      "size_bytes": 2891,
+      "sha256": "72f8c985eb3fb4fbe2e6e1824754295e532ab378368619fef3943a7996968311"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_early.yaml",
+      "size_bytes": 2311,
+      "sha256": "35f5dbdfd2334e70d25e81d33c68c3dce3db970585746de1ce51352af72a3512"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_fcooper.yaml",
+      "size_bytes": 2584,
+      "sha256": "7c03b3ca6799045ec6969b65af44d7c3e728cb4742c1af159e3b2c6a9f66c5f2"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_how2comm.yaml",
+      "size_bytes": 3421,
+      "sha256": "dacef6287630a7a4c69d5758b572dcd0344543d9393d36e5bcbc5023708c11ed"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_late.yaml",
+      "size_bytes": 2315,
+      "sha256": "7e3446034a3ee3a09cbbd4d3cbebeb0c93fb7cf7a343148c738b326e1c1b772f"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_scope.yaml",
+      "size_bytes": 3188,
+      "sha256": "e359e36f3ff404d40e04184162ddc57e7c032cb8281c9859f200e2681b1bb8af"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_v2vnet.yaml",
+      "size_bytes": 2886,
+      "sha256": "5b41711581d65447a9e68279334ec9c42085adcbf789e56b940e7aaba19bebd7"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_v2xvit.yaml",
+      "size_bytes": 4224,
+      "sha256": "1aff31120f060414446f74ed868ac6a31158e8b531a91d82bec0d3d5bf5880e0"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_when2com.yaml",
+      "size_bytes": 3275,
+      "sha256": "113a36682ea5d49cd13af89ca1e09371a254562f072b0601f7b5f2b8e08356c6"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/opv2v/opv2v_where2comm.yaml",
+      "size_bytes": 3295,
+      "sha256": "742817e5862d2f823d005cb34da30ed7d8535ed86ce1e1e00b2df13716a1cb0e"
+    },
+    {
+      "path": "V2X-R_project/opencood/hypes_yaml/yaml_utils.py",
+      "size_bytes": 10838,
+      "sha256": "45e6d5c016a0e5909d7e316565e1f0e86e45948bbef3f72e6104bf532364fb39"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/point_pillar_disconet_loss.py",
+      "size_bytes": 11806,
+      "sha256": "5d84b70d9d93690b3a91aa009cd66f3376b505335fb687d582d5a1505d504331"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/point_pillar_loss.py",
+      "size_bytes": 15198,
+      "sha256": "e3ab6e3197a57cbe5d9a9ff039b6741302a67d7822f117d2473224fc41f57909"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/point_pillar_loss_coalign.py",
+      "size_bytes": 11060,
+      "sha256": "21087dd651d19050d5985bc0b6ae254f1e570bc64650ddc01d34d7d074d6e730"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/point_pillar_loss_mdd.py",
+      "size_bytes": 13356,
+      "sha256": "f210869e63b0d830196fac1309964734ede154d07c2620bfbebbe9c5d0d5bd77"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/point_pillar_loss_opencood.py",
+      "size_bytes": 13366,
+      "sha256": "30e344f8cabd2ed790cf8d2cc0c6ac37e7a64115f4737af4f7d88bd0faae2494"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/point_pillar_loss_sicp.py",
+      "size_bytes": 9297,
+      "sha256": "762bab7e9df9cf4e93e2c2bcfd8d817dbcded3764adc571f739b330e84846c50"
+    },
+    {
+      "path": "V2X-R_project/opencood/loss/project_loss.py",
+      "size_bytes": 7244,
+      "sha256": "571e6f7b84189c82c5a08b04e6bf12704d92750ba41a74c04ae8c47fda52b2c5"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/PFA_net.py",
+      "size_bytes": 2142,
+      "sha256": "edc80709d4d65485d63b0ddd5aec5dcf98951b5cd2ffd4bc4b1264725f3d85a0"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/RTNH_intermediate.py",
+      "size_bytes": 2174,
+      "sha256": "01c41ce42fafce87eafec53ebb0b97251415c4f2dfc7e22390586b189ee0447c"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/RTNH_modules/rdr_sp_pw.py",
+      "size_bytes": 7838,
+      "sha256": "e915815ba682193bf0569f061ab04bad912b6a37f0f2901d1cdd8549217f7d7c"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/RTNH_modules/rdr_sparse_processor.py",
+      "size_bytes": 2503,
+      "sha256": "0889759063e12871e5587cc5e15dface921b1a08f601f74d6c94275cd9d926d6"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/RTNH_modules/rdr_spcube_head.py",
+      "size_bytes": 28719,
+      "sha256": "fd0f737a6716b211dbaa35088c57f5a6828ed0425b9cda5d222795a5f73b943b"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/attresnet_modules/att_resnet_bev_backbone.py",
+      "size_bytes": 9009,
+      "sha256": "82da2b3a76dd9dfa6320ac5658f86e69df463414ba816d623e524737b820bb1c"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/attresnet_modules/auto_encoder.py",
+      "size_bytes": 2194,
+      "sha256": "9cbadbeef24f4e81813a68e6ef87c626549d82f6d3e9799dbe580306a92b3bff"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/attresnet_modules/resblock.py",
+      "size_bytes": 18195,
+      "sha256": "f32ac27eb9ca87adc7ba39ab22037424e3cd52c284bcec7cd120c67c3f6ee7ac"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/attresnet_modules/self_attn.py",
+      "size_bytes": 4091,
+      "sha256": "1e83d7e1236bcbb31cefa29bbf357e7587486d0aaef253aeb47ae408280ddf6a"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/bm2cp_modules/attentioncomm.py",
+      "size_bytes": 9871,
+      "sha256": "adc8da73051e4aa0622da9723f370fcb68efe6a1d1e91459e003f30736de8a80"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/bm2cp_modules/base_bev_backbone_resnet.py",
+      "size_bytes": 3776,
+      "sha256": "aba2717ee95cbe87fe9d49a6d0bbf215a58f62a4451407742ccd9bbaffc3b844"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/bm2cp_modules/sensor_blocks.py",
+      "size_bytes": 6907,
+      "sha256": "1db01cfae62e36677291ffd6b2ef938f4582126981c34a69c06c4a492e5671c2"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/coalign_modules/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/coalign_modules/fusion_in_one.py",
+      "size_bytes": 24618,
+      "sha256": "8b3be56c39752f25c64d44a086e70c1ae8bee3cbecb596ac94289c2e979e148a"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/coalign_modules/resblock.py",
+      "size_bytes": 14066,
+      "sha256": "ddbe91ce26d642544e6d4dd960bd27301b574f512d946e431f2c764c3b93e9f0"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/coalign_modules_1019/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/coalign_modules_1019/fusion_in_one copy.py",
+      "size_bytes": 21041,
+      "sha256": "4040891d4be1bb60108bbc660045d7b67cdf54d7cffb4580a67e46a610c2e7a9"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/coalign_modules_1019/fusion_in_one.py",
+      "size_bytes": 21631,
+      "sha256": "1e6b7f5370beb74b24a779fe875d475a3f166dad12ba1b730d192a24a1144695"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/coalign_modules_1019/resblock.py",
+      "size_bytes": 14066,
+      "sha256": "ddbe91ce26d642544e6d4dd960bd27301b574f512d946e431f2c764c3b93e9f0"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/cobevt_modules/base_transformer.py",
+      "size_bytes": 3880,
+      "sha256": "9b789bce267841afa0e25bf1a12c81268fb7ce4f509dcbbc456b85ff2767ff84"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/cobevt_modules/fuse_utils.py",
+      "size_bytes": 2039,
+      "sha256": "049e1b0a1ed355883c2c14c838d91490c38c4cdbc68da5f39dbc29973773a3d0"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/cobevt_modules/swap_fusion_modules.py",
+      "size_bytes": 11000,
+      "sha256": "93636aa1139c614dceca3f1117feb0ff9635b395476a6115cc359835383b4d45"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/att_bev_backbone.py",
+      "size_bytes": 16142,
+      "sha256": "c068f5504d6ab57a2da76087d3b2aad9c7c79e90c05e9af81def67b13cdcca6e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/auto_encoder.py",
+      "size_bytes": 2194,
+      "sha256": "9cbadbeef24f4e81813a68e6ef87c626549d82f6d3e9799dbe580306a92b3bff"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/base_bev_backbone.py",
+      "size_bytes": 4519,
+      "sha256": "c1715f650ef3c951f80f7ac1c8de775a28b7eeff62913bcfc28b661103674270"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/base_bev_backbone_resnet.py",
+      "size_bytes": 5002,
+      "sha256": "97305aedba2192afc8f1d0e01abf1ed1708e4f89ac706302d29578fa90236e68"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/dcn_net.py",
+      "size_bytes": 659,
+      "sha256": "19a08da260adb24a1b390e128a204783e7618789ff0d33a16e0bc145286b213b"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/downsample_conv.py",
+      "size_bytes": 1643,
+      "sha256": "5e45bc70e1add5847e7809f50076b83028147a5d3540baa15c89a0ec4342726e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/evidence_router.py",
+      "size_bytes": 11267,
+      "sha256": "0f1304d7bd2b607e8aa7bcb44cb9987c1c1ecb427fadc443acf1326e86c9050e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/fuse_utils.py",
+      "size_bytes": 2039,
+      "sha256": "049e1b0a1ed355883c2c14c838d91490c38c4cdbc68da5f39dbc29973773a3d0"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/naive_compress.py",
+      "size_bytes": 1046,
+      "sha256": "aff3961489189f1312c2f308fad95fba36262c062361b4ba1715a167ce91838d"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/pillar_vfe.py",
+      "size_bytes": 7001,
+      "sha256": "f67aec7955db5c12d36304f8819d044608fe3bc712cf6cc434ac7a9598ab5bd8"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/point_pillar_scatter.py",
+      "size_bytes": 3817,
+      "sha256": "6cfd00e72cad65c979953c13c4dc7c383b968a1a534aefe41e1773a45330dca1"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/resblock.py",
+      "size_bytes": 14451,
+      "sha256": "75a0bbff71101b70a30578fb5e517518a5fa42455ba18c71fe351a6a58dbc7d1"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/self_attn.py",
+      "size_bytes": 2400,
+      "sha256": "21f1887ff377e108cb2c382583fc1dac8dbb9e85d8d2c3713b1d23eeb3f497c8"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/supported_residual.py",
+      "size_bytes": 10656,
+      "sha256": "6890d55852ac1108336c9697ac7e4bce4d313825c99177f3b73824e92ec5f9a4"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/common_modules/torch_transformation_utils.py",
+      "size_bytes": 13737,
+      "sha256": "a64384183db6d3faa4ca663cf6a3b8e14ebd5453207efa8f6607a1429054f809"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/how2comm_modules/communication.py",
+      "size_bytes": 2960,
+      "sha256": "12f5cce3111cf21a6e8576ddd6b85261c8c23fd27b18972d23dcb425b6281df3"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/how2comm_modules/feature_flow.py",
+      "size_bytes": 13945,
+      "sha256": "a25694eb959129a1bd6a14e57212c43c1a699739aba7533f42cce0a20ba26c09"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/how2comm_modules/how2comm_deformable.py",
+      "size_bytes": 10950,
+      "sha256": "7ca0792993f7042c802c3e4866bebb6c6b59ed87f65b808b497b9bd88e9a757e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/how2comm_modules/how2comm_deformable_transformer.py",
+      "size_bytes": 16132,
+      "sha256": "5cd2477eec1ef4902b614960996a3cd4826284ccde03bea50b40719ab67a63ce"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/how2comm_modules/how2comm_preprocess.py",
+      "size_bytes": 3214,
+      "sha256": "a5c62bd6f5553d5d3a99f51515625c330f35307e7f2e957d003562bf78b6d9e3"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/how2comm_modules/mutual_communication.py",
+      "size_bytes": 10009,
+      "sha256": "fedc8e9f06dae9b9a6882fdcdc32d60cf1c9bab1a44c203c59c1f7ffb2598a3d"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/how2comm_modules/stcformer.py",
+      "size_bytes": 7183,
+      "sha256": "ce7d5b119f0db64af8af6471cef8ac3ea7edd4e35fdd8aa5fea9c7d58d3eae5b"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/interf_modules/Inter_pillar_vfe.py",
+      "size_bytes": 10104,
+      "sha256": "3637edf7d16d07199f518104668a575d4c4fc962dd63894a3d0e6fa705d34eb5"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/l4dr_modules/att_bev_backbone.py",
+      "size_bytes": 10902,
+      "sha256": "9a74fddc2a9018147252bc3b70397108146fa48b61f5dcf6d50883c99b49a4de"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/max_modules/convgru.py",
+      "size_bytes": 7763,
+      "sha256": "3f0ec698dd527973e5e897a7b6e5efa312ffbb61958528161b21c5bd6045877e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/max_modules/max_fuse.py",
+      "size_bytes": 7668,
+      "sha256": "1f436939bc647e72cae595a3f6356e528874bd29ab67bb1e3ae92dfff1135699"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/mdd_modules/radar_cond_diff_denoise.py",
+      "size_bytes": 15990,
+      "sha256": "c26b74eadae7342e33216cf2445c9f400e7b095466f19f7049e8011a900f7390"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/mdd_modules/unet.py",
+      "size_bytes": 12671,
+      "sha256": "442aa5817a0ee3e6bd9c1f5ba9ff91cc6d6cc7bbc7cc0d2c333a557a39155218"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar.py",
+      "size_bytes": 2924,
+      "sha256": "0296867148f925afba15777f54e8fae3e46885f19445790a34d3f83a8ca99831"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_InterF.py",
+      "size_bytes": 3992,
+      "sha256": "9da735d22a214e7371d303716dcf2e9ad3c4aad142301ef4613055558c0bd8f2"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_L4DR.py",
+      "size_bytes": 3313,
+      "sha256": "9a49a8a5fb4c247820291ab5ccd4d053e8b6ca325ce2346edf34b0d4e72ccf2d"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_attresnet.py",
+      "size_bytes": 2409,
+      "sha256": "e7aa555e73ff19c431b27898332488f5434c498f281e89d20ff0bfd994407093"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_baseline_multiscale.py",
+      "size_bytes": 6307,
+      "sha256": "e0dd27f54fce9c7c1dc761c47b0dfb94760e8c0e97a5e005f71545e1a7eee659"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_bm2cp.py",
+      "size_bytes": 19443,
+      "sha256": "6552094c8e334f23cc7c84546179563247e4133041b718b6c86cd5b2283780d2"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_coalign.py",
+      "size_bytes": 5013,
+      "sha256": "8398858abe972114c9e6e6eba51ee2b14f383cb489d340cb8431cf511dd80843"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_coalign_lrf.py",
+      "size_bytes": 8200,
+      "sha256": "d307a001aaf99001a2f2a825545c7d531434c42ca7c25f847b1e84289645e787"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_cobevt.py",
+      "size_bytes": 5380,
+      "sha256": "d18f8c3a6fdd2af73da2fc7f07b8e9ce9f5b79537b29efa53c4d203a022d82c2"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_cobevt_lrf.py",
+      "size_bytes": 5693,
+      "sha256": "c5b09b68fe03d75de4c2af5f29c8467061761bdecf172febde3cb9c6cd0a0f74"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_deer_sbr.py",
+      "size_bytes": 11242,
+      "sha256": "62d1b6c91c73aed8d12c835dc2bdf2cae50fe278f913d400ada50c5ef3d8e80f"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_disconet.py",
+      "size_bytes": 7892,
+      "sha256": "386ce7ace064cdbf3e7c8db15797dd8dcdc0ff44d34f499f61026ff0784c4d5f"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_disconet_teacher.py",
+      "size_bytes": 2111,
+      "sha256": "d7de0c8e5c413e4f62da506c09f6c46b8f033686cdeca5bc8c002c9f61748671"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_how2comm.py",
+      "size_bytes": 10696,
+      "sha256": "533414013fcb24947538b67f765f255262adab928f5d2df9ec103c0f69f59776"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_intermediate.py",
+      "size_bytes": 2441,
+      "sha256": "0ee4b229818b374fe8303f54e19ac65ecd88cc88c10a7418342357a17743b5df"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_intermediate_lrf.py",
+      "size_bytes": 3551,
+      "sha256": "fb89eed34bd9ff0f9d1fe565312c4e7f85487957d546bd8397245a1263dc8ce4"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_intermediate_lrf_MDD.py",
+      "size_bytes": 6585,
+      "sha256": "76af0bc4dd0d80456e656008582fae0e040edfde4ca4c0b2c3993b00a644ffb4"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_max.py",
+      "size_bytes": 4820,
+      "sha256": "2437a2f46eef7822fc71a145274176c33d51ef4b387df482fb18b87e952ae4d5"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_scope.py",
+      "size_bytes": 11852,
+      "sha256": "e32a55650f45295e144242c081c79eeaa27e6808ebf794091e95b07aabf39f65"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_scope_lrf.py",
+      "size_bytes": 13930,
+      "sha256": "037afccf8d012a8834a38e1830adc57f89cbd78c649352e43cb13a131f3823a4"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_sicp.py",
+      "size_bytes": 6584,
+      "sha256": "31bbcf0cf52771fa29aea3ac6a8851568aafee1a5fd2bcab99da8f67637ab450"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_sicp_lrf.py",
+      "size_bytes": 8189,
+      "sha256": "f34f46e25def361f530ff8865d43f73c232f6924716cb86d85259c2b5fa2eaa8"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_spatialcooper.py",
+      "size_bytes": 4737,
+      "sha256": "4b7633a1d797435f8c30f446189449c55438be19cec1560e3fa6e0359ba8c004"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_spatialcooper_lrf.py",
+      "size_bytes": 6765,
+      "sha256": "c129f3fdeeaa7eb1a35fb8c9635a6b651b9cb1c236f62da434525007a1c63916"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_v2vnet.py",
+      "size_bytes": 4855,
+      "sha256": "52ecf54c4a0013449c1dbc88bb7fed28a5b31935bd0db04f2973ea534c970d7e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_v2xvit.py",
+      "size_bytes": 6827,
+      "sha256": "6ec2540cd35652b5f0a3324964ec47974ca112473ecca9fcf39747d9501ee118"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_v2xvit_lrf.py",
+      "size_bytes": 6526,
+      "sha256": "7d197c10ed8aac10e34f00fae42de9e827dd91f935672ddff82d1a20fa97dc46"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_when2com.py",
+      "size_bytes": 4844,
+      "sha256": "32519c6bd4b721790494a990cbe9deae55bb201eaca228360c5bcd162dc5a2f1"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_where2comm.py",
+      "size_bytes": 6459,
+      "sha256": "7b14026f6b5385dfc224b95132a4aaedcebddbe6c4c0dace7bb02c4db88f53a8"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_where2comm_bm2cp.py",
+      "size_bytes": 8213,
+      "sha256": "b98728af8fb6d35bc8aab84f6ce9ae213b194b0fd05095f788e0836aa38dd48b"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/point_pillar_where2comm_lrf.py",
+      "size_bytes": 6539,
+      "sha256": "d547a712e4f88f97add9ead20f910b4e5e2844aa1906a4a699d516017bb94a7b"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/scope_modules/scope_attn.py",
+      "size_bytes": 10972,
+      "sha256": "f27ac5766a82e84aa775fa49816105fd6bd0af9314620e73b35485085958e416"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/scope_modules/scope_deformable_transformer.py",
+      "size_bytes": 17127,
+      "sha256": "b7cafe49f62a0107da0837f2f731723d9ba37ed4b359fa970c81a4a30992f023"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/scope_modules/temporal_fusion_lstm.py",
+      "size_bytes": 7860,
+      "sha256": "d398e7157df7f13aa4cd69f97d7903f9500a08b9abcdbcf27c81c5b41f7a638e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/scope_modules/temporal_late_fusion.py",
+      "size_bytes": 2473,
+      "sha256": "39562d97b08b009cc557be388bfaefb9d13c872858a06e650665928ba03f2f9f"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/sicpfuse_modules/sicp_fuse.py",
+      "size_bytes": 3261,
+      "sha256": "984fe1902bbe4203e3b39aa3305b29b71a0e61615a0547984549d6bf5714f53b"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/spatialcooper_modules/spatial_cooper_fuse.py",
+      "size_bytes": 1066,
+      "sha256": "b08c43c014b76e57cb345ae3b49d8753a453eb6ad70e3d6b5472d9b5780641a5"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/v2vnet_modules/convgru.py",
+      "size_bytes": 7763,
+      "sha256": "3f0ec698dd527973e5e897a7b6e5efa312ffbb61958528161b21c5bd6045877e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/v2vnet_modules/v2v_fuse.py",
+      "size_bytes": 7273,
+      "sha256": "4b1488186a0c561285fc9fa2da23b23e64ba9fd5903d0d666fad4680a407233a"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/v2xvit_modules/base_transformer.py",
+      "size_bytes": 3631,
+      "sha256": "b9da0596d47d239b0cf772e04f012dd2af932ad23972a9e193d1eaea060a41a4"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/v2xvit_modules/hmsa.py",
+      "size_bytes": 5671,
+      "sha256": "0e1c784e52644b85b62bd2338b82c6cec7038aef09eb6e4351c6b6880f97d12e"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/v2xvit_modules/mswin.py",
+      "size_bytes": 4448,
+      "sha256": "20b55a213a0ab20cdaea4ea09c3d6a021ca612535a2bedf8b905a8311d0595ae"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/v2xvit_modules/split_attn.py",
+      "size_bytes": 1908,
+      "sha256": "63cd35f3513f00a256d7a0249d55377c9e84c62ca0e7e1ca40bf195a07fcc206"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/v2xvit_modules/v2xvit_basic.py",
+      "size_bytes": 7975,
+      "sha256": "1af4c8354eb8f6ecc69309507c64471e003c2093396f0ed5080cbd078084c6fa"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/when2com_modules/when2com.py",
+      "size_bytes": 12037,
+      "sha256": "7d1b9e78eb36826244fac3f1392bcb8deca99fb636647bcf2cba48d4bdbcb1d9"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/where2comm_modules/base_bev_backbone_resnet.py",
+      "size_bytes": 3776,
+      "sha256": "aba2717ee95cbe87fe9d49a6d0bbf215a58f62a4451407742ccd9bbaffc3b844"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/where2comm_modules/where2comm.py",
+      "size_bytes": 3945,
+      "sha256": "ae66a6b36af5688f435e0843d99ebfa38f11cd4cccc51f4592cee1b41a6e4695"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/where2comm_modules/where2comm_attn.py",
+      "size_bytes": 14713,
+      "sha256": "4b57c5c0435404291ccb37e7631f717aba3e1d46dde37fd3792d731f66741f1b"
+    },
+    {
+      "path": "V2X-R_project/opencood/models/where2comm_modules/where2comm_fuse.py",
+      "size_bytes": 10266,
+      "sha256": "57a00165c0a2776d8748e1fe25914816ae42e72a335a2d302c784075699247e5"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/__init__.py",
+      "size_bytes": 63,
+      "sha256": "19ca84636cadb9368951dc003de157d7225c930a9fc6027c8f8f0eda4ae4f3a8"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/iou3d_nms/iou3d_nms_utils.py",
+      "size_bytes": 11579,
+      "sha256": "da96f584e3048f0c1da9d37e39366100b0c33ba99c95bcd8c3d193e2d86b1462"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/iou3d_nms/src/iou3d_cpu.cpp",
+      "size_bytes": 8283,
+      "sha256": "2c2aff44c1c73eacc26f897fdc32263e898432a7f8f4fee2563991e32421d6ef"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/iou3d_nms/src/iou3d_cpu.h",
+      "size_bytes": 256,
+      "sha256": "2a0c9325ef7e61035adedb67a4629ac0792750a4cbc292acdca48ff4e1d8b526"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/iou3d_nms/src/iou3d_nms.cpp",
+      "size_bytes": 6456,
+      "sha256": "72face378aa8d84cac0cd174130de7f397bffdecbc7f586ebf6897e71f03faa3"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/iou3d_nms/src/iou3d_nms.h",
+      "size_bytes": 481,
+      "sha256": "47c624b567a16fc05b6afd81567a18dafc2238dfc3222e56b16b547ab8c41db1"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/iou3d_nms/src/iou3d_nms_api.cpp",
+      "size_bytes": 553,
+      "sha256": "879562461c15216c99736cfbc48f201295ea7d3a00a76e70ccddb0852dc617ed"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/iou3d_nms/src/iou3d_nms_kernel.cu",
+      "size_bytes": 16203,
+      "sha256": "6815b8ef6935a1e75bc0972635d9eb5dcc83c305dc6745fb9ce6018323d168a0"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/pointnet2_modules.py",
+      "size_bytes": 6676,
+      "sha256": "507f5278313f95838f124d53f3f4b101fda3253d2186cd0d4d806b565358a500"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/pointnet2_utils.py",
+      "size_bytes": 9744,
+      "sha256": "ebf87836d0fcbb563050cc5288548aed13c426b66c0af996afb1c099f99c1cf3"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/ball_query.cpp",
+      "size_bytes": 1210,
+      "sha256": "6891d5262b50c6cab3f0db6b8375aebbe1e92cca6e9a4a6d799f2b41e2884fcc"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/ball_query_gpu.cu",
+      "size_bytes": 2178,
+      "sha256": "c8f4b27abd9ea23489764e441e5141ce18b4f572baf7ed900614fc6a2d56ed11"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/ball_query_gpu.h",
+      "size_bytes": 455,
+      "sha256": "d5f2d88e599d6c947e4b876323f8ad356509bfdaa78852af9f247d59738df43c"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/cuda_utils.h",
+      "size_bytes": 353,
+      "sha256": "7ace0019cea06178a57b275d3b1086b26cd5d0c83d646e8b8ae70c530e9e7bca"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/group_points.cpp",
+      "size_bytes": 1153,
+      "sha256": "aef6dcafda284812c7c3da5122e345fc07ef0f504ee257a30b3598163b518af0"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/group_points_gpu.cu",
+      "size_bytes": 3406,
+      "sha256": "28c79c009da32c14e57d0e45345de92caffec7db31eefa853d971f148c4e2cbf"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/group_points_gpu.h",
+      "size_bytes": 794,
+      "sha256": "e75f1a0eb6c18ed28b780daa3c6d82c5fccbf70e79d574f71bd469d5fa22eeaf"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/interpolate.cpp",
+      "size_bytes": 1947,
+      "sha256": "6b3f3f94e5b9162dc5f910533fd7404f21d90cde553b9bda5aa507c20dc8fd88"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/interpolate_gpu.cu",
+      "size_bytes": 5405,
+      "sha256": "4e16680f4fdc95de527cb5093c42306b6eb67ae31c1cbd30b321c6ae62bc56d2"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/interpolate_gpu.h",
+      "size_bytes": 1111,
+      "sha256": "1d6c66ff03d32e3e7bc844f2599bb41c26bb8e2b97ebff60061f2ddf67d9f806"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/pointnet2_api.cpp",
+      "size_bytes": 1148,
+      "sha256": "1673a7041d21ee3c7f9979b2068a9b6055a99a284a6de640a0c2b1b81c112b95"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/sampling.cpp",
+      "size_bytes": 1478,
+      "sha256": "cf30dc3b21580c02b7cad3fd0bf14d39794850714a8d1b44c06faa2199ae8174"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/sampling_gpu.cu",
+      "size_bytes": 7895,
+      "sha256": "5a898832473b159a35e12fa4c639435f37588ffc0a989229694da8d1568f76e5"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_batch/src/sampling_gpu.h",
+      "size_bytes": 982,
+      "sha256": "a116fef8b7ea61442c52ddc43282de2d7ccc5ba1fe4f432bdcbd1e1a07d7cf2f"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/pointnet2_modules.py",
+      "size_bytes": 5470,
+      "sha256": "aa37738190d824e22712abe2a133ed7c1f5597a01ce6361d8da29dcd3e1c2ef3"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/pointnet2_utils.py",
+      "size_bytes": 9507,
+      "sha256": "7b2895deb1ef0e0db726d56dcfef36e39dab407136e3594c232dccc91a1c510d"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/ball_query.cpp",
+      "size_bytes": 1517,
+      "sha256": "58cd0ef906183cc23cdf1db07bd43d4286338566c20a44f34836226f7a8fd8dc"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/ball_query_gpu.cu",
+      "size_bytes": 3066,
+      "sha256": "c7fe0cccc944e59631640f2daa5be283b72fe5fc6def1525030de47d3fba8b76"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/ball_query_gpu.h",
+      "size_bytes": 769,
+      "sha256": "89b8977c40a607f9412e5e0ed5ea27ed3058ab423f9f5b75ae1fa8d50b1cdeed"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/cuda_utils.h",
+      "size_bytes": 162,
+      "sha256": "a7e0abefec2bc34cb42e21fd2a47b122fc4b0c024547c647ea6ae36ebd7cf670"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/group_points.cpp",
+      "size_bytes": 2440,
+      "sha256": "a43a09400eaa5562754216425908093b690c6d3a263a6b5fd0b1e15153d5d34f"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/group_points_gpu.cu",
+      "size_bytes": 5691,
+      "sha256": "c2ede6fb15ca86cba3d9338eff9eb00d5e4d38fc734437afb3ac484216e10b11"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/group_points_gpu.h",
+      "size_bytes": 1222,
+      "sha256": "3c993cd12624bb574f2fa9b10c264990cd6dceabdd8c923b25f84a1e8b29610b"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/interpolate.cpp",
+      "size_bytes": 3871,
+      "sha256": "ef82b7a3d53e1d7dbd466707373d9e3e1397f0020294a87292bae93f85325f1d"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/interpolate_gpu.cu",
+      "size_bytes": 6466,
+      "sha256": "4120eeafd682d657e5c3f5885753dffa49de9305baabe50466dc24e04bef44e2"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/interpolate_gpu.h",
+      "size_bytes": 1192,
+      "sha256": "4b67350ea5b09e378cc0ef61f4cd84168dbcecc919586f00d1eb2b683e0130fb"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/pointnet2_api.cpp",
+      "size_bytes": 950,
+      "sha256": "3f14fea2d24262e8d02263187346804f8196671eb830f87bfe58d4c0aaa24613"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/sampling.cpp",
+      "size_bytes": 1001,
+      "sha256": "0ff52ee6fa48441c2158d76f62bc4ed6487244b4360a77bf7cf7721ca708caf2"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/sampling_gpu.cu",
+      "size_bytes": 5391,
+      "sha256": "df4146aea67ebbf71015ae7de9b294263b33edb62fb2d4079ab7f63b6beab102"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/pointnet2/pointnet2_stack/src/sampling_gpu.h",
+      "size_bytes": 400,
+      "sha256": "46eb78bea0fb2a9537873dcfb88be41cd33a3e97bee6ee6e88c8a862ec565005"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/roiaware_pool3d/roiaware_pool3d_utils.py",
+      "size_bytes": 4648,
+      "sha256": "269f006640040095424fd6b24a633f63341c6a3135572affc88a405b14b17b8a"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/roiaware_pool3d/src/roiaware_pool3d.cpp",
+      "size_bytes": 7272,
+      "sha256": "878257ec685dc4c16b7edf2fdfe82309ca26288ab390cbf441a983db35248389"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/roiaware_pool3d/src/roiaware_pool3d_kernel.cu",
+      "size_bytes": 14858,
+      "sha256": "d34013f84a0094dd9ae814e0cf1e5bceb7d808bfcc1248a1832f334a96a1808e"
+    },
+    {
+      "path": "V2X-R_project/opencood/pcdet_utils/setup.py",
+      "size_bytes": 2103,
+      "sha256": "3ab4146d6a02d6fc5b4a93b1b2e950d176a242c84e7faee6a68eeded91451c68"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/__init__.py",
+      "size_bytes": 80,
+      "sha256": "037c57a5b46486a4bf596316abb3c8f87f4af3c6e53b4ddef466d101fd655450"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/anchor_targets.py",
+      "size_bytes": 5277,
+      "sha256": "e5e94e23798492bc45a0233e3f53964bf0b8287b1b1e995bcf975aee0eb5f33f"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/config.py",
+      "size_bytes": 12653,
+      "sha256": "debc352e1349382bbc67743a00432a4dae3f3010ad3cf5323ccfd38e1ce0ebb9"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/data_geometry.py",
+      "size_bytes": 5055,
+      "sha256": "fcaf83e6f4e9ac5339861aeb9baebda0e278ba51c984da684800464ce7c64d21"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/data_io.py",
+      "size_bytes": 4498,
+      "sha256": "93a9f611e58c62490f1acea12f573511265215eeae4127f21501d1a5af149ffa"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/evaluation.py",
+      "size_bytes": 16568,
+      "sha256": "b4920629721f0e058c8d021c1b811b80b2dbfd0512ac3af3ee91d737342b81fc"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/fixed_gt.py",
+      "size_bytes": 14732,
+      "sha256": "1d6548ee553c611154a0e426c9e04e42b7044b2451d37eea0dd5542068fd0f0b"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/geometry.py",
+      "size_bytes": 10288,
+      "sha256": "d0e06a96480e13d1573404c49c0d280f2903b142baa5a7b1596576da91b02608"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/supervision.py",
+      "size_bytes": 9676,
+      "sha256": "4b79d10d7626f6d7d259a1f6a8b1926203d779b83525799783ee84bf60cf4e5f"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/training.py",
+      "size_bytes": 10062,
+      "sha256": "9c6d9fa2fc50933f84d9b7b75936f00d431a6686cf495bd168964f2bab9c6d1b"
+    },
+    {
+      "path": "V2X-R_project/opencood/project/weather.py",
+      "size_bytes": 882,
+      "sha256": "d1823559fa7624ab0390e4b2001587f26a16bd9d1258700c77b4ab194e7f1370"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/abl_object_dist.py",
+      "size_bytes": 9727,
+      "sha256": "a54a16c6c72bf6cda4c7d304b81bc5dee8e054756cf0f18527a8124a5b361362"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/abl_object_distance.py",
+      "size_bytes": 8305,
+      "sha256": "ba72e69dd396983a4f7d68ac13c1ddb119dd243a975444c12ea8507e5fa7dd80"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/config_generate.py",
+      "size_bytes": 775,
+      "sha256": "fbccf4ece11c272675eb554eba0c42cee7fe2e00e62fba50af439bfaf112f9a8"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/debug_utils.py",
+      "size_bytes": 2649,
+      "sha256": "b4c324fe84e17a862097ef05da1a586125a122b5ba191e96a6a54e481d39342e"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/inference.py",
+      "size_bytes": 17138,
+      "sha256": "8e83181d7876f3490446baa3acf165a3726bbcf6490d24ada9becaec63e07fb2"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/inference_pretrained.py",
+      "size_bytes": 9722,
+      "sha256": "1c5ca0e30c4caff24f94bc83abb565c77297815b97bde42a6d925655fc848486"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/inference_tiny.py",
+      "size_bytes": 6618,
+      "sha256": "99b89c55f476eb2b9c159693a1895c7f0a79b934302bb3824883643776a0fd5e"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/inference_utils.py",
+      "size_bytes": 4623,
+      "sha256": "a10a65a6174f98edf09163844fa129e7ef31252d2e430602470dcdcd71b141e7"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/inference_w_noise_dair.py",
+      "size_bytes": 11772,
+      "sha256": "e7a686edd7261ba27c13814dcd3ba5cf03353fa584d2b68ac747a451105fe662"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/inference_w_noise_opv2v copy.py",
+      "size_bytes": 14132,
+      "sha256": "c2f6cf5c48ca44ef248ea06ded54a0d6229bd619d5bc0bd0a308ee563c7fb3fd"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/inference_w_noise_opv2v.py",
+      "size_bytes": 14395,
+      "sha256": "fe3d0b4bf599ef83a6fc2c233c70a7de6175771ea4ebb54fc2a9861e701bc765"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/multi_gpu_utils.py",
+      "size_bytes": 1602,
+      "sha256": "e6ecf5aa732e76b699093a8a2690889b68145c7506b9785621e98407c8b660ac"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/pose_graph_evaluate.py",
+      "size_bytes": 9386,
+      "sha256": "35bd5dd5ae7fd604a54e1fb792c0aaa46aaf2866b76107f47dd4ac9357ae70ca"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/pose_graph_pre_calc.py",
+      "size_bytes": 8609,
+      "sha256": "797b482e2dd19b931ccefa153b4ebdd955cba3048dc7eb891babdb9aadc4fc0c"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/train.py",
+      "size_bytes": 13626,
+      "sha256": "b9674d0597ccaf3d99b51c8b10c09082f4f4af35066267687653d8ea2c33938b"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/train_opencood.py",
+      "size_bytes": 9800,
+      "sha256": "858742edab6d57b572fdc7420e273fa87f7615c19b77a8b6a5b2d949ced9262c"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/train_sicp.py",
+      "size_bytes": 15478,
+      "sha256": "fcd62100e281026d9de46fc81f4f87d43cc9304ac3e8d0c79fbf626d651b8632"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/train_utils.py",
+      "size_bytes": 14509,
+      "sha256": "62b440b9d96f6918f941e7d7494901c274e2be5fc7df2a2bf3f9288e9d4be1e8"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/train_w_kd.py",
+      "size_bytes": 8938,
+      "sha256": "df07b649036f2c1c9cf39d15049fd933a99592ac92b299b055463106f05fd718"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/vis_feat.py",
+      "size_bytes": 15563,
+      "sha256": "ecfedb5d16466ea7a869fa4c5d42c1d71eaf6470de4cb8ac91494411a45a7f39"
+    },
+    {
+      "path": "V2X-R_project/opencood/tools/vis_object_distance.ipynb",
+      "size_bytes": 75722,
+      "sha256": "f551bac0a5e30f6cece14239540463a3cf09c6cea8d6c5a2008728425b5148d7"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/MDD_utils.py",
+      "size_bytes": 13059,
+      "sha256": "9990d3e471b0ea015432ac480d886a11606c86aeeda9592dd6f6efe85d4c2751"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/bessel_utils.py",
+      "size_bytes": 8139,
+      "sha256": "1f191017a1a1641876f5c2f223ca0388e88388c76e89286ed256fea3df60dd98"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/box_overlaps.c",
+      "size_bytes": 385864,
+      "sha256": "388a9e122a300efac697bc8b6b8b02ccc59f5485a3f3b86fc31885b082ca014e"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/box_overlaps.pyx",
+      "size_bytes": 4553,
+      "sha256": "ff53e3d6b5d5c93b8a5afbb0bdbfd8f1b1a0162a0224a67ef55c4e7054ad4070"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/box_utils.py",
+      "size_bytes": 37803,
+      "sha256": "e6148d4adb7217b1b59049655939424a98132c457dc76e1d6f1abfdc2a413d38"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/box_utils_old.py",
+      "size_bytes": 37507,
+      "sha256": "1c6c4a24269b175d5d539027584adb9c8bdb8ad655dfa7a594fee5d9bc07b2ac"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/camera_utils.py",
+      "size_bytes": 14826,
+      "sha256": "51cbc59f503b1a7b6b5ece48eff375994ac2353b87236e34ede0359c256feef4"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/common_utils.py",
+      "size_bytes": 5714,
+      "sha256": "9bd46da02a6e2aff7ad69d5a09a8f578c90cb288d593e74b412427d9e85a5473"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/cuda_op/cuda_ext.py",
+      "size_bytes": 873,
+      "sha256": "5c813c6d241ef8dc35828eb4ded6421861b93fcc0baff740c04d1229b0bdd980"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/cuda_op/cuda_utils.h",
+      "size_bytes": 1409,
+      "sha256": "f1eb9cb49ef3368fcaede5ff5fc14c26065348dfe170a91f0557ab8bfd22bf4f"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/cuda_op/setup.py",
+      "size_bytes": 330,
+      "sha256": "0c0f89c91b6136c323cbc1bc2fcd10e33e1ba090859897174506e14af754c150"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/cuda_op/sort_vert.cpp",
+      "size_bytes": 1202,
+      "sha256": "0b8f3895dd04b77d34afb6cd930c28f3e2e31a1c8b85a416efaabfdfca2c2e3a"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/cuda_op/sort_vert.h",
+      "size_bytes": 156,
+      "sha256": "d2d0868a5d5da1d13a27ec77973f2aca6f67f3a76a694aaa092991fe2efe8de5"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/cuda_op/sort_vert_kernel.cu",
+      "size_bytes": 5269,
+      "sha256": "e226183ff1915a989e3fbdf93f7d2d253cddc3f75cc17bd3081bf9a5a1c9df35"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/cuda_op/utils.h",
+      "size_bytes": 1570,
+      "sha256": "e8f05c1763ac5addcee80235493d857be234884d15fb1766277c455bd290a03a"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/draco_compression.py",
+      "size_bytes": 2501,
+      "sha256": "ba3ee614d0ccaab4dfe97f2312590631a5bbe15d755f0e01b5f386a7ed6a2732"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/eval_utils.py",
+      "size_bytes": 4480,
+      "sha256": "736722b97bd2389a2e7338a26bde4d08a2b773e7f5846a52209c80b8ebc1b0be"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/eval_utils_opv2v.py",
+      "size_bytes": 5325,
+      "sha256": "9b81d2bb3b8e7fa00884fe5ebd5e2b6263f58c0eb58ca801ddba533bd74babce"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/eval_utils_where2comm.py",
+      "size_bytes": 4480,
+      "sha256": "736722b97bd2389a2e7338a26bde4d08a2b773e7f5846a52209c80b8ebc1b0be"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/img2hdf5.py",
+      "size_bytes": 3720,
+      "sha256": "0fdfa6eb930781db051c7950cb42af20ea31c7a15153866fc0430a243c753361"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/iou3d_nms_utils.py",
+      "size_bytes": 6382,
+      "sha256": "662badf016d033832b2671b5ea9f5885a47053f67f3aac380333804c84a3284a"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/src/iou3d_cpu.cpp",
+      "size_bytes": 9068,
+      "sha256": "fbda2e4e6c2508e0f59132d680c13c66528387b2b022c660257116359fa8b13e"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/src/iou3d_cpu.h",
+      "size_bytes": 367,
+      "sha256": "82d65c0d3c22e30345fa13bfc6af74b0ee0f7c27834db1391b9dc885724e457d"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/src/iou3d_nms.cpp",
+      "size_bytes": 8134,
+      "sha256": "f657ce7a01118fa453185fd7551c1e2f6b9e8c1dfd49170d7b2ffbbe5b0b46eb"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/src/iou3d_nms.h",
+      "size_bytes": 698,
+      "sha256": "d5a96c67224fe83de9af5c7c43ecbe707d873dba86468cb715c4669fc821bdb6"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/src/iou3d_nms_api.cpp",
+      "size_bytes": 855,
+      "sha256": "94711bd241e5602d31ebad6cbd39ac7e917680c3079f64e8f150cbb2a09185b3"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/iou3d_nms/src/iou3d_nms_kernel.cu",
+      "size_bytes": 18405,
+      "sha256": "8f4370c412736c44eb34d728c636fcb38977c6b2e44864f02ddbfbf3e965e8b3"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/keypoint_utils.py",
+      "size_bytes": 13190,
+      "sha256": "62b2369473034914d0973e738706f612a4d094c74f509c7d6962058de3715fb0"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/knn_algorithm.py",
+      "size_bytes": 1570,
+      "sha256": "60ca088429abdc2b6a49d020460d596bbbb7df3633c69d30dffd542906dd7a1a"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/max_consensus.py",
+      "size_bytes": 6894,
+      "sha256": "f0eee0e4a029745fdb1166b3a225c4010ffca4a06d02cd0ab8fd1cbb5a41d8dc"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/model_utils.py",
+      "size_bytes": 1973,
+      "sha256": "446e25e31e82e7315bb2286b1cf00c050a5327c0d81a6c404f8a427f8ee078dd"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/opencda_carla.py",
+      "size_bytes": 5258,
+      "sha256": "f121f0f17cad14411bd365ff70120e0c0ce15100e0ce6c465f0d03427a314f9b"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/pcd_utils.py",
+      "size_bytes": 7778,
+      "sha256": "9c515596dcf7da7a7c8d00a09599df554eeb0a746ac20af4142d2d232c54b15b"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/pose_utils.py",
+      "size_bytes": 4958,
+      "sha256": "ee83bfd7a7d5b6279406d3bf34d381daf4c9892b8d43f065458c3d6e6c9ba38c"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/sensor_transformation_utils.py",
+      "size_bytes": 7525,
+      "sha256": "b9c8ec30d6762ae4d1de67e5a8b30eedae4bf1ee9b4f14226501a97d0cd000e3"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/setup.py",
+      "size_bytes": 215,
+      "sha256": "fade8f522dc201a390ac8f9b6603729f44a55361a1335fba8445faf4f59f415f"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/subsampling_utils.py",
+      "size_bytes": 8990,
+      "sha256": "283ff87f94a0a1cd1128fd0b247af8db67a1263ff272e0a61e46daee7ff1f2df"
+    },
+    {
+      "path": "V2X-R_project/opencood/utils/transformation_utils.py",
+      "size_bytes": 15057,
+      "sha256": "0c140902c083ca80836db01eb5509d484f9ebd41833d4bc93c6a95c6d52fc308"
+    },
+    {
+      "path": "V2X-R_project/opencood/version.py",
+      "size_bytes": 79,
+      "sha256": "c5571fb673f4eca3201c4935b268643ae0471b5131a15ae32f60c08934275551"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/my_vis.py",
+      "size_bytes": 1507,
+      "sha256": "62df1fdea1d46bad18218c3f50d7c2eced7d8e5c90b9cb9f7cf812f885caa435"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/simple_plot3d/__init__.py",
+      "size_bytes": 68,
+      "sha256": "51da230b1af46f6e4c34436a608a1cca2e0dda46459dcf9666acce24137a0c45"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/simple_plot3d/canvas_3d.py",
+      "size_bytes": 16965,
+      "sha256": "e34f804a5d5357c1d4e4fdaf25f2661041216af0d4ddc0f08f1de0168833af5e"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/simple_plot3d/canvas_bev.py",
+      "size_bytes": 21063,
+      "sha256": "7ef5c321658a5b0257bdc71d736f242e439f9ad6d4db2d24acd37b04b32dc192"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/simple_vis.py",
+      "size_bytes": 5314,
+      "sha256": "345ba3bf9d17feb188cd5e2c67c6ee1ce399f0ef9336bce7bbc896d8586bed1a"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/simple_vis_where2comm.py",
+      "size_bytes": 4785,
+      "sha256": "afce93749d2c80f1987c31c10117b8c8cff05053eb923e19135e30cafe95f5ae"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/vis_data_sequence.py",
+      "size_bytes": 2856,
+      "sha256": "86eb10ed52394aeba38693ad6dea7efb048ca044046385f5e48cb14ef45c949f"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/vis_data_sequence_allcav.py",
+      "size_bytes": 4620,
+      "sha256": "d11d1d37acfe3b858f2fb29da0de48a6e724650051118bb5128e48681377e92f"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/vis_data_sequence_dairv2x.py",
+      "size_bytes": 4131,
+      "sha256": "c56180321bd70e0afec2859da004e20f2487e06f70c1f64298d5f3e1884fe6f3"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/vis_data_sequence_opv2v.py",
+      "size_bytes": 3008,
+      "sha256": "2868541cdb1ecfd06c445f14c912c442d567ef49822ed80067d76d3684cb43d5"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/vis_merged.py",
+      "size_bytes": 3539,
+      "sha256": "3e53fc1d0e15697ebe25995a65f52eaefaa1fb63628df1d41aa7f9a26ea4a287"
+    },
+    {
+      "path": "V2X-R_project/opencood/visualization/vis_utils.py",
+      "size_bytes": 19982,
+      "sha256": "17a8c3f34465adf7833b1c3432fcc0f4cf5fa24d6cda56760395b8ad166a3e6d"
+    },
+    {
+      "path": "V2X-R_project/project_tools/audit_full_astyx.py",
+      "size_bytes": 5045,
+      "sha256": "3d75a84d510e6beeffb94b1baf066a68f04ebf63b26ae32cbd8c5298f2ae18f2"
+    },
+    {
+      "path": "V2X-R_project/project_tools/audit_pair_supervision.py",
+      "size_bytes": 8755,
+      "sha256": "c92af04e78dae57e6125c687d01f779118920467d01e70f93cc9ecaf81667df3"
+    },
+    {
+      "path": "V2X-R_project/project_tools/benchmark_resources.py",
+      "size_bytes": 4811,
+      "sha256": "e62287f38f73223e65ab0f1c578a9c7535f292017a4939452dd9b3bbdde7e1b3"
+    },
+    {
+      "path": "V2X-R_project/project_tools/build_extensions.sh",
+      "size_bytes": 318,
+      "sha256": "8ae1b0e6ab59cbecf8c7ff4c7eae89f1c8dcaa580e099816b19c70bc34e7a1d7"
+    },
+    {
+      "path": "V2X-R_project/project_tools/build_fixed_gt.py",
+      "size_bytes": 1130,
+      "sha256": "f851fdc23bc051a7ddd7745767313f274e5493f89cbf317e5eeadbdff1a08b4f"
+    },
+    {
+      "path": "V2X-R_project/project_tools/check_astyx_sample.py",
+      "size_bytes": 2677,
+      "sha256": "58957a8335027a9654d5070a27e696dcaff64b60e25f953e5c2c96774b369523"
+    },
+    {
+      "path": "V2X-R_project/project_tools/check_environment.py",
+      "size_bytes": 9066,
+      "sha256": "a1630ceca2c9849e550b8757556058a3443fed6c81e1fac0e7886a07aaac0187"
+    },
+    {
+      "path": "V2X-R_project/project_tools/check_v2xr_prepared.py",
+      "size_bytes": 2967,
+      "sha256": "518985147985564e337d6e196249f518d0ac642a5200ef0a57585e1bac560389"
+    },
+    {
+      "path": "V2X-R_project/project_tools/check_v2xr_sample.py",
+      "size_bytes": 5266,
+      "sha256": "d40438f378f0857a75ca690833f40b3ef62c5e2ec6a0b2d3b91d1f8102f0b71f"
+    },
+    {
+      "path": "V2X-R_project/project_tools/data_download_status.py",
+      "size_bytes": 1161,
+      "sha256": "aceb66538926bdff2b9721a4ea31bfa652b493395399e0835fffd87734dae580"
+    },
+    {
+      "path": "V2X-R_project/project_tools/diagnose_modules.py",
+      "size_bytes": 28380,
+      "sha256": "62cb40744a0a4227da885b9f1923f7f137368e33675c7d2fab502faec14f2859"
+    },
+    {
+      "path": "V2X-R_project/project_tools/diagnose_teacher_free.py",
+      "size_bytes": 8060,
+      "sha256": "823be81a2f789e4b8712ddff8cc61676ae155f981cae4404ebb277a6faa116e6"
+    },
+    {
+      "path": "V2X-R_project/project_tools/diagnose_v3_mechanisms.py",
+      "size_bytes": 26730,
+      "sha256": "8b81cd46b52c605a5d19d25b83a195709409d8d18e7987ac48ab884320ec6f97"
+    },
+    {
+      "path": "V2X-R_project/project_tools/download_full_v2xr.py",
+      "size_bytes": 22007,
+      "sha256": "d393927a6f75c72987bb059e1f5cf52ee07094fede15b79a1c8e87e5cdd4d130"
+    },
+    {
+      "path": "V2X-R_project/project_tools/evaluate_predictions.py",
+      "size_bytes": 2008,
+      "sha256": "d8aa6692c1f5bebcbc94add67b64767761e9e2879ca0d769fa929f23fa9aa0f9"
+    },
+    {
+      "path": "V2X-R_project/project_tools/export_predictions.py",
+      "size_bytes": 8452,
+      "sha256": "f126a64e3a04f25482a67190db8bfd39ac1310a822702ab47732c275da968f0f"
+    },
+    {
+      "path": "V2X-R_project/project_tools/finalize_full_data.py",
+      "size_bytes": 2216,
+      "sha256": "7b7bf4cf94b515514b5e93d14d1c4423c626046016adc08f2f572c9203ed6752"
+    },
+    {
+      "path": "V2X-R_project/project_tools/profile_memory.py",
+      "size_bytes": 18447,
+      "sha256": "425db0fea9f60fa9211d8186836b7f8ec96bc4bf27d1d000d8badfa182d9eec6"
+    },
+    {
+      "path": "V2X-R_project/project_tools/run_experiments.py",
+      "size_bytes": 38503,
+      "sha256": "ab2a00b3a22a92d6d4d4f72214243448449246a4abf3d67a0ca1d5cdb4828fef"
+    },
+    {
+      "path": "V2X-R_project/project_tools/run_setup_checks.sh",
+      "size_bytes": 244,
+      "sha256": "89bf91b4930e67c159964967c0b8024e30bd60ef3860e1f8a5dfe70167a81627"
+    },
+    {
+      "path": "V2X-R_project/requirements.txt",
+      "size_bytes": 207,
+      "sha256": "30bcf4d9b7cce9128916f30b1f0f32243b10db08d71f747649ee2bddc5ba841f"
+    },
+    {
+      "path": "V2X-R_project/setup.py",
+      "size_bytes": 1097,
+      "sha256": "d30fcd225ade11b197dbd5982854715faee148224aad9097808aeadae9e5e1dd"
+    },
+    {
+      "path": "V2X-R_project/tests/test_anchor_targets.py",
+      "size_bytes": 3558,
+      "sha256": "9b7b298877c931f52fcfb72b4c22c37cb92d24fd5a13d10a26b8cbc1d165cc20"
+    },
+    {
+      "path": "V2X-R_project/tests/test_data_geometry_review.py",
+      "size_bytes": 5966,
+      "sha256": "01eca228b91b148ad8022572a7e372c2a4860ae7cb6dd96638477fdf89079503"
+    },
+    {
+      "path": "V2X-R_project/tests/test_fixed_gt.py",
+      "size_bytes": 7235,
+      "sha256": "5513dced64152e77800324e699bfe09755f33ac6c632abbf976510f706b2ad47"
+    },
+    {
+      "path": "V2X-R_project/tests/test_innovation_modules.py",
+      "size_bytes": 24693,
+      "sha256": "1e7cdb32791df4f9c95c40bbeb5d7ba99baa8aba5bd1352413bcfcbe8893d05d"
+    },
+    {
+      "path": "V2X-R_project/tests/test_memory_profile.py",
+      "size_bytes": 1933,
+      "sha256": "3d135dfa9792fbc40a4060d99d45189d3d988fd68ae4a0fa8fd24f2917c32dcc"
+    },
+    {
+      "path": "V2X-R_project/tests/test_project_dataset.py",
+      "size_bytes": 11307,
+      "sha256": "dd0fef3c6ea05b1742282b98b50db741708859525b11e3d8de18b606d6ad24c8"
+    },
+    {
+      "path": "V2X-R_project/tests/test_project_evaluation.py",
+      "size_bytes": 12650,
+      "sha256": "a11f0ba7ce69766546d21d71377846619cd73e89d4744806661d341f7fda351d"
+    },
+    {
+      "path": "V2X-R_project/tests/test_source_supervision.py",
+      "size_bytes": 3794,
+      "sha256": "527ed36ce50b392d7c78ed07c0d8fd24438c5966502b2bba02c2b88388abfcdc"
+    },
+    {
+      "path": "V2X-R_project/tests/test_supported_residual_losses.py",
+      "size_bytes": 2507,
+      "sha256": "1c81bc4d26637e5b85e6e437af586f7f01671e4e75af5fc96c5a154e23f1a125"
+    },
+    {
+      "path": "V2X-R_project/tests/test_training_protocol.py",
+      "size_bytes": 16787,
+      "sha256": "80e7e3fb497de388ec79689f344759e7eea4449dd327a3b460d1849b18686666"
+    },
+    {
+      "path": "V2X-R_project/tests/test_v3_mechanisms.py",
+      "size_bytes": 9759,
+      "sha256": "9b132cf14cdd0ef79ab360989ed91dfee5e66641d0ec6b212274e25e33862c40"
+    },
+    {
+      "path": "V2X-R_project/tests/test_v3_protocol.py",
+      "size_bytes": 3444,
+      "sha256": "746006ad4d763be132329a1c279c6107dbf98ce03b6025015acab338560ed72f"
+    },
+    {
+      "path": "docs/00_阅读导航与审查结论.md",
+      "size_bytes": 8282,
+      "sha256": "724b0c26c7b0d0e26d4d7854b225ee70c50db25d12cee2a009ac49ca187f59bc"
+    },
+    {
+      "path": "docs/01_客户需求与验收标准.md",
+      "size_bytes": 7623,
+      "sha256": "353c5bf041104231e2082c9ab4491e377244e4efc55444771830ce5e46afe6b2"
+    },
+    {
+      "path": "docs/02_两个创新模块设计.md",
+      "size_bytes": 13716,
+      "sha256": "19ce8922450c482ab746b42ba8c9204cee932ed12f3eaf51ffacb8879df789e5"
+    },
+    {
+      "path": "docs/03_数据准备与天气协议.md",
+      "size_bytes": 21108,
+      "sha256": "7cca4ff2a2e338813a1d7b9eb324e01de232d37139d93499e6aa8827136165f4"
+    },
+    {
+      "path": "docs/04_训练对比与消融实验.md",
+      "size_bytes": 24535,
+      "sha256": "7116c9df4ed7df9f9b1f761efded446005f868eb7d731772345fb4daba39f962"
+    },
+    {
+      "path": "docs/05_评测审计与结果表模板.md",
+      "size_bytes": 47206,
+      "sha256": "9e1cfa5b13aecf9280afb41740d2dddc46886710e292255939d89bda5267aae0"
+    },
+    {
+      "path": "docs/06_执行步骤与排期.md",
+      "size_bytes": 19543,
+      "sha256": "6c55f57d28942e38a08a9311037f1379fa7c919e74c1ef32b8696ff3c7923162"
+    },
+    {
+      "path": "docs/07_参考文献与证据索引.md",
+      "size_bytes": 16772,
+      "sha256": "5df104d349f24db82858b4acb5f9f2f0008bd6ccd99cdf8c0d55b3c5a50dc28b"
+    },
+    {
+      "path": "docs/08_实现验收与训练资源配置.md",
+      "size_bytes": 18494,
+      "sha256": "088782e5966276bbbe78734f2a53017614b0b97faa1c27b70922962a197649b3"
+    },
+    {
+      "path": "setup/activate.sh",
+      "size_bytes": 566,
+      "sha256": "10c57ecbbbd6d30fef65fbd3632fda8de6d60b4e65490f12a9795e51d270ed29"
+    },
+    {
+      "path": "setup/check_v3_normal_bn.py",
+      "size_bytes": 3558,
+      "sha256": "670c13de5a80c51e8350a938e078f7157cfd497c79bfcff0b93bdde1c8d92009"
+    },
+    {
+      "path": "setup/create_v3_acceptance.py",
+      "size_bytes": 8629,
+      "sha256": "e75f1b9e3e2992a0eba319134eddd48d71ddd0d1b92775aa1a8dbda141dd0573"
+    },
+    {
+      "path": "setup/create_v3_diagnostic_scope.py",
+      "size_bytes": 4938,
+      "sha256": "b5078ddaf54e40a96d47d6e72687a44d799095f5f2327750f293a5c50116b562"
+    },
+    {
+      "path": "setup/pip-freeze.txt",
+      "size_bytes": 7264,
+      "sha256": "4a44e170c3aed7c83471bfbf91a8e924830d717bdc0bcc319ec0ea61d42177e2"
+    },
+    {
+      "path": "setup/provenance_supervision_audit_v3.json",
+      "size_bytes": 45452,
+      "sha256": "cadcd79a7f18dd548a79226dcd5de6f136ef45aedab6c40f63fa2c0c8687b564"
+    },
+    {
+      "path": "setup/requirements-lock.txt",
+      "size_bytes": 7302,
+      "sha256": "3e0b4b87385d5630029c2955af83de00ac7c0cce213dcc02d17058c57dd4e2cc"
+    },
+    {
+      "path": "setup/source_manifest.json",
+      "size_bytes": 7865,
+      "sha256": "fb5365cf74896301859baef5d9c989e532d12512edf47a1914aaa4d9d3bbd67d"
+    },
+    {
+      "path": "setup/teacher_free_v3_acceptance.json",
+      "size_bytes": 14228,
+      "sha256": "0f5f1498b27b0d19a1af0d124ed19dcb1b6f2cff24c3c22d8d4f46ecb0616b30"
+    },
+    {
+      "path": "setup/teacher_free_v3_checkpoint_dedup_audit.json",
+      "size_bytes": 5851,
+      "sha256": "356e3aaa9db47b1552ea478a84e962ff75555952b4112e9f875abf29bf8ecbfa"
+    },
+    {
+      "path": "setup/teacher_free_v3_cleanup_manifest.json",
+      "size_bytes": 99649,
+      "sha256": "2df5518248111cf91a4abf7d8b6cb15161020c337eabc6590dfd8b696ee254d5"
+    },
+    {
+      "path": "setup/teacher_free_v3_diagnostic_scope.json",
+      "size_bytes": 30630,
+      "sha256": "08c9ab16a29be9bec6f034ed683ea0277f089b99cc20bd0809b6bff467cec5fd"
+    },
+    {
+      "path": "setup/teacher_free_v3_independent_protocol_review.json",
+      "size_bytes": 982,
+      "sha256": "e45eb747a12a66448e673c3f265c1fe7719c3fd74cba1bde4118afa64474698d"
+    },
+    {
+      "path": "setup/teacher_free_v3_mechanism_findings.json",
+      "size_bytes": 15397,
+      "sha256": "f32680803d7140c8f3688bb07e1a396b0fb153d6d5f1f6716173be8dcc3d3db5"
+    },
+    {
+      "path": "setup/teacher_free_v3_mechanisms.json",
+      "size_bytes": 109723,
+      "sha256": "923d2357cda190f12cd54741a9a5c571c3c953382a167ee776540b364322ce05"
+    },
+    {
+      "path": "setup/teacher_free_v3_mechanisms.log",
+      "size_bytes": 15843,
+      "sha256": "a953d984f5d20cbefb745d042c7a8058845bba0fc9d601e70f24270da98aa2e0"
+    },
+    {
+      "path": "setup/teacher_free_v3_mechanisms_retain_graph_failed.log",
+      "size_bytes": 2239,
+      "sha256": "d95811256615b864745649f4b3852b838009f1e4a68fb58be0e20c845fc9dcae"
+    },
+    {
+      "path": "setup/teacher_free_v3_memory_interpretation.json",
+      "size_bytes": 20158,
+      "sha256": "f57857038aa9295646fb6bcf556071c8eb1e8de15e6c64b07154088c0b246f12"
+    },
+    {
+      "path": "setup/teacher_free_v3_normal_bn.json",
+      "size_bytes": 2125,
+      "sha256": "a7eef8d299cfd965189bf29fbcea47ab85556c85e51548333810ad8fa184ba84"
+    },
+    {
+      "path": "setup/teacher_free_v3_normal_bn.log",
+      "size_bytes": 2126,
+      "sha256": "aff6b2a7edab8c7b18aaa81bf759cd462227dc6ca890fd1d1d8ed5801ea78b14"
+    },
+    {
+      "path": "setup/teacher_free_v3_paired_v2_resources.log",
+      "size_bytes": 3888,
+      "sha256": "1c90b4930b626cabdaf5fa5249d8e66d14835f12df6b96453a59514a621e8619"
+    },
+    {
+      "path": "setup/teacher_free_v3_preflight_C.json",
+      "size_bytes": 4191,
+      "sha256": "5b60643617ec8699f9d8ad79ac1dfdc49dfec2b4063d5e6cb1a53f910e1e08b9"
+    },
+    {
+      "path": "setup/teacher_free_v3_preflight_W.json",
+      "size_bytes": 4261,
+      "sha256": "e3f241d97001019bf2b3d6bf78160a8a421f84057d54e3b80ffb480e029f3a00"
+    },
+    {
+      "path": "setup/teacher_free_v3_resources.log",
+      "size_bytes": 3956,
+      "sha256": "5c4f999a1cd062360a4862e1d49e44e13cb35775ad14ab289dc24c4329d783f8"
+    },
+    {
+      "path": "setup/teacher_free_v3_resume.json",
+      "size_bytes": 1153,
+      "sha256": "0f9742b7e5d1c8e76439b78c454313f9141dba0df5d17eafb1a854099b15236f"
+    },
+    {
+      "path": "setup/teacher_free_v3_resume.log",
+      "size_bytes": 1154,
+      "sha256": "960baa93f75d9e24cc3938a7dfd85704d2f4bd7779447ecc789f1e52f6c4f86c"
+    },
+    {
+      "path": "setup/teacher_free_v3_stress_2109.json",
+      "size_bytes": 2969,
+      "sha256": "1419fdbff9e1e1615a3a9020fd51f75c97df6ff6d6488b7bf8268c704bcc5d8f"
+    },
+    {
+      "path": "setup/teacher_free_v3_tests_final.log",
+      "size_bytes": 12432,
+      "sha256": "ea4d67c2f80ca2e97c2814467cdde853ea52fae75c69b31b5d5f2c260e60daf1"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_allocator_probe.json",
+      "size_bytes": 133734,
+      "sha256": "7bb302274254bc064eb08d14a453b1b3d5aaa8254196d23d075031d323c31b8b"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_allocator_probe.log",
+      "size_bytes": 105,
+      "sha256": "be89d631c1479de89061ea631e3526a812d8a23efb30d20f9f32d88f6088e2bc"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_dense_memory_hook_failed.json",
+      "size_bytes": 18131,
+      "sha256": "1ea46619131c9ab38054e2ba7e258c804fb867a27820bec3b2b52143712809c2"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_dense_memory_hook_failed.log",
+      "size_bytes": 1725,
+      "sha256": "b51694a08df1bd8f37e9b0a0b0bd110c14e0ace90624e582d7033f887bef3ed0"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_memory_hook_failed.json",
+      "size_bytes": 17935,
+      "sha256": "be1174f2966c8c3d7cfebbe32cf6b54772928fc65d44425fc591545010b5f826"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_memory_hook_failed.log",
+      "size_bytes": 1725,
+      "sha256": "b51694a08df1bd8f37e9b0a0b0bd110c14e0ace90624e582d7033f887bef3ed0"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_normal_bn.json",
+      "size_bytes": 2169,
+      "sha256": "2d725d2cad464a2bce178b21b5ff0a1d01f8e24d421fd5da06c3d08460276fd6"
+    },
+    {
+      "path": "setup/teacher_free_v3_v2_normal_bn.log",
+      "size_bytes": 2170,
+      "sha256": "b57e91c19d04d915e8ffe0aad2d2387b51c6f8ec7fd083284a7d8d5c9643032c"
+    },
+    {
+      "path": "setup/teacher_free_v3_variant_paths.json",
+      "size_bytes": 8159,
+      "sha256": "5c0e21778232207646d7f7569439e946e6fb971a855033e67fc0018bbb8c9106"
+    },
+    {
+      "path": "setup/verify_real_resume.py",
+      "size_bytes": 3566,
+      "sha256": "0e364a9044f5a0e680beacedadbadcabfd480ba62fde3b9794c58c1c4a4e6915"
+    }
+  ],
+  "excluded": [
+    "datasets",
+    "envs",
+    "outputs",
+    ".git",
+    "build",
+    ".so",
+    ".pyc"
+  ],
+  "config_count": 19,
+  "external_dependencies": {
+    "environment": "/root/autodl-tmp/CSCWD/envs/cscwd",
+    "data": "/root/autodl-tmp/CSCWD/datasets",
+    "weights_and_resume_artifacts": "Retained at original output paths; not duplicated into archive."
+  }
+}
