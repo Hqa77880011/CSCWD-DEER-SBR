@@ -1,12 +1,14 @@
 # Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception
 
-补充实验的方案、配置对应与实现状态见 [补充实验方案与实施说明](docs/13_补充实验方案与实施说明.md)；运行命令见 [复现指南](docs/REPRODUCING.md)，本地检查与未验证路径见 [验证记录](docs/VALIDATION.md)。新增实验尚未正式运行。
-
 **Anonymous Authors**
 
-[Paper](paper/paper.pdf) · [LaTeX source](paper/source/) · [Editable Fig. 1](paper/source/figures/architecture.pptx) · [Pretrained Models](https://github.com/Hqa77880011/CSCWD-DEER-SBR/releases/tag/v1.0.0) · [Experimental Protocol](#experimental-protocol) · [Citation](#citation)
+[Paper](paper/paper.pdf) · [LaTeX source](paper/source/) · [Pretrained Models](https://github.com/Hqa77880011/CSCWD-DEER-SBR/releases/tag/v1.0.0) · [Reference Protocol](#experimental-protocol) · [Supplemental Experiments](#supplemental-experiments) · [Citation](#citation)
 
 This repository provides the reference implementation, pretrained models, and reproducible evaluation pipeline for the accompanying manuscript, **Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception**.
+
+The original seven-model release uses `teacher_free_v4` (schema 4). Supplemental experiments use `supplement_v1` (schema 5), with independent configurations and output directories. The AP results and released checkpoints below belong to the original experiments; the supplemental implementation has passed local functional checks and awaits real-data training and evaluation.
+
+Documentation: [Reproduction guide](docs/REPRODUCING.md) · [Supplemental experiment plan and implementation](docs/13_补充实验方案与实施说明.md) · [Validation records](docs/VALIDATION.md). These detailed guides are currently in Chinese.
 
 ## Overview
 
@@ -19,7 +21,7 @@ Missing LiDAR returns and spurious echoes require different responses when const
 
 *Local feature processing is followed by the common AttFuse cooperative backbone and Vehicle detection head. The architecture figure is available as an [editable PowerPoint](paper/source/figures/architecture.pptx) and [vector PDF](paper/source/figures/architecture.pdf).*
 
-The implementation includes seven configurations: an internal baseline (**S0**), the individual modules (**A**, **B**), their combination (**AB**), an ordinary gating/residual control (**SUP**), and amplitude/type-prior controls (**N1**, **N2**).
+The reference release includes seven configurations: an internal baseline (**S0**), the individual modules (**A**, **B**), their combination (**AB**), an ordinary gating/residual control (**SUP**), and amplitude/type-prior controls (**N1**, **N2**). The supplemental implementation adds mechanism controls, external-method comparisons, additional data protocols, and a second cooperative backbone.
 
 ## Main Results
 
@@ -35,7 +37,7 @@ Vehicle **AP3D at IoU = 0.7 (%)** on the V2X-R test split. All configurations us
 | N1 — normalized-mean descriptor | 64.37 | 51.03 | 48.69 | 49.86 |
 | N2 — multiplicative type prior | **65.87** | **52.52** | 48.73 | **50.62** |
 
-AB improves Snow AP3D@0.7 by **3.52 percentage points** and the Fog/Snow mean by **1.67 points** relative to S0, with small decreases in Normal and Fog. N2 achieves the highest weather mean. The largest AB gain occurs at strict 3D overlap in Snow, which is held out from training and model selection.
+AB improves Snow AP3D@0.7 by **3.52 percentage points** and the Fog/Snow mean by **1.67 points** relative to S0, with small decreases in Normal and Fog. N2 achieves the highest weather mean. Snow was excluded from training and model selection in this reference batch. Its published test scores are excluded from subsequent structure-selection decisions.
 
 Full-precision results, AP3D/APBEV at IoU thresholds 0.3/0.5/0.7, checkpoint identities, and experiment manifests are available in [`results/reference/`](results/reference/).
 
@@ -192,11 +194,61 @@ Use `--variant S0`, `A`, `B`, `AB`, `SUP`, `N1`, or `N2` to run an individual co
 
 Ground truth is fixed across weather conditions, with an ego-frame center ROI of x ∈ [0, 140) m and y ∈ [−40, 40) m and a geometric camera field of view. Ground-truth acceptance is independent of weather-specific point counts. AP uses global confidence ordering and VOC2010 all-points interpolation. The reported weather mean is the arithmetic mean of Fog and Snow AP3D@0.7.
 
-Exact executed configurations are stored in [`repro/configs/`](repro/configs/). The detailed [reproduction guide](docs/REPRODUCING.md) covers checkpoint recovery, data preparation, and protocol checks; this supplementary guide is currently in Chinese.
+Exact executed configurations are stored in [`repro/configs/`](repro/configs/). The original reproduction and pretrained-evaluation entrypoints load the frozen scientific source from [`repro/archive/legacy_v4_runtime.zip`](repro/archive/legacy_v4_runtime.zip), preserving the original configuration and checkpoint identities. The [reproduction guide](docs/REPRODUCING.md) covers checkpoint recovery, data preparation, and protocol checks.
+
+## Supplemental Experiments
+
+[`scripts/supplement.py`](scripts/supplement.py) provides the supplemental CLI and calls the existing project runner. The experiment matrix is defined in [`cscwd_configs/supplement/matrix.json`](cscwd_configs/supplement/matrix.json); dataset templates are available for [V2X-R](cscwd_configs/supplement/v2xr.yaml), [V2X-Radar-C](cscwd_configs/supplement/v2xradar.yaml), and [K-Radar](cscwd_configs/supplement/kradar.yaml).
+
+| Experiment block | Implemented scope |
+|---|---|
+| Training budgets and repeats | Independent 20/30/60/90-epoch recipes with matching learning-rate schedules; seeds 17/29/43; actual updates, losses, learning rates, development scores, and selected epochs |
+| Mechanism controls | S0/A/B/AB/SUP/N1/N2, M1–M6, NO_NULL, residual bound `rho`, support radius, and inference-time signal interventions |
+| External methods and second backbone | AttFuse, AttFuse+MDD, L4DR, CoBEVT, and Where2comm; paired Where2comm baseline/+F with shared common-parameter initialization |
+| Data protocols | V2X-R fixed GT; V2X-Radar-C vehicle ego with its real roadside partner; K-Radar as a single-vehicle input, with dataset-specific coordinates, classes, ROI, and evaluators |
+| Robustness and diagnostics | Deletion, injection, coexistence, radar retention, missing modalities, heterogeneous agents, ego-only/agent count, localization, and asynchronous inputs; type, routing, donor, support, and residual-amplitude diagnostics |
+| Statistical and efficiency analysis | Paired-seed summaries, within-seed weather means, budget comparisons, sequence bootstrap with AP recomputation, and CUDA-synchronized timing with explicit processing boundaries |
+
+`F` denotes one AB or N2 structure frozen from the complete S0/AB/N2 development runs for all three seeds. It has **not yet been selected**. Development selection, training-only BN handling, and final testing are separate; `latest.rank0.pt`, `selected.pt`, and `budget_epochNNN.pt` retain distinct roles.
+
+External comparisons retain their method-specific modules, objectives, and registered native candidate recipes. L4DR is explicitly a four-channel adaptation with FAD, foreground supervision, bidirectional MME, and MSGF under the project's detection protocol. MDD requires a verified clean training reference. HRCP and REL remain blocked by insufficient verifiable implementation material and have no executable training configurations.
+
+After installing the environment, inspect the CLI or run the synthetic CPU check without a dataset or pretrained weights:
+
+```bash
+python scripts/supplement.py --help
+python scripts/supplement.py smoke
+```
+
+The smoke check performs synthetic forward, backward, and inference passes with zero optimizer updates and produces no AP results. To prepare the 60-epoch pilot configurations for S0, AB, and N2:
+
+```bash
+# Expand the matrix and write configurations; does not start training.
+python scripts/supplement.py plan --suite pilot --epochs 60 \
+  --data-root /path/to/v2xr --output-root outputs/supplement \
+  --device cuda:0 --write-configs
+
+python scripts/supplement.py preflight \
+  --config outputs/supplement/configs/supp_v2xr_deer_sbr_AB_e60_s17.yaml
+```
+
+Preflight reports missing data or dependencies as blockers. Once prepared data and the required compiled extensions are available, the corresponding training command is:
+
+```bash
+python scripts/supplement.py run-suite --suite pilot --epochs 60 \
+  --data-root /path/to/v2xr --output-root outputs/supplement \
+  --device cuda:0 --execute --skip-completed
+```
+
+Supplemental runs write to `outputs/supplement/<run_id>/train/`, including resolved configurations, run metadata, step logs, per-epoch development scores, and checkpoints. They use independent outputs from the released experiments. See the [supplemental reproduction commands](docs/REPRODUCING.md#补充实验复现入口schema-5) for real-data indexing, repeated runs, F selection, evaluation, robustness, diagnostics, and summaries, and the [implementation mapping](docs/13_补充实验方案与实施说明.md) for each experiment's status and blockers.
 
 ## Reproducibility Checks
 
-The released evaluation path passed **159 regression tests**. A complete AB/Snow evaluation reproduced all six reported AP3D/APBEV metrics at IoU 0.3/0.5/0.7, and its prediction archive was byte-identical to the original experiment. Verification records are available in [`repro/pretrained_release_verification.json`](repro/pretrained_release_verification.json).
+The original release validation passed **159 regression tests**. A complete AB/Snow evaluation reproduced all six reported AP3D/APBEV metrics at IoU 0.3/0.5/0.7, and its prediction archive was byte-identical to the original experiment. Verification records are available in [`repro/pretrained_release_verification.json`](repro/pretrained_release_verification.json).
+
+The supplemental implementation checks on **2026-10-23** covered 18 relevant test modules: **160 passed, 3 skipped, 0 failures or errors**. The three skipped checks require the complete prepared V2X-R dataset. In addition, **21 synthetic CPU model paths** passed forward/backward/inference checks, and **27 CLI calls** passed. Machine-readable records are available in [`results/supplement/`](results/supplement/), with scope and environment details in [VALIDATION.md](docs/VALIDATION.md).
+
+Supplemental real-data training, final evaluation, and CUDA numerical/performance validation remain unexecuted. The local native-data preflight reports missing spconv/cumm, Open3D, pypcd, and compiled extensions. Synthetic checks establish functionality and do not supply experimental AP or efficiency claims.
 
 ```bash
 bash scripts/test.sh
@@ -216,8 +268,10 @@ paper/               Anonymous manuscript, LaTeX source, editable figure, suppor
 opencood/            Models, datasets, training protocol, and evaluation
 project_tools/       Training, prediction export, and diagnostic utilities
 scripts/             Installation, data preparation, and reproduction entrypoints
+cscwd_configs/       Project configurations, including the supplemental matrix and templates
 repro/               Executed configurations, manifests, and verification records
 results/reference/   Reference metrics and experiment identities
+results/supplement/  Local supplemental implementation-check records
 tests/               Module, geometry, protocol, and evaluation regression tests
 docs/                Detailed reproduction and validation documentation
 CITATION.cff         Machine-readable software and preferred paper citation
@@ -243,8 +297,6 @@ The citation is also available in [`CITATION.bib`](CITATION.bib) and [`CITATION.
 
 ## Acknowledgments and License
 
-This implementation builds on [V2X-R](https://github.com/ylwhxht/V2X-R) and its OpenCOOD-based framework. We acknowledge the upstream authors and the related codebases credited in the [upstream README](readme.md).
+This implementation builds on [V2X-R](https://github.com/ylwhxht/V2X-R) and its OpenCOOD-based framework. We acknowledge the upstream authors and the related codebases credited in the retained [upstream V2X-R README](docs/V2XR_UPSTREAM_README.md), which provides the original benchmark documentation.
 
 Please consult [`NOTICE.md`](NOTICE.md) and the applicable source-file headers for third-party attribution and license terms.
-
-The retained [upstream V2X-R README](docs/V2XR_UPSTREAM_README.md) provides the original benchmark documentation.
