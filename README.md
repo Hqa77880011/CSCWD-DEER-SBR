@@ -1,5 +1,7 @@
 # Evidence Routing and Supported Residuals for Cooperative LiDAR–Radar Perception
 
+补充实验的方案、配置对应与实现状态见 [补充实验方案与实施说明](docs/13_补充实验方案与实施说明.md)；运行命令见 [复现指南](docs/REPRODUCING.md)，本地检查与未验证路径见 [验证记录](docs/VALIDATION.md)。新增实验尚未正式运行。
+
 **Anonymous Authors**
 
 [Paper](paper/paper.pdf) · [LaTeX source](paper/source/) · [Editable Fig. 1](paper/source/figures/architecture.pptx) · [Pretrained Models](https://github.com/Hqa77880011/CSCWD-DEER-SBR/releases/tag/v1.0.0) · [Experimental Protocol](#experimental-protocol) · [Citation](#citation)
@@ -244,3 +246,5 @@ The citation is also available in [`CITATION.bib`](CITATION.bib) and [`CITATION.
 This implementation builds on [V2X-R](https://github.com/ylwhxht/V2X-R) and its OpenCOOD-based framework. We acknowledge the upstream authors and the related codebases credited in the [upstream README](readme.md).
 
 Please consult [`NOTICE.md`](NOTICE.md) and the applicable source-file headers for third-party attribution and license terms.
+
+The retained [upstream V2X-R README](docs/V2XR_UPSTREAM_README.md) provides the original benchmark documentation.

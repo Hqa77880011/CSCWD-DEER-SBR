@@ -114,4 +114,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from legacy_runtime import execute_original
+    execute_original('reproduce.py')

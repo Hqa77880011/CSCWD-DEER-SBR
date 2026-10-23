@@ -1,0 +1,131 @@
+version: 5
+experiment:
+  run_id: supp_v2xradar_deer_sbr_AB_e30_s17
+  dataset_id: v2xradar
+  protocol: v2xradar_official_v1
+  training_protocol: supplement_v1
+  track: C
+  seed: 17
+  variant: AB
+  method: deer_sbr
+  comparison: controlled_module
+  transfer: retrained
+  final_model_file: null
+data:
+  root: datasets/v2xradar
+  manifest_dir: datasets/v2xradar
+  base_hypes: cscwd_configs/baseline_full_data_check.yaml
+  paired_supervision: false
+  supervision_source: provenance_v1
+  supervision_audit: null
+  controlled_corruption:
+    probability: 0.5
+    drop_fraction: 0.2
+    inject_fraction: 0.05
+    max_offset_m: 0.3
+  matching:
+    max_distance: 0.002
+    ambiguity_margin: 0.001
+    unmatched_min_distance: 0.05
+  radar_root: null
+  label_root: null
+  clean_only: false
+training:
+  epochs: 30
+  effective_batch_size: 8
+  micro_batch_size: 4
+  world_size: 1
+  accumulation_steps: 2
+  lr: 0.002
+  weight_decay: 0.0001
+  adam_eps: 1.0e-10
+  milestones:
+  - 15
+  - 23
+  gamma: 0.1
+  checkpoint_interval_updates: 100
+  precision: fp32
+  normalization: batchnorm
+  deterministic: true
+  batchnorm:
+    eps: 0.001
+    momentum: 0.01
+    evaluation_statistics: running
+    refit_samples: 0
+    refit_sampling: uniform_midpoints_v1
+    refit_epoch: 0
+    refit_augment: false
+    refit_micro_batch_size: 4
+  scheduler: multistep
+  warmup_epochs: 0
+  warmup_lr: 0.0002
+  min_lr: 2.0e-05
+  retain_epochs:
+  - 20
+  - 30
+  recipe: independent_e30
+resources:
+  num_workers: 8
+  prefetch_factor: 2
+  pin_memory: true
+  persistent_workers: true
+  raw_cache_gib_per_worker: 0.5
+  ram_budget_gib: 64
+  cpu_threads: 4
+  device: auto
+model:
+  hidden_channels: 16
+  attention_channels: 8
+  rho: 0.25
+  g_min: 0.25
+  scale_mode: current_observation_rms
+  scale_floor: 0.001
+  scale_ceiling: 1000.0
+  support_radius_m: 0.8
+  route_strength: 0.5
+  activation_checkpoint: true
+  amplitude_context: rms
+  type_prior_mode: input_only
+  efficient_features: true
+  null_donor: true
+  local_variant: none
+loss:
+  type_weight: 0.1
+  correction_weight: 0.001
+  identity_weight: 0.01
+artifacts:
+  output_root: outputs/supplement
+  amp_audit: null
+selection:
+  metric: ap3d
+  iou: 0.7
+  tie_tolerance: 1.0e-06
+  domains:
+  - natural
+  class_name: Vehicle
+scoring:
+  iou_thresholds:
+  - 0.3
+  - 0.5
+  - 0.7
+  score_floor: 0.001
+  nms_bev_iou: 0.15
+  max_detections: 500
+evaluation:
+  kind: natural
+  corruption: none
+  drop_fraction: 0.0
+  inject_fraction: 0.0
+  max_offset_m: 0.3
+  radar_keep: 1.0
+  missing_modality: none
+  agent_scope: all
+  agents: 5
+  min_agents: 1
+  position_std_m: 0.0
+  yaw_std_deg: 0.0
+  delay_frames: 0
+  perturbation_seed: 17029
+  intervention: none
+  sample_ids: null
+  natural_weather: null

@@ -194,25 +194,52 @@ def export_loader(model, loader, dataset, device, *, postprocess=True,
                 raise ValueError("prediction export requires every module in eval mode")
             ego = batch["ego"]
             inputs = stage("h2d", lambda: to_device(select_model_inputs(ego), device))
-            output = stage("forward", lambda: model(inputs, return_aux=False))
-            array_path = postprocess and implementation == "optimized"
+            def forward():
+                if getattr(model, 'method', None) == 'mdd':
+                    from opencood.project.weather import augmentation_seed
+                    seed = augmentation_seed('/'.join(ego['sample_ids']), 0, getattr(dataset, 'seed', 17), stream='mdd_inference_noise')
+                    devices = [torch.device(device).index or 0] if torch.device(device).type == 'cuda' else []
+                    with torch.random.fork_rng(devices=devices):
+                        torch.manual_seed(seed)
+                        return model(inputs, return_aux=False)
+                return model(inputs, return_aux=False)
+            output = stage("forward", forward)
+            dataset_id = getattr(dataset, 'dataset_id', 'v2xr')
+            array_path = postprocess and implementation == "optimized" and dataset_id == 'v2xr'
             decoder = decode_prediction_arrays if array_path else reference_decode_predictions
-            decoded = stage("decode", lambda: decoder(output, dataset.anchor_box, ego["sample_ids"]))
+            if 'class_outputs' in output:
+                def multiclass_decode():
+                    records = [{'sample_id': sid, 'predictions': []} for sid in ego['sample_ids']]
+                    for name, prediction in output['class_outputs'].items():
+                        decoded_class = reference_decode_predictions(prediction, dataset.anchors[name], ego['sample_ids'])
+                        for record, row in zip(records, decoded_class):
+                            for p in row['predictions']:
+                                p.update(class_name=name, prediction_id=name + '/' + p['prediction_id'])
+                            record['predictions'].extend(row['predictions'])
+                    return records
+                decoded = stage('decode', multiclass_decode)
+            else:
+                decoded = stage("decode", lambda: decoder(output, dataset.anchor_box, ego["sample_ids"]))
             for batch_index, record in enumerate(decoded):
                 if array_path:
                     # Keep serialized field order identical to the old decode.
                     record["predictions"] = None
                 sample = dataset.manifest["samples"][record["sample_id"]]
                 record.update({key: sample[key] for key in ("split", "sequence", "timestamp", "ego_id", "agent_ids", "gt_sha256")})
-                record.update(dataset="v2xr", evaluation_weather=dataset.weather,
+                record.update(dataset=dataset_id, evaluation_weather=dataset.weather,
                               protocol_sha256=dataset.manifest["protocol_sha256"])
                 agent_metadata = ego["metadata"][batch_index]
                 record.update(source_agent_ids=sample["agent_ids"], agent_ids=[item["agent_id"] for item in agent_metadata],
                               evaluated_agent_ids=[item["agent_id"] for item in agent_metadata],
                               agent_weather={item["agent_id"]: item["weather"] for item in agent_metadata})
+                if dataset_id != 'v2xr' or getattr(dataset, 'experiment_config', None):
+                    record['agent_inputs'] = agent_metadata
                 if postprocess:
                     # The evaluator owns the single frozen postprocessing contract.
-                    if array_path:
+                    if dataset_id != 'v2xr':
+                        from opencood.project.supplement_evaluation import postprocess_real
+                        record['predictions'] = stage('postprocess', lambda: postprocess_real(record['predictions'], dataset.manifest, dataset.config['scoring']))
+                    elif array_path:
                         record["predictions"], record["filter_counts"] = stage("postprocess", lambda:
                             postprocess_prediction_arrays(record["boxes"], record["scores"], record["prediction_ids"], sample))
                         for key in ("boxes", "scores", "prediction_ids"):

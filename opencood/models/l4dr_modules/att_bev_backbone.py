@@ -223,8 +223,8 @@ class AttBEVBackbone_MGF(nn.Module):
             x = self.blocks[i](x)
             lidar_x = self.L_blocks[i](lidar_x)
             radar_x = self.R_blocks[i](radar_x)
-            lidar_x = self.Conv_LG[i](lidar_x) * lidar_x
-            radar_x = self.Conv_RG[i](radar_x) * radar_x
+            lidar_x = self.Conv_LG[i](x) * lidar_x
+            radar_x = self.Conv_RG[i](x) * radar_x
             if self.compress and i < len(self.compression_modules):
                 x = self.compression_modules[i](x)
             x_fuse = self.fuse_modules[i](x, record_len)

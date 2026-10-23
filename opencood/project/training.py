@@ -17,7 +17,7 @@ from opencood.project.weather import stable_seed
 # Nonfinite gradients still fail the update; no optimizer steps are hidden.
 FP16_INITIAL_SCALE = 8.0
 
-MODEL_KEYS = frozenset(("processed_lidar", "processed_radar", "record_len", "pairwise_t_matrix",
+MODEL_KEYS = frozenset(("processed_lidar", "processed_radar", "raw_radar", "record_len", "pairwise_t_matrix",
                         "observation_maps", "modality_valid", "batch_size"))
 
 
@@ -147,13 +147,15 @@ def save_checkpoint(path, model, optimizer, scheduler, scaler, state, sampler, c
     if any(p.grad is not None for p in model.parameters()):
         raise ValueError("zero gradients with set_to_none=True before saving a resumable checkpoint")
     metadata = dict(metadata or {})
-    if config["version"] == 4:
+    if config["version"] in (4, 5):
         role = metadata.setdefault("checkpoint_role", "resume")
         if role == "resume":
             if metadata.setdefault("bn_statistics_role", "online_running") != "online_running":
                 raise ValueError("resumable checkpoint requires online BN statistics")
-        elif role == "selected":
-            if metadata.get("bn_statistics_role") != "train_refit_cma_v1":
+        elif role == "selected" or (config['version'] == 5 and role == 'budget_snapshot'):
+            expected_bn = ('native_running_frozen' if config['version'] == 5 and config['training']['batchnorm']['evaluation_statistics'] == 'running'
+                           else 'train_refit_cma_v1')
+            if metadata.get("bn_statistics_role") != expected_bn:
                 raise ValueError("selected checkpoint requires train-only refitted BN statistics")
         else:
             raise ValueError("unsupported checkpoint role")
@@ -168,11 +170,11 @@ def save_checkpoint(path, model, optimizer, scheduler, scaler, state, sampler, c
 def load_checkpoint(path, model, optimizer, scheduler, scaler, sampler, config, expected_metadata=None):
     # Only load locally generated checkpoints: torch optimizer/RNG states use pickle.
     payload = torch.load(path, map_location="cpu", weights_only=False)
-    if (config.get("version") not in (2, 3, 4) or payload.get("schema_version") != config["version"]
+    if (config.get("version") not in (2, 3, 4, 5) or payload.get("schema_version") != config["version"]
             or payload.get("training_protocol") != config["experiment"].get("training_protocol")
             or payload["config_sha256"] != config_hash(config)):
         raise ValueError("checkpoint configuration/schema mismatch")
-    if config["version"] == 4:
+    if config["version"] in (4, 5):
         metadata = payload.get("metadata", {})
         if metadata.get("checkpoint_role") == "selected":
             raise ValueError("selected checkpoint contains refitted BN statistics; resume requires latest online statistics")
@@ -193,8 +195,8 @@ def load_checkpoint(path, model, optimizer, scheduler, scaler, sampler, config, 
     return TrainState(**payload["train_state"])
 
 
-def selection_score(track, scores):
-    required = {"normal"} if track == "C" else {"normal", "fog"} if track == "W" else None
+def selection_score(track, scores, domains=None):
+    required = set(domains) if domains is not None else {"normal"} if track == "C" else {"normal", "fog"} if track == "W" else None
     if required is None or set(scores) != required:
         raise ValueError("selection must use only Normal (C), or Normal and Fog (W); Snow is forbidden")
     if any(not np.isfinite(value) or not 0 <= value <= 1 for value in scores.values()):
@@ -202,8 +204,8 @@ def selection_score(track, scores):
     return float(sum(scores.values()) / len(scores))
 
 
-def consider_checkpoint(state, track, scores, epoch, tolerance=1e-6):
-    score = selection_score(track, scores)
+def consider_checkpoint(state, track, scores, epoch, tolerance=1e-6, domains=None):
+    score = selection_score(track, scores, domains)
     # Iteration order is chronological, so retain the earlier epoch on a tie.
     if score > state.best_score + tolerance or (abs(score - state.best_score) <= tolerance and epoch < state.selected_epoch):
         state.best_score, state.selected_epoch = score, int(epoch)

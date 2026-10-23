@@ -53,7 +53,7 @@ def normalize_manifests(root, reference=REPO / "repro/metadata"):
             continue
         split, sequence, agent, filename = path.parts
         stamp = path.stem
-        prefix = str(path.with_suffix(""))
+        prefix = path.with_suffix("").as_posix()
         modalities = {key: entries[prefix + suffix] for key, suffix in SUFFIXES.items()}
         for index in range(4):
             if prefix + f"_camera{index}.png" not in images:

@@ -153,6 +153,12 @@ class EvidenceRouter(nn.Module):
                 amplitude_descriptor = torch.cat((lidar_scale.log1p(), radar_scale.log1p()), dim=1)
                 if self.amplitude_context == 'zero':
                     amplitude_descriptor = torch.zeros_like(amplitude_descriptor)
+            intervention = getattr(self, 'signal_intervention', 'none')
+            if intervention == 'amplitude_zero':
+                amplitude_descriptor = torch.zeros_like(amplitude_descriptor)
+            elif intervention == 'amplitude_shuffle':
+                from opencood.project.supplement_models import shuffle_signal
+                amplitude_descriptor = shuffle_signal(amplitude_descriptor, self.intervention_seed)
             projected = projected + self.amplitude_project(amplitude_descriptor.to(lidar.dtype))
         evidence = self.encoder(projected)
         type_logits = self.type_head(evidence)
@@ -167,6 +173,12 @@ class EvidenceRouter(nn.Module):
         else:
             miss_logits, spur_logits = type_logits.split(1, dim=1)
         miss, spur = miss_logits.sigmoid(), spur_logits.sigmoid()
+        intervention = getattr(self, 'signal_intervention', 'none')
+        if intervention == 'type_zero':
+            miss, spur = torch.zeros_like(miss), torch.zeros_like(spur)
+        elif intervention == 'type_shuffle':
+            from opencood.project.supplement_models import shuffle_signal
+            miss, spur = (shuffle_signal(x, self.intervention_seed) for x in (miss, spur))
         route_logits = self.route_head(evidence)
         # Do not detach evidence: task gradients must still train shared encoding.
         type_bias = (torch.cat((-self.beta_spur * spur.detach(),

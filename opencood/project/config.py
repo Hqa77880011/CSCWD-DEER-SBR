@@ -64,6 +64,9 @@ def _merge(default, supplied, prefix=""):
 
 
 def validate_config(config):
+    if config.get("version") == 5:
+        from opencood.project.supplement import validate_supplement_config
+        return validate_supplement_config(config)
     defaults = deepcopy(DEFAULTS)
     if config.get("version") in (3, 4):
         version = config["version"]

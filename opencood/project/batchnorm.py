@@ -89,7 +89,8 @@ def _synchronize(device):
 
 
 @contextmanager
-def refit_batchnorm(model, batches, device):
+def refit_batchnorm(model, batches, device, max_batches=8, training_sample_ids=None,
+                    allowed_weather=None):
     """Temporarily install reset-CMA statistics from at most eight microbatches.
 
     ``batches`` contains the runner's fixed train-partition calibration batches.
@@ -110,8 +111,8 @@ def refit_batchnorm(model, batches, device):
         raise BatchNormRefitError("statistics refit requires at least one BN")
     if any(not module.track_running_stats for module in modules.values()):
         raise BatchNormRefitError("statistics refit requires tracked BN buffers")
-    if hasattr(batches, "__len__") and len(batches) > 8:
-        raise BatchNormRefitError("statistics refit is bounded to eight microbatches")
+    if hasattr(batches, "__len__") and len(batches) > max_batches:
+        raise BatchNormRefitError(f"statistics refit is bounded to {max_batches} microbatches")
     original_buffers = {name: value.detach().clone() for name, value in model.named_buffers()}
     original_modes = {name: module.training for name, module in model.named_modules()}
     original_momenta = {name: module.momentum for name, module in modules.items()}
@@ -123,7 +124,7 @@ def refit_batchnorm(model, batches, device):
     handles = []
     report = {"policy": "train_refit_cma_v1", "statistics_definition":
               "PyTorch reset CMA: microbatch means and unbiased within-microbatch variances averaged with equal microbatch weight; not pooled",
-              "optimizer_updates": 0, "max_micro_batches": 8, "micro_batches": 0,
+              "optimizer_updates": 0, "max_micro_batches": max_batches, "micro_batches": 0,
               "sample_count": 0, "input_sample_ids": [], "input_agent_weather": [],
               "bn": {}, "unused_bn": [], "all_modules_eval_at_yield": False,
               "original_buffers_restored_on_exit": None, "rng_restored_on_exit": None}
@@ -152,16 +153,18 @@ def refit_batchnorm(model, batches, device):
         with torch.no_grad(), torch.autocast(device_type=device.type, enabled=False):
             # islice enforces the same bound for unsized generators without
             # pulling a ninth batch. Sized inputs longer than eight are rejected.
-            for batch in itertools.islice(batches, 8):
+            for batch in itertools.islice(batches, max_batches):
                 if "ego" not in batch:
                     raise BatchNormRefitError("calibration batches must contain ego")
                 ego = batch["ego"]
                 sample_ids = list(ego.get("sample_ids", []))
-                if any(not str(sample_id).startswith("train/") for sample_id in sample_ids):
+                if any((sample_id not in training_sample_ids if training_sample_ids is not None
+                        else not str(sample_id).startswith('train/')) for sample_id in sample_ids):
                     raise BatchNormRefitError("calibration sample IDs must belong to train")
                 metadata = ego.get("metadata", [])
                 weather = [[agent.get("weather") for agent in agents] for agents in metadata]
-                if any(item not in ("normal", "fog", None) for agents in weather for item in agents):
+                if any(item not in (allowed_weather if allowed_weather is not None else ('normal', 'fog', None))
+                       for agents in weather for item in agents):
                     raise BatchNormRefitError("calibration permits only train Normal/Fog")
                 inputs = to_device(select_model_inputs(ego), device)
                 output = model(inputs, return_aux=False)

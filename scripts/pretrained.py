@@ -74,15 +74,19 @@ def unpack_metadata(release, directory):
             if target.exists():
                 verify_file(target, expected)
                 continue
-            with tempfile.NamedTemporaryFile(dir=destination, delete=False) as output:
-                temporary = Path(output.name)
-                try:
+            temporary = None
+            try:
+                with tempfile.NamedTemporaryFile(dir=destination, delete=False) as output:
+                    temporary = Path(output.name)
                     with source.extractfile(member) as stream:
                         shutil.copyfileobj(stream, output)
                     output.flush()
-                    verify_file(temporary, expected)
-                    temporary.replace(target)
-                finally:
+                # Windows cannot rename a NamedTemporaryFile while its handle
+                # remains open. Verify and commit after closing that handle.
+                verify_file(temporary, expected)
+                temporary.replace(target)
+            finally:
+                if temporary is not None:
                     temporary.unlink(missing_ok=True)
     return destination
 
@@ -99,10 +103,21 @@ def dataset_view(metadata, raw_root, output_root):
     for name, target in targets.items():
         link = view / name
         if link.exists() or link.is_symlink():
-            if not link.is_symlink() or link.resolve() != target:
+            if not link.samefile(target):
                 raise ValueError(f"Existing dataset view points elsewhere: {link}; choose a new output root")
         else:
-            link.symlink_to(target, target_is_directory=target.is_dir())
+            try:
+                link.symlink_to(target, target_is_directory=target.is_dir())
+            except OSError as error:
+                if os.name != 'nt' or error.winerror != 1314:
+                    raise
+                # Junctions and file hard links preserve the same source data
+                # without requiring Windows' symbolic-link privilege.
+                if target.is_dir():
+                    import _winapi
+                    _winapi.CreateJunction(str(target), str(link))
+                else:
+                    os.link(target, link)
     return view.resolve()
 
 
@@ -275,4 +290,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from legacy_runtime import execute_original
+    execute_original('pretrained.py')

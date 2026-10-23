@@ -90,6 +90,9 @@ def read_hypes(config):
         hypes = yaml.safe_load(stream)
     if hypes.get("yaml_parser") != "load_point_pillar_params":
         raise ValueError("only the verified PointPillar base hypes parser is accepted")
+    if config['version'] == 5:
+        from opencood.project.supplement_runner import configure_hypes
+        hypes = configure_hypes(config, hypes)
     hypes = load_point_pillar_params(hypes)
     hypes["root_dir"] = str(Path(config["data"]["root"]) / "train")
     hypes["validate_dir"] = str(Path(config["data"]["root"]) / "validate")
@@ -99,6 +102,9 @@ def read_hypes(config):
 
 
 def build_model(config, mode="smoke", variant=None):
+    if config['version'] == 5:
+        from opencood.project.supplement_models import SupplementalModel
+        return SupplementalModel(config, read_hypes(config))
     from opencood.models.point_pillar_deer_sbr import PointPillarDeerSbr
     hypes = read_hypes(config)
     args = deepcopy(hypes["model"]["args"])
@@ -111,6 +117,17 @@ def build_model(config, mode="smoke", variant=None):
 
 
 def build_components(config, mode="smoke"):
+    if config['version'] == 5:
+        from opencood.project.supplement_runner import build_dataset
+        from opencood.project.supplement_models import SupplementalLoss
+        hypes = read_hypes(config)
+        dataset = build_dataset(config, hypes, 'train', training=True, augment=True)
+        loss = {**hypes['loss']['args'], 'training_line': config['experiment']['track'],
+                'lambda_a': config['loss']['type_weight'],
+                'lambda_correction': config['loss']['correction_weight'],
+                'lambda_id': config['loss']['identity_weight'],
+                'efficient_features': config['model']['efficient_features']}
+        return dataset, build_model(config, mode), SupplementalLoss(loss, config['experiment']['method'])
     from opencood.data_utils.datasets.project_v2xr_dataset import ProjectV2XRDataset
     from opencood.loss.project_loss import ProjectLoss
     hypes = read_hypes(config)
@@ -148,6 +165,12 @@ def make_loader(dataset, config, *, sampler=None, evaluation=False):
 
 def make_eval_loader(config, split="validate", weather="normal"):
     split = "validate" if split == "validation" else split
+    if config['version'] == 5:
+        from opencood.project.supplement_runner import build_dataset
+        if weather == 'snow' and split != 'test':
+            raise ValueError('Snow is excluded from model selection')
+        dataset = build_dataset(config, read_hypes(config), split, weather=weather)
+        return dataset, make_loader(dataset, config, evaluation=True)
     from opencood.data_utils.datasets.project_v2xr_dataset import ProjectV2XRDataset
     if weather == "snow" and split != "test":
         raise ValueError("Snow is forbidden in model selection")
@@ -159,14 +182,18 @@ def make_eval_loader(config, split="validate", weather="normal"):
 
 def make_bn_refit_loader(config):
     """Separate fixed train input stream; never mutates the training loader."""
-    from opencood.data_utils.datasets.project_v2xr_dataset import ProjectV2XRDataset
     policy = config['training']['batchnorm']
     d, e, r = config['data'], config['experiment'], config['resources']
-    dataset = ProjectV2XRDataset(read_hypes(config), root=d['root'], split='train', training=True,
-        track=e['track'], seed=e['seed'], paired=d['paired_supervision'], augment=policy['refit_augment'],
-        cache_bytes=int(r['raw_cache_gib_per_worker'] * 1024**3), supervision_source=d['supervision_source'],
-        gt_manifest=str(Path(d['manifest_dir'])/'eval_gt_manifest.json'), supervision_audit=d['supervision_audit'],
-        matching=d['matching'], controlled_corruption=d['controlled_corruption'])
+    if config['version'] == 5:
+        from opencood.project.supplement_runner import build_dataset
+        dataset = build_dataset(config, read_hypes(config), 'train', training=True, augment=policy['refit_augment'])
+    else:
+        from opencood.data_utils.datasets.project_v2xr_dataset import ProjectV2XRDataset
+        dataset = ProjectV2XRDataset(read_hypes(config), root=d['root'], split='train', training=True,
+            track=e['track'], seed=e['seed'], paired=d['paired_supervision'], augment=policy['refit_augment'],
+            cache_bytes=int(r['raw_cache_gib_per_worker'] * 1024**3), supervision_source=d['supervision_source'],
+            gt_manifest=str(Path(d['manifest_dir'])/'eval_gt_manifest.json'), supervision_audit=d['supervision_audit'],
+            matching=d['matching'], controlled_corruption=d['controlled_corruption'])
     dataset.set_epoch(policy['refit_epoch'])
     count, micro = policy['refit_samples'], policy['refit_micro_batch_size']
     if count > len(dataset) or count % micro:
@@ -200,7 +227,11 @@ def batchnorm_evaluation(model, config, device, telemetry=None):
                       refit_samples=policy['refit_samples'], refit_micro_batch_size=policy['refit_micro_batch_size'],
                       refit_epoch=policy['refit_epoch'], sampling=policy['refit_sampling'],
                       input_augmentation=policy['refit_augment'])
-        with refit_batchnorm(model, loader, device) as report:
+        refit_options = {}
+        if config['version'] == 5 and config['experiment']['dataset_id'] != 'v2xr':
+            refit_options = dict(training_sample_ids=set(dataset.sample_ids),
+                allowed_weather={s['natural_weather'] for s in dataset.manifest['samples'].values() if s['split'] == 'train'})
+        with refit_batchnorm(model, loader, device, max_batches=(len(loader) if config['version'] == 5 else 8), **refit_options) as report:
             report.update(sample_indices=indices, sampling=policy['refit_sampling'],
                           refit_epoch=policy['refit_epoch'], input_augmentation=policy['refit_augment'],
                           training_protocol=config['experiment']['training_protocol'],
@@ -235,6 +266,9 @@ def batchnorm_evaluation(model, config, device, telemetry=None):
 
 
 def data_contract_metadata(config):
+    if config['version'] == 5 and config['experiment']['dataset_id'] != 'v2xr':
+        return {'base_hypes_sha256': file_sha256(resolve_repo(config['data']['base_hypes'])),
+                'gt_manifest_sha256': file_sha256(Path(config['data']['manifest_dir']) / 'supplement_manifest.json')}
     manifest = Path(config["data"]["manifest_dir"]) / "eval_gt_manifest.json"
     metadata = {"base_hypes_sha256": file_sha256(resolve_repo(config["data"]["base_hypes"])),
                 "gt_manifest_sha256": file_sha256(manifest)}
@@ -258,14 +292,22 @@ def artifact_metadata(config):
     metadata["training_protocol"] = config["experiment"]["training_protocol"]
     metadata["supervision_contract"] = supervision_contract(config)
     metadata["source_sha256"] = source_tree_hash()
+    if config['version'] == 5:
+        from opencood.project.supplement import resolve_final
+        e = config['experiment']
+        path = e['final_model_file']
+        metadata['final_model_sha256'] = file_sha256(path) if path else None
+        metadata['resolved_variant'] = resolve_final(path) if e['variant'] == 'F' else e['variant']
+        local = config['model']['local_variant']
+        metadata['resolved_local_variant'] = resolve_final(path) if local == 'F' else local
     return metadata
 
 
 def source_tree_hash():
     source_files = list((REPO / "opencood").rglob("*.py")) + list((REPO / "project_tools").glob("*.py"))
     digest = hashlib.sha256()
-    for path in sorted(source_files):
-        digest.update(str(path.relative_to(REPO)).encode())
+    for path in sorted(source_files, key=lambda p: p.relative_to(REPO).as_posix()):
+        digest.update(path.relative_to(REPO).as_posix().encode())
         digest.update(bytes.fromhex(file_sha256(path)))
     return digest.hexdigest()
 
@@ -335,6 +377,12 @@ def validate_amp_audit(config, audit, *, require_stability=True):
 def supervision_contract(config):
     """Bind train-only type targets to their actual source, never density labels."""
     d = config["data"]
+    if config['version'] == 5:
+        return dict(dataset_id=config['experiment']['dataset_id'], split='train',
+            supervision_source=d['supervision_source'], controlled_corruption=d['controlled_corruption'],
+            seed=config['experiment']['seed'], natural_unknown_types='masked',
+            real_reference_policy='verified_clear_only',
+            source_sha256=source_tree_hash(), data_contract=data_contract_metadata(config))
     result = {"dataset_id": "v2xr", "split": "train", "supervision_source": d["supervision_source"],
               "source_sha256": source_tree_hash(), "data_contract": data_contract_metadata(config)}
     if d["supervision_source"] == "provenance_v1":
@@ -393,6 +441,9 @@ def provenance_supervision_blockers(config,audit):
 
 
 def formal_blockers(config):
+    if config['version'] == 5:
+        from opencood.project.supplement_runner import blockers
+        return blockers(config)
     e, a, d = config["experiment"], config["artifacts"], config["data"]
     blockers = []
     uses_a = e["variant"] not in ("S0", "B")
@@ -427,6 +478,8 @@ def formal_blockers(config):
 def preflight(config):
     paths = {"root": Path(config["data"]["root"]), "base_hypes": resolve_repo(config["data"]["base_hypes"]),
              "gt_manifest": Path(config["data"]["manifest_dir"]) / "eval_gt_manifest.json"}
+    if config['version'] == 5 and config['experiment']['dataset_id'] != 'v2xr':
+        paths['gt_manifest'] = Path(config['data']['manifest_dir']) / 'supplement_manifest.json'
     report = {"status": "preflight", "config_sha256": config_hash(config), "resolved_config": config,
               "paths": {key: {"path": str(path), "exists": path.exists()} for key, path in paths.items()},
               "formal_blockers": formal_blockers(config), "cuda_available": torch.cuda.is_available(),
@@ -443,7 +496,8 @@ def validate_epoch(model, config, device, telemetry=None):
     from project_tools.export_predictions import export_loader
     from opencood.project.evaluation import evaluate_predictions
     scores, details = {}, {}
-    for weather in (["normal"] if config["experiment"]["track"] == "C" else ["normal", "fog"]):
+    domains = config['selection']['domains'] if config['version'] == 5 else (["normal"] if config["experiment"]["track"] == "C" else ["normal", "fog"])
+    for weather in domains:
         started = time.perf_counter()
         stage_seconds, stage_calls = Counter(), Counter()
         def record_profile(row):
@@ -475,7 +529,11 @@ def validate_epoch(model, config, device, telemetry=None):
             telemetry("validation_scoring_start", split="validate", weather=weather, evaluated_samples=len(records),
                       seconds=time.perf_counter() - started)
         scoring_started = time.perf_counter()
-        result = evaluate_predictions(dataset.manifest, records, "validate")
+        if config['version'] == 5:
+            from opencood.project.supplement_evaluation import evaluate_supplement
+            result = evaluate_supplement(dataset.manifest, records, 'validate', config['scoring'], sample_ids=dataset.sample_ids)
+        else:
+            result = evaluate_predictions(dataset.manifest, records, "validate")
         stage_seconds["scoring"] += time.perf_counter() - scoring_started
         stage_calls["scoring"] += 1
         scores[weather] = result["metrics"]["3d"]["0.7"]["ap"]
@@ -547,7 +605,11 @@ def _run(config, args, resources):
     rank, local_rank = int(os.environ.get("RANK", "0")), int(os.environ.get("LOCAL_RANK", "0"))
     if world != t["world_size"]:
         raise ValueError("configured world_size must match torchrun WORLD_SIZE")
-    device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
+    if config['version'] == 5:
+        from opencood.project.supplement_runner import select_device
+        device = select_device(config, local_rank)
+    else:
+        device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         torch.cuda.set_device(device)
     if world > 1:
@@ -555,6 +617,18 @@ def _run(config, args, resources):
     torch.set_num_threads(config["resources"]["cpu_threads"])
     seed_everything(e["seed"] + rank, t["deterministic"])
     dataset, model, criterion = build_components(config, args.mode)
+    initialize = getattr(args, 'initialize_from', None)
+    if config['version'] == 5:
+        transfer = e['transfer']
+        if transfer == 'zero_shot':
+            raise ValueError('zero_shot is evaluation-only; target training is forbidden')
+        if bool(initialize) != (transfer == 'fine_tuned'):
+            raise ValueError('fine_tuned requires --initialize-from; retrained recipes start from random initialization')
+        if initialize:
+            saved = torch.load(initialize, map_location='cpu', weights_only=False)
+            if saved.get('metadata', {}).get('checkpoint_role') != 'selected':
+                raise ValueError('fine-tuning initialization requires selected source weights')
+            model.load_state_dict(saved['model'], strict=True)
     if args.mode == "smoke":
         # Keep the dataset/collate contract; only shorten the sample manifest.
         subset = min(32, len(dataset))
@@ -568,16 +642,24 @@ def _run(config, args, resources):
     model.to(device)
     criterion.to(device)
     shared_state = {key: value.detach().cpu().clone() if torch.is_tensor(value) else deepcopy(value) for key, value in model.state_dict().items()
-                    if not key.startswith(("evidence_router.", "supported_residual.", "supervision_control."))}
+                    if not key.startswith(("evidence_router.", "supported_residual.", "supervision_control.",
+                        "native.evidence_router.", "native.supported_residual.", "local."))}
     initial_hash = tensor_state_hash(shared_state)
-    optimizer = torch.optim.Adam(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"], eps=t["adam_eps"])
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=t["milestones"], gamma=t["gamma"])
+    optimizer_class = torch.optim.AdamW if t.get('optimizer', 'adam') == 'adamw' else torch.optim.Adam
+    optimizer = optimizer_class(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"], eps=t["adam_eps"])
+    if config['version'] == 5:
+        from opencood.project.supplement_runner import scheduler_for
+        scheduler = scheduler_for(optimizer, config)
+    else:
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=t["milestones"], gamma=t["gamma"])
     amp_enabled = t["precision"] != "fp32"
     if amp_enabled and device.type != "cuda":
         raise ValueError("AMP protocol is CUDA-only")
     amp_dtype = torch.float16 if t["precision"] == "amp_fp16" else torch.bfloat16
     scaler = torch.cuda.amp.GradScaler(init_scale=FP16_INITIAL_SCALE, enabled=t["precision"] == "amp_fp16")
     state, metadata = TrainState(), artifact_metadata(config)
+    if initialize:
+        metadata['initialization_checkpoint_sha256'] = file_sha256(initialize)
     output = Path(config["artifacts"]["output_root"]) / e["run_id"] / args.mode
     output.mkdir(parents=True, exist_ok=True)
     telemetry_started = time.perf_counter()
@@ -615,6 +697,8 @@ def _run(config, args, resources):
         raise ValueError("output already has a checkpoint; pass --resume or choose a new run_id")
     if rank == 0:
         common_path = Path(config["artifacts"]["output_root"]) / "initializations" / f"v2xr_{e['training_protocol']}_shared_s{e['seed']}.pt"
+        if config['version'] == 5:
+            common_path = common_path.with_name(f"{e['dataset_id']}_{e['method']}_shared_s{e['seed']}.pt")
         if common_path.exists():
             previous = torch.load(common_path, map_location="cpu", weights_only=False)
             if previous["sha256"] != initial_hash:
@@ -625,7 +709,7 @@ def _run(config, args, resources):
         (output / "resolved_config.json").write_text(json.dumps(config, indent=2))
         (output / "run_metadata.json").write_text(json.dumps({**metadata, "shared_initialization_sha256": initial_hash,
             "diagnostic_only": args.mode != "train", "feature_scale_mode": config["model"]["scale_mode"],
-            "teacher_networks": 0, "clean_feature_forwards": 0,
+            "teacher_networks": 0, "clean_feature_forwards": 'one extra reference encoder pass per microbatch' if config['version'] == 5 and e['method'] == 'mdd' else 0,
             "parameter_count": sum(p.numel() for p in model.parameters()), "torch": torch.__version__}, indent=2))
     telemetry("training_ready", shared_initialization_sha256=initial_hash)
     monitor_batchnorm(model, telemetry, phase="resume_loaded_online" if args.resume else "initialized_online")
@@ -652,6 +736,8 @@ def _run(config, args, resources):
     log_path = output / f"steps.rank{rank}.jsonl"
     while state.epoch < t["epochs"] and not stop_requested[0]:
         dataset.set_epoch(state.epoch)
+        if hasattr(criterion, 'epoch'):
+            criterion.epoch = state.epoch
         model.train()
         if t["normalization"] == "frozen_batchnorm":
             freeze_batchnorm(model)
@@ -683,7 +769,7 @@ def _run(config, args, resources):
                 raise ValueError("mixed anchor-assignment protocols in one optimizer update")
             for agent_list in ego.get("metadata", []):
                 for agent in agent_list:
-                    if agent["weather"] not in ("normal", "fog"):
+                    if agent["weather"] not in ("normal", "fog") and not (config['version'] == 5 and e['dataset_id'] != 'v2xr'):
                         raise ValueError("a forbidden training weather reached the runner")
                     weather_counts[agent["weather"]] += 1
                     for modality in ("lidar", "radar"):
@@ -696,6 +782,8 @@ def _run(config, args, resources):
                     type_coverage[name + "_valid_cells"] += int(mask.sum())
                     type_coverage[name + "_positive_cells"] += int(((raw_targets[name] > 0) & mask).sum())
             inputs = to_device(select_model_inputs(ego), device)
+            if config['version'] == 5 and e['method'] == 'mdd':
+                inputs['processed_de_lidar'] = to_device(ego['reference_lidar'], device)
             targets = to_device(batch.get("train_targets", {}), device)
             labels = to_device(ego["label_dict"], device)
             is_last_micro = (sampler.next_batch + 1) % t["accumulation_steps"] == 0
@@ -745,6 +833,7 @@ def _run(config, args, resources):
                        "epoch": state.epoch, "optimizer_step": state.optimizer_steps, "loss": float(np.mean(update_losses)),
                        "data_seconds": data_time, "compute_seconds": compute_time, "optimizer_seconds": optimizer_time,
                        "effective_batch": t["effective_batch_size"], "lr": optimizer.param_groups[0]["lr"],
+                       "clean_reference_agents_last_micro": int(ego['record_len'].sum()) if config['version'] == 5 and e['method'] == 'mdd' else 0,
                        "loss_terms": {key: value / len(update_losses) for key, value in loss_term_sums.items()},
                        "loss_term_aggregation": "mean_across_micro_batches", "counts_scope": "rank_local", "rank": rank,
                        "target_diagnostics": dict(target_summary), "unrepresented_samples": unrepresented_samples,
@@ -785,13 +874,24 @@ def _run(config, args, resources):
                 telemetry("validation_start", split="validate", weather=["normal"] if e["track"] == "C" else ["normal", "fog"])
                 with batchnorm_evaluation(model, config, device, telemetry) as bn_report:
                     scores, details = validate_epoch(model, config, device, telemetry)
-                    selected = consider_checkpoint(state, e["track"], scores, state.epoch)
+                    selected = consider_checkpoint(state, e["track"], scores, state.epoch,
+                        domains=config['selection']['domains'] if config['version'] == 5 else None)
                     if selected:
                         selected_metadata = {**metadata, "checkpoint_role": "selected"}
+                        if config['version'] == 5 and bn_report is None:
+                            selected_metadata['bn_statistics_role'] = 'native_running_frozen'
                         if bn_report is not None:
                             selected_metadata.update(bn_statistics_role="train_refit_cma_v1",
                                                      batchnorm_refit=deepcopy(bn_report))
                         commit_checkpoint(output / "selected.pt", selected_metadata)
+                    if config['version'] == 5 and state.epoch in t['retain_epochs']:
+                        retained = {**metadata, 'checkpoint_role': 'budget_snapshot',
+                            'bn_statistics_role': 'train_refit_cma_v1' if bn_report else 'native_running_frozen',
+                            'recipe': t['recipe'], 'snapshot_epoch': state.epoch,
+                            'snapshot_kind': 'independent_recipe_endpoint' if state.epoch == t['epochs'] else 'long_recipe_intermediate'}
+                        if bn_report:
+                            retained['batchnorm_refit'] = deepcopy(bn_report)
+                        commit_checkpoint(output / f"budget_epoch{state.epoch:03d}.pt", retained)
                 if bn_report is not None:
                     details['batchnorm_refit'] = bn_report
                 (output / f"validation_epoch{state.epoch:03d}.json").write_text(json.dumps(details, indent=2))
@@ -811,7 +911,8 @@ def _run(config, args, resources):
               "formal_experiment_started": args.mode == "train", "mode": args.mode,
               "passed": not stop_requested[0], "all_losses_and_gradients_finite": True,
               "variant": e["variant"], "completed_optimizer_updates": completed,
-              "training_protocol": e["training_protocol"], "teacher_networks": 0, "clean_feature_forwards": 0,
+              "training_protocol": e["training_protocol"], "teacher_networks": 0,
+              "clean_feature_forwards": state.micro_steps if config['version'] == 5 and e['method'] == 'mdd' else 0,
               "feature_scale_mode": config["model"]["scale_mode"],
               "audit_contract": amp_audit_contract(config),
               "measured_optimizer_updates": len(timings), "warmup_optimizer_updates": min(args.warmup, completed),
@@ -844,6 +945,7 @@ def main():
     parser.add_argument("--mode", choices=["preflight", "smoke", "benchmark", "train"], default="preflight")
     parser.add_argument("--allow-formal-run", action="store_true")
     parser.add_argument("--resume", help="checkpoint file or run-mode directory containing per-rank checkpoints")
+    parser.add_argument('--initialize-from', help='v5 fine_tuned source selected weights; never optimizer/resume state')
     parser.add_argument("--steps", type=int, default=None, help="measured optimizer updates; smoke=4, benchmark=100")
     parser.add_argument("--warmup", type=int, default=None, help="warmup optimizer updates; benchmark=20")
     args = parser.parse_args()

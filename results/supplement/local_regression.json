@@ -1,0 +1,59 @@
+{
+  "schema": "supplement_local_regression_v2",
+  "date": "2026-10-23",
+  "modules": [
+    "test_supplement",
+    "test_supplement_integrity",
+    "test_l4dr_supplement",
+    "test_training_protocol",
+    "test_v3_protocol",
+    "test_v4_protocol",
+    "test_v3_mechanisms",
+    "test_innovation_modules",
+    "test_supported_residual_losses",
+    "test_source_supervision",
+    "test_data_geometry_review",
+    "test_fixed_gt",
+    "test_project_evaluation",
+    "test_validation_fastpath",
+    "test_batchnorm_refit",
+    "test_bn_runner",
+    "test_portable_reproduction",
+    "test_pretrained_release"
+  ],
+  "tests_run": 163,
+  "passed": 160,
+  "failures": [],
+  "errors": [],
+  "skipped": [
+    {
+      "test": "test_all_official_samples_and_sensor_frames_covered (tests.test_fixed_gt.FullPreparedDatasetTests.test_all_official_samples_and_sensor_frames_covered)",
+      "reason": "Prepared full dataset is not available"
+    },
+    {
+      "test": "test_every_accepted_gt_has_source_and_satisfies_same_geometry (tests.test_fixed_gt.FullPreparedDatasetTests.test_every_accepted_gt_has_source_and_satisfies_same_geometry)",
+      "reason": "Prepared full dataset is not available"
+    },
+    {
+      "test": "test_weather_invariance_no_gt_cap_and_empty_samples_retained (tests.test_fixed_gt.FullPreparedDatasetTests.test_weather_invariance_no_gt_cap_and_empty_samples_retained)",
+      "reason": "Prepared full dataset is not available"
+    }
+  ],
+  "environment": {
+    "PYTHONUTF8": "1",
+    "MKL_THREADING_LAYER": "SEQUENTIAL",
+    "OMP_NUM_THREADS": "2",
+    "MKL_NUM_THREADS": "2"
+  },
+  "resolved_prior_failures": [
+    "three Windows distribution entry errors",
+    "fixed-GT POSIX image keys",
+    "five initially failing integrity regressions",
+    "OpenMP #15 in combined run; sequential MKL selected"
+  ],
+  "formal_training_performed": false,
+  "real_data_read": false,
+  "weights_downloaded": false,
+  "experimental_metrics_produced": false,
+  "detailed_log": "outputs/verification/supplement/related_regressions.txt"
+}

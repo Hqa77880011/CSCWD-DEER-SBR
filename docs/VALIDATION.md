@@ -1,4 +1,4 @@
-# 本次整理的验证记录
+# 验证记录
 
 验证日期：2026-10-21（Asia/Shanghai）。工作目录为独立导出的仓库，未覆盖原训练目录。
 
@@ -43,3 +43,34 @@ dd13771fa8ca73b92b297fdc25375d2371a3d162b613433406d821fffb248de4
 ```
 
 其余 20 项完整测试未重复执行；它们的原始权重、配置、数据和评测身份保持不变。机器可读记录见 `repro/pretrained_release_verification.json`，原并行导出流程的完整验证等价记录见 `repro/pretrained_parallel_equivalence.json`。
+
+
+## 2026-10-23 补充实验实现核查与修复
+
+本节为schema 5 / `supplement_v1`当前检查；前文2026-10-21为原七组历史记录。本轮没有下载数据或权重、运行下载脚本、连接实验服务器、正式训练或全量评测；没有生成新增论文AP、收敛或资源成绩。
+
+本地环境：Windows、Python 3.13.5、PyTorch 2.7.1+cu118、NumPy 2.1.3。模型功能检查在CPU执行。18个相关测试模块实际执行**163项：160通过、3项skip、0 failure、0 error**，未运行全仓库测试。完整模块与skip身份记录于`results/supplement/local_regression.json`，详细本地日志位于忽略上传的`outputs/verification/supplement/related_regressions.txt`。
+
+| 实际检查 | 结果与范围 |
+|---|---|
+| 三模板、方法注册、15个suite及旧CLI别名 | 配置展开检查通过；20/30/60/90独立配方、原生40轮及K-Radar L4DR 35轮分别记录；F仅使用标明为合成的临时开发证据 |
+| 模型矩阵 | **21路CPU合成前向/反向/推理通过**，零优化更新；14个内部变体、5个外部方法、Where2comm+AB、K-Radar双类别；CoBEVT检查非整除窗口，MDD检查单agent/空Radar |
+| L4DR缺失机制修复 | 6项专用回归通过：FAD前景/忽略带、FAD后体素上限、双向MME标量及偏移已知答案、MSGF门控输入、K-Radar格式完整网格的FAD loss/梯度及无标签推理、空Radar、原生35轮AdamW候选；与其他用例有合并验证关系 |
+| F开发冻结与角色隔离 | 完整开发日志、按规则选择的epoch、匹配数据/损失/公共结构/源码、Normal容忍线、唯一赢家复算通过；online resume/selected/budget snapshot区分通过 |
+| 统计/evaluator已知答案 | AP41、BEV/true-3D区分、重算AP的sequence bootstrap、逐seed配对、Fog/Snow同权重、天气均值标准差、rho分组、共同GT/样本身份检查通过 |
+| 数据格式与几何 | V2X-Radar-C真实车辆ego/路侧配对、K-Radar同步header/标定/类别/单车样例、固定GT、投影与来源监督回归通过；输入均为合成格式文件 |
+| 原七组与分发源码包 | 七份原配置字节与归档科学源码身份检查通过；Windows发布helper与源码包同步；`scripts/reproduce.py results`、归档CLI、七份重定位配置、默认路径/参数传递检查通过；未加载真实权重重新评测 |
+| CLI/静态/文档 | 27次CLI调用通过；35个受影响Python文件语法编译通过；7份Markdown的81处本地链接通过，无旧方案路径；缺数据预检正确返回阻塞 |
+| native环境预检 | **blocked**：缺cumm/spconv、open3d、pypcd、PointNet++ CUDA扩展及box_overlaps编译扩展；导入检查未替代CUDA数值检查 |
+| 真实数据全链路 | 未运行V2X-R/V2X-Radar-C/K-Radar真实样本训练或最终评分；数据字段/单位/实际标定、训练充分性和方法精度仍需真实运行 |
+| CUDA与效率 | 同步、跨帧释放和计时边界已检查；没有本轮CUDA耗时/显存实测，FAD CUDA采样/球查询/三邻域尚未验证 |
+
+三个skip均属于`test_fixed_gt.FullPreparedDatasetTests`：全官方样本覆盖、全部GT来源与几何、全量天气不变性/空样本保留；原因都是本地无完整真实数据。合成样例中的已知答案不写入`results/reference/`或论文结果。
+
+本轮先复现并修复的旧错误分别为：`prepare_data.normalize_manifests`的POSIX receipt键在Windows转换为反斜杠；`pretrained.unpack_metadata`在文件仍打开时替换；`pretrained.dataset_view`缺符号链接权限；以及扩大到相关固定GT检查后发现的camera/source路径键问题。前3项发布helper也同步到源码分发包，原七组科学源码、配置、参考结果和权重身份未放宽。固定GT主源码改用POSIX相对键，在Linux上保持相同语义，归档原科学源码保持原字节。
+
+早期组合回归曾被**OpenMP #15**中断，该次不计为通过。定位到本机Anaconda MKL与PyTorch运行库重复加载后，最终检查进程使用`MKL_THREADING_LAYER=SEQUENTIAL`、`OMP_NUM_THREADS=2`、`MKL_NUM_THREADS=2`及`PYTHONUTF8=1`完成；未使用`KMP_DUPLICATE_LIB_OK`。此设置仅用于本地功能检查，不用于正式性能结论。
+
+修复内容还包括：F冻结规则和checkpoint证据的复算；统计拒绝不同GT/场景或天气混权重；参数敏感性独立分组；原生/独立配方run_id隔离；实际通信距离的agent数量过滤；晴天开发集的正常类型标签与未知天气屏蔽；供体RMS/余弦与raw/tanh诊断；L4DR的FAD/MME/MSGF与额外前景目标。项目主README与上游readme移为不同路径，避免Windows大小写覆盖。
+
+正式方案为[13_补充实验方案与实施说明.md](13_补充实验方案与实施说明.md)。可核查摘要还包括`results/supplement/local_smoke.json`、`local_environment.json`和`local_cli_checks.json`。HRCP尚未取得足够可核查实现资料，REL作者仓库仍仅代码待发布说明；二者未伪造训练配置，外部限制不阻塞已实现矩阵。

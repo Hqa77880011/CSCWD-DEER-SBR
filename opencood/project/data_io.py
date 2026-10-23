@@ -24,6 +24,7 @@ def _scalar(loader, node):
 AnnotationLoader.add_constructor('tag:yaml.org,2002:python/tuple', lambda l,n: tuple(l.construct_sequence(n,deep=True)))
 AnnotationLoader.add_constructor('tag:yaml.org,2002:python/object/apply:numpy.dtype', _dtype)
 AnnotationLoader.add_constructor('tag:yaml.org,2002:python/object/apply:numpy.core.multiarray.scalar', _scalar)
+AnnotationLoader.add_constructor('tag:yaml.org,2002:python/object/apply:numpy._core.multiarray.scalar', _scalar)
 
 def read_annotation(path, expected_sha256=None):
     payload=Path(path).read_bytes()

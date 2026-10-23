@@ -1,0 +1,305 @@
+{
+  "schema": "supplement_cli_validation_v2",
+  "date": "2026-10-23",
+  "checks": [
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "environment",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "prepare",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "configure",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "plan",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "run-suite",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "preflight",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "check-data",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "train",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "evaluate",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "diagnose",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "efficiency",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "robustness",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "bn-sensitivity",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "smoke",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "summarize",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "convergence",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "freeze-final",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "bootstrap",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "visualize",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "plan",
+        "--suite",
+        "external_main",
+        "--output-root",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture",
+        "--device",
+        "cpu"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "plan",
+        "--suite",
+        "pilot",
+        "--data-root",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture\\missing_data",
+        "--output-root",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture",
+        "--device",
+        "cpu",
+        "--write-configs"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "preflight",
+        "--config",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture\\configs\\supp_v2xr_deer_sbr_AB_e60_s17.yaml"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "run-suite",
+        "--suite",
+        "pilot",
+        "--output-root",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture",
+        "--device",
+        "cpu"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/supplement.py",
+        "robustness",
+        "--config",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture\\configs\\supp_v2xr_deer_sbr_AB_e60_s17.yaml",
+        "--checkpoint",
+        "not-loaded.pt",
+        "--suite",
+        "corruption",
+        "--output",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture\\corruption_plan.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/reproduce.py",
+        "results"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/pretrained.py",
+        "--help"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "scripts/reproduce.py",
+        "configure",
+        "--data-root",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture\\missing_data",
+        "--output-root",
+        "D:\\destop\\CSCWD-DEER-SBR-main\\outputs\\verification\\supplement\\cli_fixture\\legacy"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "passed": true,
+  "formal_experiment_started": false,
+  "datasets_downloaded": false,
+  "real_data_read": false,
+  "notes": [
+    "missing-data preflight returned explicit blockers",
+    "robustness and suite dispatch remained dry runs",
+    "original archived configure generated seven relocated configurations; no train/evaluation performed"
+  ],
+  "static_and_document_checks": {
+    "python_files_compiled": 35,
+    "syntax_files": [
+      "opencood/data_utils/datasets/project_v2xr_dataset.py",
+      "opencood/models/common_modules/evidence_router.py",
+      "opencood/models/common_modules/supported_residual.py",
+      "opencood/models/l4dr_modules/att_bev_backbone.py",
+      "opencood/models/mdd_modules/radar_cond_diff_denoise.py",
+      "opencood/models/point_pillar_deer_sbr.py",
+      "opencood/project/batchnorm.py",
+      "opencood/project/config.py",
+      "opencood/project/data_geometry.py",
+      "opencood/project/data_io.py",
+      "opencood/project/fixed_gt.py",
+      "opencood/project/l4dr.py",
+      "opencood/project/official/__init__.py",
+      "opencood/project/official/kradar_eval_revised.py",
+      "opencood/project/official/kradar_iou_cpu.py",
+      "opencood/project/official/v2xradar_eval.py",
+      "opencood/project/supplement.py",
+      "opencood/project/supplement_data.py",
+      "opencood/project/supplement_evaluation.py",
+      "opencood/project/supplement_models.py",
+      "opencood/project/supplement_reporting.py",
+      "opencood/project/supplement_runner.py",
+      "opencood/project/training.py",
+      "project_tools/export_predictions.py",
+      "project_tools/run_experiments.py",
+      "project_tools/smoke_supplement.py",
+      "scripts/legacy_runtime.py",
+      "scripts/prepare_data.py",
+      "scripts/pretrained.py",
+      "scripts/reproduce.py",
+      "scripts/supplement.py",
+      "tests/test_l4dr_supplement.py",
+      "tests/test_pretrained_release.py",
+      "tests/test_supplement.py",
+      "tests/test_supplement_integrity.py"
+    ],
+    "markdown_files_checked": 7,
+    "local_links_checked": 81,
+    "broken_links": [],
+    "no_retired_plan_links": true,
+    "original_seven_configs_and_reference_tables_unchanged": true,
+    "legacy_source_archive_contains_data_or_weights": false
+  },
+  "task_temporary_artifacts": "sent to Windows Recycle Bin; user datasets and outputs preserved"
+}

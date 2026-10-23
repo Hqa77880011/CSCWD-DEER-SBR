@@ -121,9 +121,9 @@ def build_sample(root, frames, image_sizes, protocol):
     for agent in agents:
         entry = by_agent[agent]["modalities"]["annotation"]
         annotations[agent] = load_annotation(Path(root)/entry["path"], entry["sha256"])
-        source_annotations[agent] = {"path": entry["path"], "sha256": entry["sha256"]}
+        source_annotations[agent] = {"path": Path(entry["path"]).as_posix(), "sha256": entry["sha256"]}
     first = by_agent[agents[0]]
-    camera_path = str(Path(first["modalities"]["annotation"]["path"]).with_suffix("")) + "_camera0.png"
+    camera_path = Path(first["modalities"]["annotation"]["path"]).with_suffix("").as_posix() + "_camera0.png"
     if camera_path not in image_sizes:
         raise ValueError(f"Missing verified camera dimensions: {camera_path}")
     ego = annotations[agents[0]]
@@ -202,7 +202,7 @@ def build_manifest(data_root, workers=8, progress=None):
         frames = groups[sid]
         ego = ordered_agents(f["agent"] for f in frames)[0]
         frame = next(f for f in frames if str(f["agent"]) == ego)
-        image_key = str(Path(frame["modalities"]["annotation"]["path"]).with_suffix(""))+"_camera0.png"
+        image_key = Path(frame["modalities"]["annotation"]["path"]).with_suffix("").as_posix()+"_camera0.png"
         jobs.append((str(root), frames, {image_key: images[image_key]}, protocol))
     samples, raw_types = {}, set()
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:

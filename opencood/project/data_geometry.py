@@ -109,3 +109,11 @@ def observation_maps(lidar, radar, valid, origins, camera, augmentation, bounds,
     return {'lidar_count':lc,'radar_count':rc,'lidar_occupancy':(lc>0).astype(np.float32),
             'radar_occupancy':(rc>0).astype(np.float32),'lidar_valid':lv,'radar_valid':rv,
             'lidar_distance':distance[0],'radar_distance':distance[1]}
+
+
+def communicating_agents(annotations, ego_id, communication_range):
+    """Keep the genuine ego and neighbors within the registered planar range."""
+    ordered = [ego_id] + [a for a in annotations if a != ego_id]
+    ego_xy = np.asarray(annotations[ego_id]['lidar_pose'][:2])
+    return [a for a in ordered if a == ego_id or
+            np.linalg.norm(np.asarray(annotations[a]['lidar_pose'][:2]) - ego_xy) <= communication_range]

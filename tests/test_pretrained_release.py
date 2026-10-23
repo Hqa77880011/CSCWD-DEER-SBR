@@ -61,7 +61,7 @@ class PretrainedReleaseTests(unittest.TestCase):
             (metadata / "data_manifest.json").write_text("{}")
             view = pretrained.dataset_view(metadata, raw, root / "output")
             self.assertEqual((view / "test").resolve(), raw / "test")
-            self.assertEqual((view / "data_manifest.json").resolve(), metadata / "data_manifest.json")
+            self.assertTrue((view / "data_manifest.json").samefile(metadata / "data_manifest.json"))
             self.assertFalse((raw / "data_manifest.json").exists())
             other = root / "other"
             (other / "test").mkdir(parents=True)

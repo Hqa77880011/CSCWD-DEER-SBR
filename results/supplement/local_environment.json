@@ -1,0 +1,75 @@
+{
+  "schema": "supplement_environment_v1",
+  "status": "blocked",
+  "python": "3.13.5",
+  "torch": "2.7.1+cu118",
+  "cuda_runtime": "11.8",
+  "cuda_available": true,
+  "requested_device": "cpu",
+  "modules": {
+    "numpy": {
+      "status": "imported",
+      "version": "2.1.3"
+    },
+    "yaml": {
+      "status": "imported",
+      "version": "6.0.2"
+    },
+    "torch": {
+      "status": "imported",
+      "version": "2.7.1+cu118"
+    },
+    "scipy": {
+      "status": "imported",
+      "version": "1.15.3"
+    },
+    "shapely": {
+      "status": "imported",
+      "version": "2.1.2"
+    },
+    "numba": {
+      "status": "imported",
+      "version": "0.61.0"
+    },
+    "einops": {
+      "status": "imported",
+      "version": "0.7.0"
+    },
+    "timm": {
+      "status": "imported",
+      "version": "0.6.7"
+    },
+    "pyquaternion": {
+      "status": "imported",
+      "version": null
+    },
+    "cumm.tensorview": {
+      "status": "missing_or_unloadable",
+      "reason": "No module named 'cumm'"
+    },
+    "spconv": {
+      "status": "missing_or_unloadable",
+      "reason": "No module named 'spconv'"
+    },
+    "open3d": {
+      "status": "missing_or_unloadable",
+      "reason": "No module named 'open3d'"
+    },
+    "pypcd.pypcd": {
+      "status": "missing_or_unloadable",
+      "reason": "No module named 'pypcd'"
+    },
+    "opencood.pcdet_utils.pointnet2.pointnet2_batch.pointnet2_utils": {
+      "status": "missing_or_unloadable",
+      "reason": "cannot import name 'pointnet2_batch_cuda' from 'opencood.pcdet_utils.pointnet2.pointnet2_batch' (unknown location)"
+    },
+    "opencood.data_utils.datasets.project_v2xr_dataset": {
+      "status": "missing_or_unloadable",
+      "reason": "No module named 'opencood.utils.box_overlaps'"
+    }
+  },
+  "data_read": false,
+  "weights_downloaded": false,
+  "compiled_extensions_executed": false,
+  "note": "import readiness only; run the explicit synthetic smoke and server data check next"
+}

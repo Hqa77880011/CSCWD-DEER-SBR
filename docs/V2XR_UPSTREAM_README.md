@@ -1,15 +1,15 @@
-# V2X-R: Cooperative LiDAR-4D Radar Fusion for 3D Object Detection with Denoising Diffusion 
+# V2X-R: Cooperative LiDAR-4D Radar Fusion for 3D Object Detection with Denoising Diffusion
 [![paper](https://img.shields.io/badge/arXiv-Paper-<COLOR>.svg)](https://arxiv.org/abs/2411.08402)
 [![code](https://img.shields.io/badge/dataset-link-blue)](https://huggingface.co/datasets/hx24/V2X-R/tree/4636ce397b214aee910cfc8ccf25a2dfac1a7906)
 :balloon:Congratulations to our V2X-R paper was accepted by **CVPR2025** ! :balloon:
 <div align="center">
-  <img src="images/logo.png" width="200"/>
+  <img src="../images/logo.png" width="200"/>
 </div>
 
 
 
 ## :balloon: Introduction
-:wave: This is the official repository for the V2X-R, including the V2X-R dataset and the implementation of the benchmark model, and MDD module. 
+:wave: This is the official repository for the V2X-R, including the V2X-R dataset and the implementation of the benchmark model, and MDD module.
 
 
 This repo is also a unified and integrated multi-agent collaborative perception framework for **LiDAR-based**, **4D radar-based**, **LiDAR-4D radar fusion** strategies!
@@ -25,7 +25,7 @@ This repo is also a unified and integrated multi-agent collaborative perception 
   - [x] LiDAR
   - [x] 4D Radar
   - [x] LiDAR-4D Radar Fusion
-    
+
 - :sparkles: SOTA collaborative perception method support
     - [x] Late Fusion
     - [x] Early Fusion
@@ -49,10 +49,10 @@ This repo is also a unified and integrated multi-agent collaborative perception 
   - [x] BEV visualization
   - [x] 3D visualization
 
-## :balloon: V2X-R Dataset Manual 
+## :balloon: V2X-R Dataset Manual
 The first V2X dataset incorporates LiDAR, camera, and **4D radar**. V2X-R contains **12,079 scenarios** with **37,727 frames of LiDAR and 4D radar point clouds**, **150,908 images**, and **170,859 annotated 3D vehicle bounding boxes**.
 <div align="center">
-  <img src="images/radar_sup.png" width="600"/>
+  <img src="../images/radar_sup.png" width="600"/>
 </div>
 
 
@@ -80,7 +80,7 @@ def process_file(args):
         extract_path = os.path.join(save_dir, path_parts[-2], path_parts[-1])
     else:
         extract_path = os.path.join(save_dir, os.path.basename(root))
-    
+
     os.makedirs(extract_path, exist_ok=True)
     subprocess.run(['7z', 'x', '-o' + extract_path + '/', file_path], check=True)
 
@@ -90,7 +90,7 @@ def decompress_v2x_r(root_dir, save_dir):
         for file in files:
             if file.endswith('.7z'):
                 args_list.append((root, file, save_dir))
-    
+
     # 创建线程池，max_workers可调整（建议设置为CPU核心数*2）
     with ThreadPoolExecutor(max_workers=os.cpu_count() * 2) as executor:
         executor.map(process_file, args_list)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 :open_file_folder: After download and decompression are finished, the dataset is structured as following:
 
 ```sh
-V2X-R # root path of v2x-r output_directory 
+V2X-R # root path of v2x-r output_directory
 ├── train
 │   ├──Sequence name (time of data collection, e.g. 2024_06_24_20_24_02)
 │   │   ├──Agent Number ("-1" denotes infrastructure, otherwise is CAVs)
@@ -143,58 +143,58 @@ If you need to run the following pre trained models:
 ### 4DRadar-based Cooperative 3D Detector (no-compression)
 | **Method** | **Validation (IoU=0.3/0.5/0.7)** | **Testing (IoU=0.3/0.5/0.7)** | **Config** |  **Model**  |
 |:--------------------------------:|:--------------------------------:|:-----------------------------:|:----------:|:-----------:|
-|         [ITSC2021:PFA-Net](https://ieeexplore.ieee.org/abstract/document/9564754)         |         75.45/66.66/38.30        |       84.93/79.71/52.46       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_PFA_net.yaml)     | [model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|           [NIPS2022:RTNH](https://arxiv.org/abs/2206.08171)          |         72.00/62.54/34.65        |       73.61/67.63/41.86       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_RTNH.yaml)     | [model-64M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|          [ECCV2022:V2XViT](https://arxiv.org/abs/2203.10638)         |         68.58/61.88/29.47        |       80.61/73.52/42.60       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_v2xvit.yaml)     | [model-51M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|         [ICRA2022:AttFuse](https://arxiv.org/abs/2109.07644)         |         71.83/63.33/34.15        |       81.34/74.98/47.96       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_attfuse.yaml)     | [model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|        [NIPS2023:Where2comm](https://arxiv.org/abs/2209.12836)       |         68.99/56.55/25.59        |       79.21/72.88/36.15       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_where2comm.yaml)     | [model-30M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|          [ICCV2023:SCOPE](https://openaccess.thecvf.com/content/ICCV2023/html/Yang_Spatio-Temporal_Domain_Awareness_for_Multi-Agent_Collaborative_Perception_ICCV_2023_paper.html)          |         61.90/59.30/47.90        |       73.00/71.60/51.60       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_scope.yaml)     | [model-151M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|          [CoRL2023:CoBEVT](https://arxiv.org/abs/2207.02202)         |         73.48/66.82/34.48        |       85.74/80.64/54.34       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_cobevt.yaml)     | [model-40M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|         [ICRA2023:CoAlign](https://arxiv.org/abs/2211.07214)         |         75.05/68.11/41.20        |       81.69/75.74/52.01       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_coalign.yaml)     | [model-43M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|        [WACV2023:AdaFusion](https://openaccess.thecvf.com/content/WACV2023/html/Qiao_Adaptive_Feature_Fusion_for_Cooperative_Perception_Using_LiDAR_Point_Clouds_WACV_2023_paper.html)        |        75.60/70.33/41.11        |       81.95/77.84/55.32       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_adafusion.yaml)     | [model-27M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
-|           [IROS2024:SICP](https://arxiv.org/abs/2312.04822)          |         70.83/62.79/34.82        |       71.94/65.17/63.44       |      [√](opencood/hypes_yaml/V2X-R/4DRadar/V2XR_sicp.yaml)     | [model-28M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|         [ITSC2021:PFA-Net](https://ieeexplore.ieee.org/abstract/document/9564754)         |         75.45/66.66/38.30        |       84.93/79.71/52.46       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_PFA_net.yaml)     | [model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|           [NIPS2022:RTNH](https://arxiv.org/abs/2206.08171)          |         72.00/62.54/34.65        |       73.61/67.63/41.86       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_RTNH.yaml)     | [model-64M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|          [ECCV2022:V2XViT](https://arxiv.org/abs/2203.10638)         |         68.58/61.88/29.47        |       80.61/73.52/42.60       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_v2xvit.yaml)     | [model-51M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|         [ICRA2022:AttFuse](https://arxiv.org/abs/2109.07644)         |         71.83/63.33/34.15        |       81.34/74.98/47.96       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_attfuse.yaml)     | [model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|        [NIPS2023:Where2comm](https://arxiv.org/abs/2209.12836)       |         68.99/56.55/25.59        |       79.21/72.88/36.15       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_where2comm.yaml)     | [model-30M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|          [ICCV2023:SCOPE](https://openaccess.thecvf.com/content/ICCV2023/html/Yang_Spatio-Temporal_Domain_Awareness_for_Multi-Agent_Collaborative_Perception_ICCV_2023_paper.html)          |         61.90/59.30/47.90        |       73.00/71.60/51.60       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_scope.yaml)     | [model-151M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|          [CoRL2023:CoBEVT](https://arxiv.org/abs/2207.02202)         |         73.48/66.82/34.48        |       85.74/80.64/54.34       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_cobevt.yaml)     | [model-40M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|         [ICRA2023:CoAlign](https://arxiv.org/abs/2211.07214)         |         75.05/68.11/41.20        |       81.69/75.74/52.01       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_coalign.yaml)     | [model-43M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|        [WACV2023:AdaFusion](https://openaccess.thecvf.com/content/WACV2023/html/Qiao_Adaptive_Feature_Fusion_for_Cooperative_Perception_Using_LiDAR_Point_Clouds_WACV_2023_paper.html)        |        75.60/70.33/41.11        |       81.95/77.84/55.32       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_adafusion.yaml)     | [model-27M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
+|           [IROS2024:SICP](https://arxiv.org/abs/2312.04822)          |         70.83/62.79/34.82        |       71.94/65.17/63.44       |      [√](../opencood/hypes_yaml/V2X-R/4DRadar/V2XR_sicp.yaml)     | [model-28M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/radar) |
 
 ### LiDAR-based Cooperative 3D Detector (no-compression)
 | **Method** | **Validation (IoU=0.3/0.5/0.7)** | **Testing (IoU=0.3/0.5/0.7)** | **Config** |  **Model**  |
 |:------------------------------:|:--------------------------------:|:-----------------------------:|:----------:|:-----------:|
-| [ECCV2022:V2XViT](https://arxiv.org/abs/2203.10638)                | 83.47/80.65/63.48                | 89.44/88.40/77.13             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_v2xvit.yaml)     | [model-52M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
-| [ICRA2022:AttFuse](https://arxiv.org/abs/2109.07644)               | 86.69/82.58/66.56                | 91.21/89.51/80.01             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_attfuse.yaml)     | [model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
-| [NIPS2023:Where2comm](https://arxiv.org/abs/2209.12836)         | 85.31/82.65/64.35                  | 85.59/84.27/73.13             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_where2comm.yaml)     | [model-30M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
-| [ICCV2023:SCOPE](https://openaccess.thecvf.com/content/ICCV2023/html/Yang_Spatio-Temporal_Domain_Awareness_for_Multi-Agent_Collaborative_Perception_ICCV_2023_paper.html)                 | 79.43/77.35/65.08                | 81.40/72.90/67.00             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_scope.yaml)     | [model-151M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
-| [CoRL2023:CoBEVT](https://arxiv.org/abs/2207.02202)                | 86.65/84.59/70.30                | 91.41/90.44/81.06             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_cobevt.yaml)     | [model-40M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
-| [ICRA2023:CoAlign](https://arxiv.org/abs/2211.07214)               | 84.43/82.29/70.68                | 88.12/86.99/80.05             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_coalign.yaml)     | [model-43M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
-| [ICCV:AdaFusion](https://openaccess.thecvf.com/content/WACV2023/html/Qiao_Adaptive_Feature_Fusion_for_Cooperative_Perception_Using_LiDAR_Point_Clouds_WACV_2023_paper.html)                 | 88.19/86.96/75.55                | 92.72/91.64/84.81             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_adafusion.yaml)     | [model-27M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
-| [IROS2024:SICP](https://arxiv.org/abs/2312.04822)                  | 81.08/77.56/58.10                | 84.65/82.18/66.73             |      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_sicp.yaml)     | [model-28M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [ECCV2022:V2XViT](https://arxiv.org/abs/2203.10638)                | 83.47/80.65/63.48                | 89.44/88.40/77.13             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_v2xvit.yaml)     | [model-52M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [ICRA2022:AttFuse](https://arxiv.org/abs/2109.07644)               | 86.69/82.58/66.56                | 91.21/89.51/80.01             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_attfuse.yaml)     | [model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [NIPS2023:Where2comm](https://arxiv.org/abs/2209.12836)         | 85.31/82.65/64.35                  | 85.59/84.27/73.13             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_where2comm.yaml)     | [model-30M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [ICCV2023:SCOPE](https://openaccess.thecvf.com/content/ICCV2023/html/Yang_Spatio-Temporal_Domain_Awareness_for_Multi-Agent_Collaborative_Perception_ICCV_2023_paper.html)                 | 79.43/77.35/65.08                | 81.40/72.90/67.00             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_scope.yaml)     | [model-151M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [CoRL2023:CoBEVT](https://arxiv.org/abs/2207.02202)                | 86.65/84.59/70.30                | 91.41/90.44/81.06             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_cobevt.yaml)     | [model-40M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [ICRA2023:CoAlign](https://arxiv.org/abs/2211.07214)               | 84.43/82.29/70.68                | 88.12/86.99/80.05             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_coalign.yaml)     | [model-43M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [ICCV:AdaFusion](https://openaccess.thecvf.com/content/WACV2023/html/Qiao_Adaptive_Feature_Fusion_for_Cooperative_Perception_Using_LiDAR_Point_Clouds_WACV_2023_paper.html)                 | 88.19/86.96/75.55                | 92.72/91.64/84.81             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_adafusion.yaml)     | [model-27M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
+| [IROS2024:SICP](https://arxiv.org/abs/2312.04822)                  | 81.08/77.56/58.10                | 84.65/82.18/66.73             |      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_sicp.yaml)     | [model-28M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/lidar) |
 
 
 ### LiDAR-4D Radar Fusion Cooperative 3D Detector (no-compression)
 |       **Method**       | **Validation (IoU=0.3/0.5/0.7)** | **Testing (IoU=0.3/0.5/0.7)** | **Config** |  **Model**  |
 |:----------------------:|:--------------------------------:|:-----------------------------:|:----------:|:-----------:|
-|  [IROS2023:InterFusion](https://ieeexplore.ieee.org/document/9982123)  |         78.33/74.70/51.44        |       87.91/86.51/69.63       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_InterFusion.yaml)     | [model-95M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|     [Arxiv2024:L4DR](https://arxiv.org/abs/2408.03677)     |         80.91/79.00/67.17        |       90.01/88.85/82.26       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_L4DR.yaml)     | [model-79M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|    [ICRA2022:AttFuse](https://arxiv.org/abs/2109.07644)    |         83.45/81.47/69.11        |       91.50/90.04/82.44       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AttFuse.yaml)     | [model-95M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|     [ECCV2022:V2XViT](https://arxiv.org/abs/2203.10638)    |         85.43/83.32/66.23        |       91.21/90.07/79.87       |[√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_V2XViT.yaml)     | [model-118M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|     [ICCV2023:Scope](https://openaccess.thecvf.com/content/ICCV2023/html/Yang_Spatio-Temporal_Domain_Awareness_for_Multi-Agent_Collaborative_Perception_ICCV_2023_paper.html)     |         78.79/77.96/62.57        |       83.38/82.89/70.00       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Scope.yaml)     | [model-134M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-| [NIPS2023:Where2comm](https://arxiv.org/abs/2209.12836) |         88.05/85.98/69.94        |       92.20/91.16/81.40       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_where2comm.yaml)     | [model-30M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|     [CoRL2023:CoBEVT](https://arxiv.org/abs/2207.02202)    |         86.45/85.49/75.65        |       94.23/93.50/86.92       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Cobevt.yaml)     | [model-40M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|    [ICRA2023:CoAlign](https://arxiv.org/abs/2211.07214)    |         87.08/85.44/73.66        |       91.13/90.19/83.73       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_CoAlign.yaml)     | [model-49M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|   [WACV2023:AdaFusion](https://openaccess.thecvf.com/content/WACV2023/html/Qiao_Adaptive_Feature_Fusion_for_Cooperative_Perception_Using_LiDAR_Point_Clouds_WACV_2023_paper.html)   |         88.87/86.94/74.44        |       92.94/91.97/85.31       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AdaFusion.yaml)     | [model-27M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
-|      [IROS2024:SICP](https://arxiv.org/abs/2312.04822)     |         83.32/80.61/63.08        |       84.83/82.59/67.61       |      [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Sicp.yaml)     | [model-28M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|  [IROS2023:InterFusion](https://ieeexplore.ieee.org/document/9982123)  |         78.33/74.70/51.44        |       87.91/86.51/69.63       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_InterFusion.yaml)     | [model-95M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|     [Arxiv2024:L4DR](https://arxiv.org/abs/2408.03677)     |         80.91/79.00/67.17        |       90.01/88.85/82.26       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_L4DR.yaml)     | [model-79M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|    [ICRA2022:AttFuse](https://arxiv.org/abs/2109.07644)    |         83.45/81.47/69.11        |       91.50/90.04/82.44       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AttFuse.yaml)     | [model-95M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|     [ECCV2022:V2XViT](https://arxiv.org/abs/2203.10638)    |         85.43/83.32/66.23        |       91.21/90.07/79.87       |[√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_V2XViT.yaml)     | [model-118M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|     [ICCV2023:Scope](https://openaccess.thecvf.com/content/ICCV2023/html/Yang_Spatio-Temporal_Domain_Awareness_for_Multi-Agent_Collaborative_Perception_ICCV_2023_paper.html)     |         78.79/77.96/62.57        |       83.38/82.89/70.00       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Scope.yaml)     | [model-134M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+| [NIPS2023:Where2comm](https://arxiv.org/abs/2209.12836) |         88.05/85.98/69.94        |       92.20/91.16/81.40       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_where2comm.yaml)     | [model-30M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|     [CoRL2023:CoBEVT](https://arxiv.org/abs/2207.02202)    |         86.45/85.49/75.65        |       94.23/93.50/86.92       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Cobevt.yaml)     | [model-40M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|    [ICRA2023:CoAlign](https://arxiv.org/abs/2211.07214)    |         87.08/85.44/73.66        |       91.13/90.19/83.73       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_CoAlign.yaml)     | [model-49M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|   [WACV2023:AdaFusion](https://openaccess.thecvf.com/content/WACV2023/html/Qiao_Adaptive_Feature_Fusion_for_Cooperative_Perception_Using_LiDAR_Point_Clouds_WACV_2023_paper.html)   |         88.87/86.94/74.44        |       92.94/91.97/85.31       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AdaFusion.yaml)     | [model-27M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
+|      [IROS2024:SICP](https://arxiv.org/abs/2312.04822)     |         83.32/80.61/63.08        |       84.83/82.59/67.61       |      [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_Sicp.yaml)     | [model-28M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r) |
 
 ### Multi-modal Diffusion Denoising Results (AttFuse train with fog simulation)
 |       **Modality**       | **Snow (IoU=0.3/0.5/0.7)** | **Fog (IoU=0.3/0.5/0.7)** | **Normal (IoU=0.3/0.5/0.7)** | **Config** |  **Model**  |
 |:----------------------:|:--------------------------------:|:-----------------------------:|:-----------------------------:|:----------:|:-----------:|
-|    LiDAR    |         68.73/65.35/45.54          |      81.71/78.48/61.52       |89.30/87.39/76.09|      [√](opencood/hypes_yaml/V2X-R/LiDAR/V2XR_attfuse.yaml)     |[model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r_train_with_fog_sim)|
-|    LiDAR-4D Radar Fusion w/o MDD    |         79.63/77.37/63.71 | 85.00/80.64/62.89 | 91.15/89.80/81.75     | [√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AttFuse.yaml)     | [model-96M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r_train_with_fog_sim)|
-|    LiDAR-4D Radar Fusion w MDD    |         83.78/81.19/66.86 | 87.37/83.90/68.64 | 90.99/89.64/81.96 |[√](opencood/hypes_yaml/V2X-R/L_4DR_Fusion_with_MDD/V2XR_AttFuse.yaml)     | [model-96M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r_train_with_fog_sim) |
+|    LiDAR    |         68.73/65.35/45.54          |      81.71/78.48/61.52       |89.30/87.39/76.09|      [√](../opencood/hypes_yaml/V2X-R/LiDAR/V2XR_attfuse.yaml)     |[model-25M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r_train_with_fog_sim)|
+|    LiDAR-4D Radar Fusion w/o MDD    |         79.63/77.37/63.71 | 85.00/80.64/62.89 | 91.15/89.80/81.75     | [√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion/V2XR_AttFuse.yaml)     | [model-96M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r_train_with_fog_sim)|
+|    LiDAR-4D Radar Fusion w MDD    |         83.78/81.19/66.86 | 87.37/83.90/68.64 | 90.99/89.64/81.96 |[√](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion_with_MDD/V2XR_AttFuse.yaml)     | [model-96M](http://39.98.109.195:1000/files/V2X-R_Dataset(compressed)/benchmark/l+r_train_with_fog_sim) |
 
 ## :balloon: Quickly Get Started
 
 ### Installation
-Refer to [Installation of V2X-R](INSTALL.md)
+Refer to [Installation of V2X-R](../INSTALL.md)
 
 
-### Train benchmark model 
+### Train benchmark model
 First of all, modify the dataset path in the setting file (**root_dir**, **validate_dir**), i.e. `xxx.yaml`.
 
 The setting is same as OpenCOOD, which uses yaml file to configure all the parameters for training. To train your own model from scratch or a continued checkpoint, run the following commonds:
@@ -246,14 +246,14 @@ CUDA_VISIBLE_DEVICES=0 python opencood/tools/inference.py --model_dir opencood/l
 ```
 The evaluation results  will be dumped in the model directory.
 
-### Train model with Multi-modal Diffusion Denoising (MDD) module 
-The relevant code section about our MDD module can be found in [here](opencood/models/mdd_modules).
+### Train model with Multi-modal Diffusion Denoising (MDD) module
+The relevant code section about our MDD module can be found in [here](../opencood/models/mdd_modules).
 
 To embed the MDD module in the model, change the following in the **yaml file** and **detector core_method code** of the original model:
 - add use_DeLidar=True
 - set train_sim = True (eval_sim = True when evaluation), and sim_weather = _fog_0.060 or _snow_2.5_2.0
-- add mdd_block to the model args and set the parameters in it (see [example_yaml](opencood/hypes_yaml/V2X-R/L_4DR_Fusion_with_MDD/V2XR_AttFuse.yaml) for details)
-- rewrite core_method to be the version that adds the MDD module, for [example](opencood/models/point_pillar_intermediate_lrf_MDD.py).
+- add mdd_block to the model args and set the parameters in it (see [example_yaml](../opencood/hypes_yaml/V2X-R/L_4DR_Fusion_with_MDD/V2XR_AttFuse.yaml) for details)
+- rewrite core_method to be the version that adds the MDD module, for [example](../opencood/models/point_pillar_intermediate_lrf_MDD.py).
 
 
 For example, to train V2XR_AttFuse (LiDAR-4D radar fusion version, 4 GPUs) from scratch with MDD:

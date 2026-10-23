@@ -12,7 +12,8 @@ class SupportedResidual(nn.Module):
                  ordinary=False, voxel_size=(.4, .4), support_radius_m=.8,
                  scale_floor=1e-3, scale_ceiling=1e3,
                  scale_mode='current_observation_rms',
-                 type_prior_mode='multiplicative', efficient_features=False):
+                 type_prior_mode='multiplicative', efficient_features=False,
+                 null_donor=True):
         super().__init__()
         if not 0 <= rho or not 0 <= g_min <= 1:
             raise ValueError('rho must be nonnegative; g_min must be in [0,1]')
@@ -28,6 +29,7 @@ class SupportedResidual(nn.Module):
         self.type_prior_mode = type_prior_mode
         self.efficient_features = bool(efficient_features)
         self.collect_diagnostics = False
+        self.null_donor = bool(null_donor)
         self.hard_support, self.bounded, self.ordinary = bool(hard_support), bool(bounded), bool(ordinary)
         self.support_radius_m = float(support_radius_m)
         vx, vy = map(float, voxel_size[:2])
@@ -45,9 +47,10 @@ class SupportedResidual(nn.Module):
         else:
             self.query = nn.Conv2d(channels, attention_channels, 1, bias=False)
             self.key = nn.Conv2d(channels, attention_channels, 1, bias=False)
-            self.null_logit = nn.Conv2d(channels, 1, 1)
-            nn.init.zeros_(self.null_logit.weight)
-            nn.init.zeros_(self.null_logit.bias)
+            self.null_logit = nn.Conv2d(channels, 1, 1) if self.null_donor else None
+            if self.null_logit is not None:
+                nn.init.zeros_(self.null_logit.weight)
+                nn.init.zeros_(self.null_logit.bias)
         self.input_project = nn.Conv2d(2 * channels + 5, hidden_channels, 1)
         self.residual_net = nn.Sequential(
             nn.SiLU(), nn.Conv2d(hidden_channels, hidden_channels, 3,
@@ -88,12 +91,20 @@ class SupportedResidual(nn.Module):
                     (self.padding_x, self.padding_x, self.padding_y, self.padding_y))
         # Correct null prior for candidate count. With equal real scores its
         # initial mass is 1/2 regardless of measurement density, and 1 if empty.
-        logits = [self.null_logit(normalized_z).float() + count.clamp_min(1).log()]
+        logits = [(self.null_logit(normalized_z).float() + count.clamp_min(1).log())
+                  if self.null_donor else torch.zeros_like(count)]
         for (dy, dx), candidate_valid in zip(self.offsets, neighbours):
             yy, xx = dy + self.padding_y, dx + self.padding_x
             score = 2 * (query * key[:, :, yy:yy + height, xx:xx + width]).sum(1, keepdim=True)
             logits.append(score.masked_fill(~candidate_valid, -torch.inf))
         weights = torch.cat(logits, dim=1).softmax(dim=1).to(z.dtype)
+        if not self.null_donor:
+            # Condition on a real candidate. Empty neighbourhoods stay exactly
+            # zero, including in the no-null training ablation.
+            real = torch.cat(logits[1:], dim=1)
+            real = real.masked_fill(count == 0, 0).softmax(dim=1)
+            real = real * (count > 0)
+            weights = torch.cat((torch.zeros_like(count), real), dim=1).to(z.dtype)
         radar_pad = F.pad(normalized_radar, (self.padding_x, self.padding_x,
                                            self.padding_y, self.padding_y))
         donor = torch.zeros_like(radar)
@@ -132,6 +143,12 @@ class SupportedResidual(nn.Module):
             donor, support, null_weight = self.local_donor(
                 z, radar, observations['radar_occupancy'], observations['radar_valid'],
                 available, scale, radar_scale, return_normalized=self.efficient_features)
+        intervention = getattr(self, 'signal_intervention', 'none')
+        if intervention == 'donor_zero':
+            donor = torch.zeros_like(donor)
+        elif intervention == 'donor_shuffle':
+            from opencood.project.supplement_models import shuffle_signal
+            donor = shuffle_signal(donor, self.intervention_seed)
         if (miss is None) != (spur is None):
             raise ValueError('provide both type scores or neither')
         if miss is None:

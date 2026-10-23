@@ -175,3 +175,6 @@ bash_script/
 *.whl
 *.bundle
 *.pid
+
+# Required original source runtime for the seven published checkpoint identities.
+!/repro/archive/legacy_v4_runtime.zip

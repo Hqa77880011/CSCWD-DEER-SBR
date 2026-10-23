@@ -25,9 +25,12 @@ class ProjectV2XRDataset(Dataset):
     def __init__(self,hypes,*,root='/root/autodl-tmp/CSCWD/datasets/v2xr',split='train',
                  training=True,track='C',weather='normal',seed=17,epoch=0,paired=False,
                  augment=True,cache_bytes=0,supervision_source='none',disabled_modalities=(),
-                 gt_manifest=None,supervision_audit=None,matching=None,controlled_corruption=None):
+                 gt_manifest=None,supervision_audit=None,matching=None,controlled_corruption=None,
+                 experiment_config=None,reference=False):
         self.hypes=copy.deepcopy(hypes);self.root=Path(root).resolve();self.split=split
         self.training=bool(training);self.track=track;self.weather=weather;self.seed=int(seed)
+        self.experiment_config=copy.deepcopy(experiment_config)
+        self.reference=bool(reference)
         if split not in ('train','validate','test'):raise ValueError('Invalid split')
         if training and split!='train':raise ValueError('Training only uses train split')
         if training and weather=='snow':raise ValueError('Snow is final evaluation only')
@@ -40,6 +43,7 @@ class ProjectV2XRDataset(Dataset):
         self.paired=bool(paired);self.augment=bool(augment);self.supervision_source=supervision_source
         self.controlled_corruption=controlled_corruption_config(controlled_corruption)
         self.epoch_value=mp.Value('q',int(epoch));self.cache=ByteLRU(cache_bytes)
+        self.comm_range=float(self.hypes.get('comm_range',70.))
         self.disabled=set(disabled_modalities)
         if not self.disabled <= {'lidar','radar'}:raise ValueError('Unknown modality override')
         self.allow_unmatched=False
@@ -65,6 +69,22 @@ class ProjectV2XRDataset(Dataset):
             for item in frame['modalities'].values()}
         del data_manifest
         self.sample_ids=sorted(sid for sid,s in self.manifest['samples'].items() if s['split']==split)
+        history_ids=list(self.sample_ids)
+        self.delayed={}
+        if self.experiment_config and not self.training:
+            v=self.experiment_config['evaluation']
+            self.sample_ids=[sid for sid in self.sample_ids if len(self.manifest['samples'][sid]['agent_ids'])>=v['min_agents']]
+            if v['min_agents']>1:
+                self.sample_ids=[sid for sid in self.sample_ids if len(self.available_agent_ids(sid))>=v['min_agents']]
+            if v['sample_ids']:
+                requested=json.loads(Path(v['sample_ids']).read_text())
+                if not set(requested)<=set(self.sample_ids):raise ValueError('common sample list contains unavailable V2X-R frames')
+                self.sample_ids=sorted(requested)
+            if v['delay_frames']:
+                for sequence in sorted({self.manifest['samples'][sid]['sequence'] for sid in self.sample_ids}):
+                    ids=[sid for sid in history_ids if self.manifest['samples'][sid]['sequence']==sequence]
+                    for i in range(v['delay_frames'],len(ids)):self.delayed[ids[i]]=ids[i-v['delay_frames']]
+                self.sample_ids=[sid for sid in self.sample_ids if sid in self.delayed and set(self.manifest['samples'][sid]['agent_ids'])<=set(self.manifest['samples'][self.delayed[sid]]['agent_ids'])]
         if not self.sample_ids:raise ValueError('No manifest samples for split')
         self.bounds=self.hypes['preprocess']['cav_lidar_range']
         self.voxel=self.hypes['preprocess']['args']['voxel_size']
@@ -75,9 +95,17 @@ class ProjectV2XRDataset(Dataset):
         ta=self.hypes['postprocess']['target_args']
         self.assigner=AnchorTargets(self.anchor_box,ta['pos_threshold'],ta['neg_threshold'])
         self.max_agents=int(self.hypes.get('train_params',{}).get('max_cav',5))
+        if self.experiment_config:self.max_agents=min(self.max_agents,self.experiment_config['evaluation']['agents'])
         self.comm_range=float(self.hypes.get('comm_range',70.))
     def __len__(self):return len(self.sample_ids)
     def set_epoch(self,epoch):self.epoch_value.value=int(epoch)
+    def available_agent_ids(self,sample_id):
+        """Actual current agents before an evaluation cap, including comm range."""
+        from opencood.project.data_geometry import communicating_agents
+        sample=self.manifest['samples'][sample_id]
+        annotations={str(a):self.cache.get(self.root/source['path'],'yaml')
+                     for a,source in sample['source_annotations'].items()}
+        return communicating_agents(annotations,str(sample['ego_id']),self.comm_range)
     def _voxelize(self,points,rng):
         if len(points)==0:
             return {'voxel_features':np.empty((0,self.hypes['preprocess']['args']['max_points_per_voxel'],4),np.float32),
@@ -101,19 +129,25 @@ class ProjectV2XRDataset(Dataset):
                 raise ValueError('GT annotation and dataset manifest sources disagree')
         ann={a:self.cache.get(self.root/seq/a/(timestamp+'.yaml'),'yaml') for a in agent_ids}
         ego_world=pose_to_world(ann[ego_id]['lidar_pose']);world_to_ego=np.linalg.inv(ego_world)
-        selected=[]
-        for agent in agent_ids:
-            position=np.asarray(ann[agent]['lidar_pose'][:3]);ego_pos=np.asarray(ann[ego_id]['lidar_pose'][:3])
-            if agent==ego_id or np.linalg.norm(position[:2]-ego_pos[:2])<=self.comm_range:selected.append(agent)
-        selected=selected[:self.max_agents]
+        from opencood.project.data_geometry import communicating_agents
+        selected=communicating_agents(ann,ego_id,self.comm_range)[:self.max_agents]
         rng=np.random.default_rng(augmentation_seed(sid,epoch,self.seed))
         aug=augmentation_matrix(rng,self.training and self.augment)
         boxes=np.asarray([g['box'] for g in sample['gt']],dtype=np.float64).reshape(-1,7)
         train_boxes=augment_boxes(boxes,aug) if self.training else boxes.copy()
-        current=[];targets=[];metadata=[]
+        current=[];targets=[];metadata=[];references=[]
         for agent in selected:
             a=ann[agent];base=self.root/seq/agent/timestamp
+            source_timestamp=timestamp
+            if sid in self.delayed and agent!=ego_id:
+                past=self.manifest['samples'][self.delayed[sid]]
+                source_timestamp=past['timestamp']
+                base=self.root/seq/agent/source_timestamp
+                a=self.cache.get(base.with_suffix('.yaml'),'yaml')
             transform=world_to_ego@pose_to_world(a['lidar_pose'])
+            if self.experiment_config and not self.training:
+                from opencood.project.supplement_data import perturbed_transform
+                transform=perturbed_transform(transform,self.experiment_config,sid,agent,ego_id)
             domain=weather_for(sid,agent,epoch,self.seed,self.track) if self.training else self.weather
             if domain not in ('normal','fog','snow'):raise ValueError('Unknown weather')
             suffix={'normal':'.pcd','fog':'_fog_0.060.pcd','snow':'_snow_2.5_2.0.pcd'}[domain]
@@ -122,6 +156,10 @@ class ProjectV2XRDataset(Dataset):
             radar=self.cache.get(str(base)+'_radar.pcd') if valid[1] else np.empty((0,4),np.float32)
             lidar=prepare_points(lidar,transform,sample['camera'],aug,self.bounds)
             radar=prepare_points(radar,transform,sample['camera'],aug,self.bounds)
+            if self.reference:
+                clean=self.cache.get(str(base)+'.pcd')
+                clean=prepare_points(clean,transform,sample['camera'],aug,self.bounds)
+                references.append(self._voxelize(clean,np.random.default_rng(augmentation_seed(sid+'/'+agent,epoch,self.seed,stream='reference_point_order'))))
             source_reference=None;source_ids=None;corruption_applied=False
             if self.training and self.track=='W' and domain=='normal' and self.supervision_source=='provenance_v1' and valid[0]:
                 source_reference=lidar
@@ -139,11 +177,21 @@ class ProjectV2XRDataset(Dataset):
                             & (points[:,:3]>=bounds[:3]).all(1)&(points[:,:3]<bounds[3:]).all(1))
                 lidar,source_ids,corruption_applied=corrupt_points(
                     source_reference,corruption_rng,self.controlled_corruption,legal_mask=legal_ghosts)
+            eval_target=None;perturbation_trace=None
+            if self.experiment_config and not self.training:
+                from opencood.project.supplement_data import perturb_points
+                lidar,radar,valid,eval_target,perturbation_trace=perturb_points(lidar,radar,valid,sample_id=sid,agent=agent,
+                    ego=ego_id,config=self.experiment_config,bounds=self.bounds,voxel=self.voxel,
+                    legal_mask=lambda p:point_fov_mask(transform_points(p[:,:3],np.linalg.inv(aug)),sample['camera']))
             origins=[transform[:3,3],transform_points(np.array([a.get('radar_pose',a['lidar_pose'])[:3]]),world_to_ego)[0]]
+            if self.experiment_config:
+                radar_to_lidar=np.linalg.solve(pose_to_world(a['lidar_pose']),pose_to_world(a.get('radar_pose',a['lidar_pose'])))
+                origins[1]=(transform@radar_to_lidar)[:3,3]
             origins=[transform_points(np.asarray(o)[None],aug)[0] for o in origins]
             maps=observation_maps(lidar,radar,valid,origins,sample['camera'],aug,self.bounds,self.voxel,self.grid)
             point_rng=np.random.default_rng(augmentation_seed(sid+'/'+agent,epoch,self.seed,stream='point_order'))
             entry={'lidar':self._voxelize(lidar,point_rng),'radar':self._voxelize(radar,point_rng),'maps':maps,'valid':valid}
+            if self.experiment_config and self.experiment_config['experiment']['method']=='l4dr':entry['raw_radar']=radar.copy()
             current.append(entry)
             reference=None
             need_reference=self.training and self.supervision_source=='mutual_nn_v1' and domain=='fog'
@@ -162,9 +210,12 @@ class ProjectV2XRDataset(Dataset):
                 else:
                     target={k:np.zeros_like(v) for k,v in target.items()}
             if not valid[0]:target={k:np.zeros_like(v) for k,v in target.items()}
+            if eval_target is not None:target=eval_target
             target['normal_mask']=np.full((1,1,1),float(domain=='normal' and not corruption_applied),np.float32)
             targets.append(target)
             metadata.append({'agent_id':agent,'weather':domain,'lidar_points':len(lidar),'radar_points':len(radar),
+                             'source_timestamp':source_timestamp,
+                             'agent_to_ego':transform.tolist(),'perturbation_trace':perturbation_trace,
                              'modality_valid':valid.tolist(),'sensor_origins':[o.tolist() for o in origins],
                              'controlled_corruption':corruption_applied,'supervision':stats})
         labels=self.assigner(train_boxes)
@@ -173,7 +224,8 @@ class ProjectV2XRDataset(Dataset):
                        'gt_boxes':boxes.astype(np.float32),'gt_ids':[g['gt_id'] for g in sample['gt']],
                        'training_boxes':train_boxes.astype(np.float32),'camera':sample['camera'],
                        'metadata':metadata,'augmentation':aug.astype(np.float32)},
-                'train_targets':targets if self.training else None}
+                'train_targets':targets if self.training or self.experiment_config else None}
+        if references:result['ego']['reference_lidar']=references
         return result
     def _collate_inputs(self,items):
         agents=[a for item in items for a in item['agents']]
@@ -193,9 +245,16 @@ class ProjectV2XRDataset(Dataset):
                    cameras=[x['camera'] for x in items],augmentations=[x['augmentation'] for x in items],
                    anchor_box=torch.from_numpy(self.anchor_box))
         out={'ego':ego}
-        if self.training:
+        if items[0].get('reference_lidar'):
+            ego['reference_lidar']=self.pre_processor.collate_batch([r for item in items for r in item['reference_lidar']])
+        if self.training or self.experiment_config:
             targets=[t for x in batch for t in x['train_targets']]
             out['train_targets']={k:torch.from_numpy(np.stack([t[k] for t in targets])) for k in targets[0]}
+        if self.experiment_config and self.experiment_config['experiment']['method']=='l4dr':
+            ego['raw_radar']=[torch.from_numpy(a['raw_radar']) for item in items for a in item['agents']]
+            if self.training:
+                out['train_targets']['fad_boxes']=[torch.from_numpy(item['training_boxes']).float()
+                    for item in items for _ in item['agents']]
         return out
     collate_batch_train=collate_batch
     collate_batch_test=collate_batch

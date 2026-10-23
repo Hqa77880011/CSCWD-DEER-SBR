@@ -1,0 +1,567 @@
+{
+  "schema": "supplement_matrix_v1",
+  "suites": {
+    "pilot": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "S0",
+          "AB",
+          "N2"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ]
+      }
+    ],
+    "pilot_sup": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "SUP"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ]
+      }
+    ],
+    "budgets": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "S0",
+          "AB",
+          "N2",
+          "SUP"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          20,
+          30,
+          60,
+          90
+        ]
+      }
+    ],
+    "internal_main": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "S0",
+          "A",
+          "B",
+          "AB",
+          "SUP",
+          "N2"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          60
+        ]
+      }
+    ],
+    "external_pilot": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "attfuse"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "mdd"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "l4dr"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "cobevt"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          40
+        ],
+        "native": true
+      }
+    ],
+    "external_main": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "attfuse"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "mdd"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "l4dr"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "cobevt"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          40
+        ],
+        "native": true
+      }
+    ],
+    "mechanism_pilot": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "M1",
+          "M3",
+          "M4"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ]
+      }
+    ],
+    "mechanism_repeat": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "M1",
+          "M3",
+          "M4"
+        ],
+        "seeds": [
+          29,
+          43
+        ],
+        "epochs": [
+          60
+        ]
+      }
+    ],
+    "mechanism_optional": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "M2",
+          "M5",
+          "M6",
+          "N1",
+          "NO_NULL"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          60
+        ]
+      }
+    ],
+    "real_cooperative": [
+      {
+        "dataset": "v2xradar",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "S0",
+          "F"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ]
+      },
+      {
+        "dataset": "v2xradar",
+        "methods": [
+          "mdd"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "v2xradar",
+        "methods": [
+          "cobevt"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          40
+        ],
+        "native": true
+      }
+    ],
+    "real_cooperative_l4dr": [
+      {
+        "dataset": "v2xradar",
+        "methods": [
+          "l4dr"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      }
+    ],
+    "real_weather": [
+      {
+        "dataset": "kradar",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "S0",
+          "F"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ]
+      },
+      {
+        "dataset": "kradar",
+        "methods": [
+          "mdd"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      },
+      {
+        "dataset": "kradar",
+        "methods": [
+          "l4dr"
+        ],
+        "variants": [
+          "S0"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          30
+        ],
+        "native": true
+      }
+    ],
+    "second_backbone": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "where2comm"
+        ],
+        "variants": [
+          "S0",
+          "F"
+        ],
+        "seeds": [
+          17,
+          29,
+          43
+        ],
+        "epochs": [
+          40
+        ],
+        "native": true
+      }
+    ],
+    "rho": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "F"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ],
+        "overrides": {
+          "model": {
+            "rho": 0.125
+          }
+        }
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "F"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ],
+        "overrides": {
+          "model": {
+            "rho": 0.25
+          }
+        }
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "F"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ],
+        "overrides": {
+          "model": {
+            "rho": 0.5
+          }
+        }
+      }
+    ],
+    "radius": [
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "F"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ],
+        "overrides": {
+          "model": {
+            "support_radius_m": 0.4
+          }
+        }
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "F"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ],
+        "overrides": {
+          "model": {
+            "support_radius_m": 0.8
+          }
+        }
+      },
+      {
+        "dataset": "v2xr",
+        "methods": [
+          "deer_sbr"
+        ],
+        "variants": [
+          "F"
+        ],
+        "seeds": [
+          17
+        ],
+        "epochs": [
+          60
+        ],
+        "overrides": {
+          "model": {
+            "support_radius_m": 1.2
+          }
+        }
+      }
+    ]
+  }
+}

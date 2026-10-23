@@ -38,7 +38,7 @@ class PointPillarDeerSbr(nn.Module):
         variants = {'S0': (False, False), 'A': (True, False), 'B': (False, True),
                     'AB': (True, True), 'SUP': (True, True),
                     **{f'M{i}': (True, True) for i in range(1, 7)},
-                    'N1': (True, True), 'N2': (True, True)}
+                    'N1': (True, True), 'N2': (True, True), 'NO_NULL': (True, True)}
         if variant is not None:
             if variant not in variants:
                 raise ValueError(f'unknown innovation variant {variant!r}; expected {list(variants)}')
@@ -94,7 +94,8 @@ class PointPillarDeerSbr(nn.Module):
                 scale_ceiling=config.get('scale_ceiling', 1000.),
                 scale_mode=config.get('scale_mode', 'current_observation_rms'),
                 type_prior_mode=config.get('type_prior_mode', 'multiplicative'),
-                efficient_features=self.efficient_features) if self.use_b else None
+                efficient_features=self.efficient_features,
+                null_donor=config.get('null_donor', self.variant != 'NO_NULL')) if self.use_b else None
 
     def _encode(self, inputs):
         forbidden = set(inputs) - MODEL_INPUT_KEYS
@@ -139,6 +140,10 @@ class PointPillarDeerSbr(nn.Module):
 
     def local_features(self, inputs, include_z0=True):
         lidar, radar = self._encode(inputs)
+        return self.fuse_encoded(lidar, radar, inputs, include_z0)
+
+    def fuse_encoded(self, lidar, radar, inputs, include_z0=True):
+        """Apply the identical local module to an already encoded second backbone."""
         obs, available = inputs['observation_maps'], inputs['modality_valid']
         aux = {'use_a': self.use_a, 'use_b': self.use_b,
                'disable_identity': self.variant == 'M5', 'variant': self.variant}

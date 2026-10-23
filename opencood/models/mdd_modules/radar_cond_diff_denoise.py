@@ -352,7 +352,7 @@ class Cond_Diff_Denoise(nn.Module):
                 _t = torch.full((x.shape[0],), _t, device=x.device, dtype=torch.long)
                 noisy_masks = self.p_sample(x, noisy_masks, _t, upsam=True)
                 all_noisy_masks.append(noisy_masks)
-            data_dict['pred_feature'] = torch.stack(all_noisy_masks,dim=0).squeeze()
+            data_dict['pred_feature'] = torch.cat(all_noisy_masks, dim=0)
         else:
             t1 = time.time()
             noisy_masks = {}
