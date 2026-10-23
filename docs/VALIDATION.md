@@ -91,3 +91,40 @@ dd13771fa8ca73b92b297fdc25375d2371a3d162b613433406d821fffb248de4
 | Markdown 与差异 | 3 份文档的 40 处本地链接/锚点、Git 路径大小写、代码围栏和 `git diff --check` 通过 |
 
 命令区分原生方法轮数与受控预算、先导复用与 online 恢复、开发冻结与最终测试；鲁棒性按 suite 分别汇总，避免重复 baseline 被当成同一 seed 的多条记录。真实数据准备、CUDA 算子/新模型检查、实际数据读取、正式训练和全量最终评分均待服务器执行。所有本轮临时检查均在内存进行，没有新增实验结果或临时产物。
+
+## 2026-10-23 补充实验执行性能优化
+
+本轮实际修改训练/验证调用链和配置生成入口，未调用多代理、连接实验服务器、下载数据或权重、启动正式训练、读取真实数据评测或执行 CUDA benchmark。环境仍为 Windows、Python 3.13.5、PyTorch 2.7.1+cu118；检查进程显式 `CUDA_VISIBLE_DEVICES=''`，使用前述 sequential MKL / 2 CPU threads 设置。
+
+12 个相关模块共 **112 项：109 通过、3 项因完整真实数据缺失 skip**。模块为 `test_supplement_performance`、`test_bn_runner`、`test_batchnorm_refit`、`test_training_protocol`、`test_supplement`、`test_supplement_integrity`、`test_validation_fastpath`、`test_v3_mechanisms`、`test_supported_residual_losses`、`test_data_geometry_review`、`test_v4_protocol`、`test_fixed_gt`。日志为 `outputs/verification/supplement/performance_regressions.txt`；新增定向回归见 [test_supplement_performance.py](../tests/test_supplement_performance.py)。后续配置绑定/完整辅助 loss 检查增强仅重跑受影响用例，也通过。
+
+| 本次实际检查 | 数值标准与结果 |
+|---|---|
+| 梯度有限性合并 | 正常路径不改任何梯度；注入 NaN、Inf 精确返回对应参数名，None 梯度合法。真实 runner 的合成 NaN loss/梯度在 optimizer 更新和 online checkpoint 保存前抛错 |
+| loss 标量批量读取 | 对 FP32 loss 与大整数计数一次转 CPU，以 float64/Python double 求均值；与原逐标量 Python 求和结果严格相等，`rtol=atol=0`，无额外 autograd 路径 |
+| activation checkpoint 开/关 | 同初始权重、32×32 合成网格、真实 AB 模型与 SupplementalLoss，包含 detection/type/correction/identity loss；`psm`、`rm`、总 loss/各项 loss、全部存在的参数梯度和 BN buffers **逐位一致**（`rtol=atol=0`）。BN 不因局部重计算多更新 |
+| runner 的普通/同步计时与恢复 | CPU Linear+BN+Dropout 合成模型，microbatch4/累积2，4 次有效更新；两种计时模式以及 2+2 中断续跑的模型、Adam、scheduler、sampler、TrainState、Python/NumPy/Torch RNG **逐位一致**。loss 与日志项一致；测试替换了数据/模型工厂，未执行真实数据 benchmark |
+| checkpoint IO | 合成 runner 保存间隔2，实际仅在第2/4次更新提交，末尾同状态不重复写；online role 与 BN role 保持。既有 selected/budget snapshot 禁止 resume 及 checkpoint 状态回归通过；原子保存/fsync 未删除 |
+| raw cache / 数据 | K-Radar 合成格式文件，在 epoch 0→1→0 比较关闭/开启缓存：点云体素、训练标签、增强/扰动、来源 metadata 和固定 GT 严格相同；原始数组未被坐标变换污染；文件变化重新读取、缓存字节受限。既有 V2X-R PCD/YAML 哈希篡改拦截回归通过 |
+| loader / 验证复用 | 0/2 workers、prefetch1/2 的两轮样本顺序严格相同，pin_memory/persistent_workers/prefetch 实际属性核对通过。两次验证只构建一次各天气输入流，但每次重新调用预测；普通模式无同步 profiler callback。BN 输入流复用后仍重新拟合并恢复原 BN/RNG |
+| 保留的高效实现 | `efficient_features` 的既有路由比较为严格相等；受支撑残差比较 `rtol=2e-5, atol=1e-7`，稀疏辅助 loss/梯度比较 `rtol=2e-6, atol=1e-7`，均通过。后两者因 FP32 运算/归约顺序不同沿用原测试容差，本次未放宽 |
+| 科学协议与旧身份 | FP32、microbatch4/累积2/有效batch8、采样/天气/固定 GT、每轮全量开发验证、选模容差和 BN 政策未改。原七组配置与归档科学源码身份回归通过；`repro/`、`results/reference/` 和原 schema4 配置无差异 |
+| 候选与 schema | 7 个阶段共14种候选在内存展开并校验；只改变资源、activation checkpoint、online 保存间隔及输出身份。RAM 校验覆盖所有同时存活的 loader cache，非法 workers/prefetch/线程值被拒绝；未放开 FP32 schema |
+| CLI 与文档 | 实际生成并读回2份 workers YAML；向 pilot/pilot_sup/internal_main/external_main 传递执行设置，确认原生 batch/optimizer/schedule、数据/损失/选择规则不变。11组实际 parser 检查、12个受影响 Python 文件内存编译、31个 Bash 块 `bash -n`、两份文档本地文件链接及 `git diff --check` 通过 |
+
+容差依据：执行调度、缓存和日志不改变 CPU FP32 运算，因此新等价检查采用严格相等；已有稀疏特征路径采用其原有 FP32 容差。这些合成结果**不等于真实数据训练轨迹等价，也不证明 GPU 加速或显存收益**。正式效率入口仍前后同步 CUDA，并显式关闭 raw array cache以保留每帧文件读取/解析；该入口本轮未在 CUDA 上执行。
+
+初次组合测试由 `python -` 启动，Windows spawn 无法重新加载 `<stdin>`，造成一项 DataLoader 启动错误；改为下面的模块入口后整组通过，没有修改采样逻辑来规避该错误。三个最终 skip 均为原 `test_fixed_gt.FullPreparedDatasetTests` 的全量数据检查。
+
+```powershell
+$env:PYTHONUTF8 = '1'
+$env:PYTHONPATH = (Join-Path (Get-Location) 'tests')
+$env:CUDA_VISIBLE_DEVICES = ''
+$env:MKL_THREADING_LAYER = 'SEQUENTIAL'
+$env:OMP_NUM_THREADS = '2'
+$env:MKL_NUM_THREADS = '2'
+$env:OPENBLAS_NUM_THREADS = '1'
+python -m unittest test_supplement_performance test_bn_runner test_batchnorm_refit test_training_protocol test_supplement test_supplement_integrity test_validation_fastpath test_v3_mechanisms test_supported_residual_losses test_data_geometry_review test_v4_protocol test_fixed_gt -v
+```
+
+性能证据仅有旧并行验证摘要，没有补充实验原始训练耗时；未产生新加速比、训练收敛或 AP。候选生成、有界测量、正常/诊断计时区别、资源总量及选择标准统一见 [REPRODUCING.md](REPRODUCING.md#11-性能证据与计时口径)。本地 CLI 生成的临时候选在核对后移入回收站；仅保留上述检查日志，不新增平行方案或实验结果文件。

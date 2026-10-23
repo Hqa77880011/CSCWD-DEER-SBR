@@ -12,12 +12,14 @@ import multiprocessing as mp
 from pathlib import Path
 import re
 import struct
+import time
+from functools import partial
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from opencood.project.data_io import read_annotation
+from opencood.project.data_io import ByteLRU, read_annotation
 from opencood.project.data_geometry import (augmentation_matrix, augment_boxes, bev_grid,
     count_map)
 from opencood.project.geometry import (pose_to_world, transform_points,
@@ -459,6 +461,7 @@ class SupplementalDataset(Dataset):
         self.voxel = hypes['preprocess']['args']['voxel_size']
         self.grid = bev_grid(self.bounds, self.voxel)
         self.epoch_value = mp.Value('q', 0)
+        self.cache = ByteLRU(int(config['resources']['raw_cache_gib_per_worker'] * 1024**3))
         self.max_agents = config['evaluation']['agents']
         self.seed = config['experiment']['seed']
         self.pre_processor = NumpyVoxelizer(hypes, training)
@@ -503,9 +506,16 @@ class SupplementalDataset(Dataset):
     def _points(self, record, modality):
         d = self.config['data']
         base = (Path(d['radar_root']) if self.dataset_id == 'kradar' and modality == 'radar' else self.root)
-        return real_points(base / record[modality], self.dataset_id, modality, record['agent_id'])
+        # Calibration/augmentation below mutate arrays; never mutate the cached
+        # raw sensor coordinates. The key includes the agent-specific scalar rule.
+        reader = partial(real_points, dataset=self.dataset_id, modality=modality, agent_id=record['agent_id'])
+        return self.cache.get(base / record[modality],
+            kind=(self.dataset_id, modality, record['agent_id']), reader=reader).copy()
 
     def __getitem__(self, index):
+        started = time.perf_counter() if self.cache.profile else None
+        read_before = self.cache.read_seconds
+        hits_before, misses_before = self.cache.hits, self.cache.misses
         sid = self.sample_ids[index]
         sample = self.manifest['samples'][sid]
         epoch = self.epoch_value.value
@@ -583,8 +593,14 @@ class SupplementalDataset(Dataset):
             labels[name] = assigner(boxes)
             diagnostics.append(deepcopy(assigner.last_diagnostics))
         fad_boxes = augment_boxes(np.asarray([g['box'] for g in sample['gt']]).reshape(-1, 7), aug)
-        return dict(agents=current, sample_id=sid, labels=labels, targets=targets, refs=refs, fad_boxes=fad_boxes,
-                    metadata=metadata, target_diagnostics=diagnostics[0])
+        result = dict(agents=current, sample_id=sid, labels=labels, targets=targets, refs=refs, fad_boxes=fad_boxes,
+                      metadata=metadata, target_diagnostics=diagnostics[0])
+        if started is not None:
+            read_seconds = self.cache.read_seconds - read_before
+            result['data_timing'] = dict(raw_read_parse_seconds=read_seconds,
+                preprocessing_seconds=time.perf_counter() - started - read_seconds,
+                raw_cache_hits=self.cache.hits - hits_before, raw_cache_misses=self.cache.misses - misses_before)
+        return result
 
     def collate_batch(self, batch):
         agents = [a for item in batch for a in item['agents']]
@@ -603,6 +619,8 @@ class SupplementalDataset(Dataset):
             ego['reference_lidar'] = self.pre_processor.collate_batch([r for item in batch for r in item['refs']])
         targets = [t for item in batch for t in item['targets']]
         result = dict(ego=ego, train_targets={k: torch.from_numpy(np.stack([t[k] for t in targets])) for k in targets[0]})
+        if 'data_timing' in batch[0]:
+            result['data_timing'] = {k: sum(item['data_timing'][k] for item in batch) for k in batch[0]['data_timing']}
         if self.config['experiment']['method'] == 'l4dr':
             ego['raw_radar'] = [torch.from_numpy(a['raw_radar']) for a in agents]
             if self.training:

@@ -143,7 +143,7 @@ class RunnerBatchNormTests(unittest.TestCase):
              patch('project_tools.export_predictions.export_loader', side_effect=export), \
              patch('opencood.project.evaluation.evaluate_predictions', return_value={'metrics': {'3d': {'0.7': {'ap': .5}}}}):
             scores, _ = validate_epoch(Toy(), validate_config({'version': 4, 'experiment': {'track': 'W', 'variant': 'S0'}}), 'cpu',
-                                       lambda event, **row: events.append((event, row)))
+                                       lambda event, **row: events.append((event, row)), timing_mode='synchronized')
         self.assertEqual(scores, {'normal': .5, 'fog': .5})
         self.assertEqual([call.args[1:] for call in make.call_args_list], [('validate', 'normal'), ('validate', 'fog')])
         self.assertTrue(all(loader.iterator.closed for loader in loaders))

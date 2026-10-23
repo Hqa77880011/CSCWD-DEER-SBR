@@ -22,7 +22,8 @@ import yaml
 from opencood.project.config import load_config, validate_config, config_hash, file_sha256
 from opencood.project.training import (EpochBatchSampler, TrainState, seed_everything, select_model_inputs, to_device,
     save_checkpoint, load_checkpoint, freeze_batchnorm, consider_checkpoint,
-    atomic_torch_save, tensor_state_hash, FP16_INITIAL_SCALE, rng_state, restore_rng)
+    atomic_torch_save, tensor_state_hash, FP16_INITIAL_SCALE, rng_state, restore_rng,
+    nonfinite_gradients, loss_scalars)
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -207,7 +208,7 @@ def make_bn_refit_loader(config):
 
 
 @contextmanager
-def batchnorm_evaluation(model, config, device, telemetry=None):
+def batchnorm_evaluation(model, config, device, telemetry=None, *, loader_cache=None):
     """One train-only frozen-weight refit, shared by all evaluation weather."""
     policy = config['training'].get('batchnorm', {})
     if policy.get('evaluation_statistics', 'running') == 'running':
@@ -220,7 +221,12 @@ def batchnorm_evaluation(model, config, device, telemetry=None):
     started = time.perf_counter()
     resources, report = {}, None
     try:
-        dataset, loader, indices = make_bn_refit_loader(config)
+        if loader_cache is not None and 'bn_refit' in loader_cache:
+            dataset, loader, indices = loader_cache['bn_refit']
+        else:
+            dataset, loader, indices = make_bn_refit_loader(config)
+            if loader_cache is not None:
+                loader_cache['bn_refit'] = (dataset, loader, indices)
         resources['loader'] = loader
         if telemetry is not None:
             telemetry("refit_start", dataset_split="train", sample_indices=indices,
@@ -241,9 +247,10 @@ def batchnorm_evaluation(model, config, device, telemetry=None):
                     report['micro_batches'] != policy['refit_samples']//policy['refit_micro_batch_size'] or
                     report['unused_bn'] or not report['all_modules_eval_at_yield']):
                 raise BatchNormRefitError('incomplete fixed training-partition statistics pass')
-            # The independent fitting workers have finished their job; release
-            # them before creating the validation loader.
-            shutdown_loader(resources)
+            # Standalone callers release the stream immediately. The v5 runner
+            # retains only data/loader state, never fitted model statistics.
+            if loader_cache is None:
+                shutdown_loader(resources)
             report['pre_evaluation_wall_seconds'] = time.perf_counter() - started
             monitor_batchnorm(model, telemetry, phase="refitted_for_validation")
             if telemetry is not None:
@@ -253,7 +260,8 @@ def batchnorm_evaluation(model, config, device, telemetry=None):
                           seconds=report['pre_evaluation_wall_seconds'])
             yield report
     finally:
-        shutdown_loader(resources)
+        if loader_cache is None:
+            shutdown_loader(resources)
         restore_rng(random_state)
         restored = batchnorm_statistics_hashes(model) == original_hashes
         if telemetry is not None:
@@ -492,7 +500,8 @@ def preflight(config):
     return report
 
 
-def validate_epoch(model, config, device, telemetry=None):
+def validate_epoch(model, config, device, telemetry=None, *, loader_cache=None,
+                   timing_mode='throughput', sample_limit=None):
     from project_tools.export_predictions import export_loader
     from opencood.project.evaluation import evaluate_predictions
     scores, details = {}, {}
@@ -503,15 +512,31 @@ def validate_epoch(model, config, device, telemetry=None):
         def record_profile(row):
             stage_seconds[row["stage"]] += row["seconds"]
             stage_calls[row["stage"]] += 1
-        dataset, loader = make_eval_loader(config, "validate", weather)
+        key = ('validate', weather, sample_limit)
+        setup_started = time.perf_counter()
+        reused = loader_cache is not None and key in loader_cache
+        if reused:
+            dataset, loader = loader_cache[key]
+        else:
+            dataset, loader = make_eval_loader(config, "validate", weather)
+            if sample_limit is not None:
+                dataset.sample_ids = dataset.sample_ids[:sample_limit]
+            if hasattr(dataset, 'cache'):
+                dataset.cache.profile = timing_mode == 'synchronized'
+            if loader_cache is not None:
+                loader_cache[key] = (dataset, loader)
+        stage_seconds['dataset_loader_setup'] = time.perf_counter() - setup_started
         if telemetry is not None:
-            telemetry("validation_weather_start", split="validate", weather=weather, total_samples=len(dataset))
+            telemetry("validation_weather_start", split="validate", weather=weather, total_samples=len(dataset),
+                      loader_reused=reused, timing_mode=timing_mode, diagnostic_subset=sample_limit is not None)
         progress_resources = {"loader": loader}
         def progress_batches():
             samples, batches = 0, 0
             iterator = iter(loader)
             progress_resources["iterator"] = iterator
             for batch in iterator:
+                for name, value in batch.get('data_timing', {}).items():
+                    stage_seconds['worker_sum_' + name] += value
                 yield batch
                 samples += len(batch['ego']['sample_ids'])
                 batches += 1
@@ -521,10 +546,12 @@ def validate_epoch(model, config, device, telemetry=None):
                               seconds=time.perf_counter() - started,
                               stage_seconds=dict(stage_seconds), stage_calls=dict(stage_calls))
         try:
+            options = {'close_loader': False} if loader_cache is not None else {}
             records = export_loader(model, progress_batches() if telemetry is not None else loader, dataset, device,
-                                    profile_callback=record_profile if telemetry is not None else None)
+                                    profile_callback=record_profile if timing_mode == 'synchronized' else None, **options)
         finally:
-            shutdown_loader(progress_resources)
+            if loader_cache is None or not config['resources']['persistent_workers']:
+                shutdown_loader(progress_resources)
         if telemetry is not None:
             telemetry("validation_scoring_start", split="validate", weather=weather, evaluated_samples=len(records),
                       seconds=time.perf_counter() - started)
@@ -585,6 +612,10 @@ def run(config, args):
         for sig, handler in resources.pop("signal_handlers", {}).items():
             signal.signal(sig, handler)
         try:
+            for stream in resources.pop('evaluation_loaders', {}).values():
+                shutdown_loader({'loader': stream[1]})
+            for stream in resources.pop('log_streams', []):
+                stream.close()
             shutdown_loader(resources)
         finally:
             if torch.distributed.is_available() and torch.distributed.is_initialized():
@@ -599,6 +630,11 @@ def _run(config, args, resources):
         raise ValueError("formal readiness gates: " + "; ".join(blockers))
     if args.mode in ("smoke", "benchmark") and (args.steps <= 0 or args.warmup < 0 or args.steps + args.warmup > 200):
         raise ValueError("diagnostic mode is limited to 200 total optimizer updates including warmup")
+    timing_mode = getattr(args, 'timing_mode', 'throughput')
+    synchronized = timing_mode == 'synchronized'
+    validation_samples = getattr(args, 'diagnose_validation_samples', 0)
+    if validation_samples and (args.mode != 'benchmark' or config['version'] != 5 or not 1 <= validation_samples <= 64):
+        raise ValueError('bounded validation diagnosis requires schema 5 benchmark mode and 1..64 samples per domain')
     os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     t, e = config["training"], config["experiment"]
     world = int(os.environ.get("WORLD_SIZE", "1"))
@@ -617,6 +653,8 @@ def _run(config, args, resources):
     torch.set_num_threads(config["resources"]["cpu_threads"])
     seed_everything(e["seed"] + rank, t["deterministic"])
     dataset, model, criterion = build_components(config, args.mode)
+    if hasattr(dataset, 'cache'):
+        dataset.cache.profile = synchronized
     initialize = getattr(args, 'initialize_from', None)
     if config['version'] == 5:
         transfer = e['transfer']
@@ -664,6 +702,8 @@ def _run(config, args, resources):
     output.mkdir(parents=True, exist_ok=True)
     telemetry_started = time.perf_counter()
     telemetry_path = output / f"telemetry.rank{rank}.jsonl"
+    telemetry_stream = telemetry_path.open('a', buffering=1)
+    resources['log_streams'] = [telemetry_stream]
     def telemetry(event, **fields):
         if event == "failure":
             fields["batchnorm"] = batchnorm_snapshot(model)
@@ -673,13 +713,17 @@ def _run(config, args, resources):
                "optimizer_step": state.optimizer_steps, "micro_step": state.micro_steps,
                "samples_seen": state.samples_seen, "sampler_cursor": sampler.state_dict(),
                "cuda_memory": cuda_memory_snapshot(device), **fields}
-        with telemetry_path.open("a") as stream:
-            stream.write(json.dumps(row, allow_nan=False) + "\n")
-            stream.flush()
-            os.fsync(stream.fileno())
+        telemetry_stream.write(json.dumps(row, allow_nan=False) + "\n")
+        # Progress is line-buffered. Durable barriers belong to checkpoint and
+        # lifecycle commits, not every validation progress/BN observation.
+        if event in ('checkpoint_commit', 'failure', 'run_complete'):
+            telemetry_stream.flush()
+            os.fsync(telemetry_stream.fileno())
     resources["telemetry"] = telemetry
     telemetry("startup", mode=args.mode, run_id=e["run_id"], variant=e["variant"], track=e["track"], seed=e["seed"],
               source_sha256=metadata["source_sha256"], config_sha256=config_hash(config),
+              timing_mode=timing_mode, resources=config['resources'],
+              thread_environment={k: os.environ.get(k) for k in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS')},
               resume_requested=str(args.resume) if args.resume else None,
               allocator_counter_semantics="process-cumulative; recovered allocator OOMs/retries are not training failures")
     if args.resume:
@@ -712,28 +756,50 @@ def _run(config, args, resources):
             "teacher_networks": 0, "clean_feature_forwards": 'one extra reference encoder pass per microbatch' if config['version'] == 5 and e['method'] == 'mdd' else 0,
             "parameter_count": sum(p.numel() for p in model.parameters()), "torch": torch.__version__}, indent=2))
     telemetry("training_ready", shared_initialization_sha256=initial_hash)
+    del shared_state
     monitor_batchnorm(model, telemetry, phase="resume_loaded_online" if args.resume else "initialized_online")
+    checkpoint_seconds = []
+    last_resume_cursor = None
     def commit_checkpoint(path, checkpoint_metadata=None):
+        nonlocal last_resume_cursor
         checkpoint_metadata = metadata if checkpoint_metadata is None else checkpoint_metadata
         role = checkpoint_metadata.get("checkpoint_role", "resume")
+        cursor = (state.epoch, state.optimizer_steps, sampler.next_batch, state.best_score, state.selected_epoch)
+        if role == 'resume' and cursor == last_resume_cursor:
+            return 0.
+        started = time.perf_counter()
         monitor_batchnorm(model, telemetry, phase="checkpoint_" + role)
+        serialization_started = time.perf_counter()
         save_checkpoint(path, model, optimizer, scheduler, scaler, state, sampler, config, checkpoint_metadata)
+        saved_seconds = time.perf_counter() - serialization_started
+        seconds = time.perf_counter() - started
+        checkpoint_seconds.append(seconds)
+        if role == 'resume':
+            last_resume_cursor = cursor
+        step_stream.flush()
+        os.fsync(step_stream.fileno())
         telemetry("checkpoint_commit", checkpoint=str(path), checkpoint_role=role,
                   bn_statistics_role=checkpoint_metadata.get("bn_statistics_role", "online_running"),
-                  checkpoint_bytes=Path(path).stat().st_size)
+                  checkpoint_bytes=Path(path).stat().st_size, seconds=seconds,
+                  serialization_fsync_seconds=saved_seconds)
+        return time.perf_counter() - started
     network = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank] if device.type == "cuda" else None,
         find_unused_parameters=True) if world > 1 else model
     optimizer.zero_grad(set_to_none=True)
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
     timings, losses, completed = [], [], 0
-    measured_phases = {name: [] for name in ("data", "compute", "optimizer")}
+    measured_phases = {name: [] for name in ('data', 'metadata', 'h2d', 'compute', 'optimizer')}
+    inclusive_timings = []
     stop_requested = [False]
     def request_stop(signum, frame):
         stop_requested[0] = True
     resources["signal_handlers"] = {sig: signal.signal(sig, request_stop) for sig in (signal.SIGINT, signal.SIGTERM)}
     max_updates = args.warmup + args.steps if args.mode != "train" else None
     log_path = output / f"steps.rank{rank}.jsonl"
+    step_stream = log_path.open('a', buffering=1)
+    resources['log_streams'].append(step_stream)
+    loader_cache = resources.setdefault('evaluation_loaders', {}) if config['version'] == 5 else None
     while state.epoch < t["epochs"] and not stop_requested[0]:
         dataset.set_epoch(state.epoch)
         if hasattr(criterion, 'epoch'):
@@ -741,20 +807,22 @@ def _run(config, args, resources):
         model.train()
         if t["normalization"] == "frozen_batchnorm":
             freeze_batchnorm(model)
+        _sync(device)
+        epoch_started = time.perf_counter()
         iterator = iter(loader)
         resources["iterator"] = iterator
-        update_start = time.perf_counter()
-        data_time = compute_time = optimizer_time = 0.0
-        update_losses = []
-        loss_term_sums = Counter()
+        update_wall_start = update_start = epoch_started
+        data_time = metadata_time = transfer_time = compute_time = optimizer_time = 0.0
+        loss_rows = []
+        worker_timings = Counter()
         target_summary, weather_counts, sensor_points = Counter(), Counter(), Counter()
         agents_per_micro, unrepresented_samples = [], []
         assignment_versions = set()
         type_coverage = Counter()
         for batch in iterator:
             data_time += time.perf_counter() - update_start
-            _sync(device)
-            compute_start = time.perf_counter()
+            metadata_start = time.perf_counter()
+            worker_timings.update(batch.get('data_timing', {}))
             ego = batch["ego"]
             agents_per_micro.append(int(ego["record_len"].sum()))
             for sample_id, diagnostic in zip(ego["sample_ids"], ego.get("target_diagnostics", [])):
@@ -781,11 +849,19 @@ def _run(config, args, resources):
                     type_coverage[name + "_cells"] += mask.numel()
                     type_coverage[name + "_valid_cells"] += int(mask.sum())
                     type_coverage[name + "_positive_cells"] += int(((raw_targets[name] > 0) & mask).sum())
+            metadata_time += time.perf_counter() - metadata_start
+            if synchronized:
+                _sync(device)
+            transfer_start = time.perf_counter()
             inputs = to_device(select_model_inputs(ego), device)
             if config['version'] == 5 and e['method'] == 'mdd':
                 inputs['processed_de_lidar'] = to_device(ego['reference_lidar'], device)
             targets = to_device(batch.get("train_targets", {}), device)
             labels = to_device(ego["label_dict"], device)
+            if synchronized:
+                _sync(device)
+            transfer_time += time.perf_counter() - transfer_start
+            compute_start = time.perf_counter()
             is_last_micro = (sampler.next_batch + 1) % t["accumulation_steps"] == 0
             sync_context = network.no_sync() if world > 1 and not is_last_micro else nullcontext()
             with sync_context:
@@ -795,10 +871,10 @@ def _run(config, args, resources):
                 if not torch.isfinite(loss):
                     raise FloatingPointError("nonfinite training loss")
                 scaler.scale(loss / t["accumulation_steps"]).backward()
-            _sync(device)
+            if synchronized:
+                _sync(device)
             compute_time += time.perf_counter() - compute_start
-            update_losses.append(float(loss.detach()))
-            loss_term_sums.update({key: float(value) for key, value in criterion.loss_dict.items()})
+            loss_rows.append({'loss': loss.detach(), **{key: value.detach() for key, value in criterion.loss_dict.items()}})
             # Do not keep the previous micro-batch's dense aux feature maps
             # alive while constructing the next forward graph.
             del prediction, loss, inputs, targets, labels
@@ -808,8 +884,7 @@ def _run(config, args, resources):
             if is_last_micro:
                 optimizer_start = time.perf_counter()
                 scaler.unscale_(optimizer)
-                bad_gradients = [name for name, parameter in model.named_parameters()
-                                 if parameter.grad is not None and not bool(torch.isfinite(parameter.grad).all())]
+                bad_gradients = nonfinite_gradients(model)
                 if bad_gradients:
                     raise FloatingPointError("nonfinite training gradients: " + json.dumps({
                         "parameters": bad_gradients, "scale": scaler.get_scale(), "epoch": state.epoch,
@@ -818,44 +893,59 @@ def _run(config, args, resources):
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad(set_to_none=True)
+                # One update boundary is needed for honest wall throughput.
+                # Only the diagnostic mode additionally fences each phase.
                 _sync(device)
                 optimizer_time += time.perf_counter() - optimizer_start
+                scalars = loss_scalars(loss_rows)
+                update_wall_seconds = time.perf_counter() - update_wall_start
                 state.optimizer_steps += 1
                 completed += 1
                 if world > 1:
                     stop_flag = torch.tensor(int(stop_requested[0]), device=device)
                     torch.distributed.all_reduce(stop_flag, op=torch.distributed.ReduceOp.MAX)
                     stop_requested[0] = bool(stop_flag.item())
-                if args.mode == "train" and state.optimizer_steps % t["checkpoint_interval_updates"] == 0:
-                    commit_checkpoint(output / f"latest.rank{rank}.pt")
+                checkpoint_time = 0.
+                if args.mode in ('train', 'benchmark') and state.optimizer_steps % t["checkpoint_interval_updates"] == 0:
+                    checkpoint_time = commit_checkpoint(output / f"latest.rank{rank}.pt")
                 row = {"timestamp_utc": timestamp_utc(), "elapsed_seconds": time.perf_counter() - telemetry_started,
                        "cuda_memory": cuda_memory_snapshot(device),
-                       "epoch": state.epoch, "optimizer_step": state.optimizer_steps, "loss": float(np.mean(update_losses)),
+                       "epoch": state.epoch, "optimizer_step": state.optimizer_steps, "loss": scalars.pop('loss'),
                        "data_seconds": data_time, "compute_seconds": compute_time, "optimizer_seconds": optimizer_time,
+                       "metadata_seconds": metadata_time, "h2d_seconds": transfer_time,
+                       "update_wall_seconds": update_wall_seconds, "checkpoint_seconds": checkpoint_time,
+                       "worker_data_timing": dict(worker_timings), "timing_mode": timing_mode,
+                       "phase_semantics": 'synchronized_wall' if synchronized else 'host_dispatch_and_required_waits',
                        "effective_batch": t["effective_batch_size"], "lr": optimizer.param_groups[0]["lr"],
                        "clean_reference_agents_last_micro": int(ego['record_len'].sum()) if config['version'] == 5 and e['method'] == 'mdd' else 0,
-                       "loss_terms": {key: value / len(update_losses) for key, value in loss_term_sums.items()},
+                       "loss_terms": scalars,
                        "loss_term_aggregation": "mean_across_micro_batches", "counts_scope": "rank_local", "rank": rank,
                        "target_diagnostics": dict(target_summary), "unrepresented_samples": unrepresented_samples,
                        "assignment_versions": sorted(assignment_versions), "agent_weather_counts": dict(weather_counts),
                        "agents_per_micro": agents_per_micro, "sensor_points": dict(sensor_points), "type_coverage": dict(type_coverage)}
-                with log_path.open("a") as stream:
-                    stream.write(json.dumps(row, allow_nan=False) + "\n")
+                step_stream.write(json.dumps(row, allow_nan=False) + "\n")
+                if checkpoint_time:
+                    step_stream.flush()
+                    os.fsync(step_stream.fileno())
                 if completed > args.warmup:
-                    timings.append(data_time + compute_time + optimizer_time)
+                    timings.append(update_wall_seconds)
+                    inclusive_timings.append(time.perf_counter() - update_wall_start)
                     losses.append(row["loss"])
-                    for name, value in (("data", data_time), ("compute", compute_time), ("optimizer", optimizer_time)):
+                    for name, value in (('data', data_time), ('metadata', metadata_time), ('h2d', transfer_time),
+                                        ('compute', compute_time), ('optimizer', optimizer_time)):
                         measured_phases[name].append(value)
                 if stop_requested[0] or (max_updates and completed >= max_updates):
                     break
-                data_time = compute_time = optimizer_time = 0.0
-                update_losses = []
-                loss_term_sums = Counter()
+                data_time = metadata_time = transfer_time = compute_time = optimizer_time = 0.0
+                loss_rows = []
+                worker_timings = Counter()
                 target_summary, weather_counts, sensor_points = Counter(), Counter(), Counter()
                 agents_per_micro, unrepresented_samples = [], []
                 assignment_versions = set()
                 type_coverage = Counter()
             update_start = time.perf_counter()
+            if is_last_micro:
+                update_wall_start = update_start
         if stop_requested[0] or (max_updates and completed >= max_updates):
             break
         if sampler.next_batch != sampler.total_batches:
@@ -871,9 +961,14 @@ def _run(config, args, resources):
                 # train stream. Both validation weather use this single state.
                 # Save selected while those buffers are live; resume state is
                 # saved after the context restores the original online EMA.
-                telemetry("validation_start", split="validate", weather=["normal"] if e["track"] == "C" else ["normal", "fog"])
-                with batchnorm_evaluation(model, config, device, telemetry) as bn_report:
-                    scores, details = validate_epoch(model, config, device, telemetry)
+                if any(metadata[key] != value for key, value in data_contract_metadata(config).items()):
+                    raise ValueError('data identity changed before validation; cached inputs cannot be reused')
+                validation_started = time.perf_counter()
+                telemetry("validation_start", split="validate", timing_mode=timing_mode,
+                          weather=config['selection'].get('domains', ["normal"] if e["track"] == "C" else ["normal", "fog"]))
+                with batchnorm_evaluation(model, config, device, telemetry, loader_cache=loader_cache) as bn_report:
+                    scores, details = validate_epoch(model, config, device, telemetry,
+                        loader_cache=loader_cache, timing_mode=timing_mode)
                     selected = consider_checkpoint(state, e["track"], scores, state.epoch,
                         domains=config['selection']['domains'] if config['version'] == 5 else None)
                     if selected:
@@ -896,7 +991,8 @@ def _run(config, args, resources):
                     details['batchnorm_refit'] = bn_report
                 (output / f"validation_epoch{state.epoch:03d}.json").write_text(json.dumps(details, indent=2))
                 telemetry("validation_complete", scores=scores, selected=selected,
-                          selected_epoch=state.selected_epoch, best_score=state.best_score)
+                          selected_epoch=state.selected_epoch, best_score=state.best_score,
+                          seconds=time.perf_counter() - validation_started)
             if world > 1:
                 selection = [state.best_score, state.selected_epoch, selected] if rank == 0 else [None, None, None]
                 torch.distributed.broadcast_object_list(selection, src=0)
@@ -907,6 +1003,16 @@ def _run(config, args, resources):
             # Diagnostic modes may reuse their small train-only sample set.
             continue
     commit_checkpoint(output / f"latest.rank{rank}.pt")
+    if validation_samples and not stop_requested[0]:
+        if any(metadata[key] != value for key, value in data_contract_metadata(config).items()):
+            raise ValueError('data identity changed before bounded validation diagnosis')
+        for pass_index in (1, 2):
+            telemetry('diagnostic_validation_start', pass_index=pass_index, samples_per_domain=validation_samples)
+            with batchnorm_evaluation(model, config, device, telemetry, loader_cache=loader_cache):
+                validate_epoch(model, config, device, telemetry, loader_cache=loader_cache,
+                               timing_mode=timing_mode, sample_limit=validation_samples)
+        telemetry('diagnostic_validation_complete', samples_per_domain=validation_samples,
+                  passes=2, used_for_selection=False, selected_checkpoint_written=False)
     report = {"status": "interrupted_resumable" if stop_requested[0] else ("diagnostic_completed" if args.mode != "train" else "checkpoint_selected"),
               "formal_experiment_started": args.mode == "train", "mode": args.mode,
               "passed": not stop_requested[0], "all_losses_and_gradients_finite": True,
@@ -918,6 +1024,11 @@ def _run(config, args, resources):
               "measured_optimizer_updates": len(timings), "warmup_optimizer_updates": min(args.warmup, completed),
               "mean_optimizer_step_seconds": float(np.mean(timings)) if timings else None,
               "effective_samples_per_second": t["effective_batch_size"] / float(np.mean(timings)) if timings else None,
+              "mean_update_including_periodic_io_seconds": float(np.mean(inclusive_timings)) if inclusive_timings else None,
+              "samples_per_second_including_periodic_io": t['effective_batch_size'] / float(np.mean(inclusive_timings)) if inclusive_timings else None,
+              "checkpoint_commit_seconds": checkpoint_seconds, "timing_mode": timing_mode,
+              "phase_semantics": 'synchronized_wall' if synchronized else 'host_dispatch_and_required_waits',
+              "diagnostic_validation_samples_per_domain": validation_samples,
               "mean_phase_seconds": {name: float(np.mean(values)) if values else None for name, values in measured_phases.items()},
               "data_wait_fraction": float(sum(measured_phases["data"]) / sum(timings)) if timings else None,
               "loss_first": losses[0] if losses else None, "loss_last": losses[-1] if losses else None,
@@ -925,7 +1036,7 @@ def _run(config, args, resources):
               "peak_reserved_gib": torch.cuda.max_memory_reserved(device) / 1024 ** 3 if device.type == "cuda" else 0,
               "training_micro_steps": state.micro_steps, "optimizer_steps": state.optimizer_steps, "output": str(output),
               "formal_blockers": blockers,
-              "timing_scope": "real data + transfer + forward/backward + optimizer; excludes validation/checkpoint writes"}
+              "timing_scope": "update wall includes loader wait, metadata, H2D, forward/backward, finite checks, optimizer completion and scalar logging preparation; inclusive metric adds periodic checkpoint and step log IO; excludes validation and final checkpoint"}
     report["source_unchanged"] = report["audit_contract"]["source_sha256"] == metadata["source_sha256"]
     report["passed"] = report["passed"] and report["source_unchanged"]
     (output / f"report.rank{rank}.json").write_text(json.dumps(report, indent=2))
@@ -948,6 +1059,10 @@ def main():
     parser.add_argument('--initialize-from', help='v5 fine_tuned source selected weights; never optimizer/resume state')
     parser.add_argument("--steps", type=int, default=None, help="measured optimizer updates; smoke=4, benchmark=100")
     parser.add_argument("--warmup", type=int, default=None, help="warmup optimizer updates; benchmark=20")
+    parser.add_argument('--timing-mode', choices=['throughput', 'synchronized'], default='throughput',
+                        help='normal update-wall throughput or phase-synchronized diagnosis; never compare the two as speedups')
+    parser.add_argument('--diagnose-validation-samples', type=int, default=0,
+                        help='benchmark only: two passes over first 1..64 development samples per domain plus registered train BN refit; never selects weights')
     args = parser.parse_args()
     args.steps = args.steps if args.steps is not None else (100 if args.mode == "benchmark" else 4)
     args.warmup = args.warmup if args.warmup is not None else (20 if args.mode == "benchmark" else 0)

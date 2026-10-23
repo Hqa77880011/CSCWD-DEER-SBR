@@ -2,6 +2,7 @@
 from collections import OrderedDict
 import hashlib
 from pathlib import Path
+import time
 import numpy as np
 import yaml
 
@@ -85,17 +86,25 @@ class ByteLRU:
         self.bytes = 0
         self.items = OrderedDict()
         self.expected_sha256 = {}
-    def get(self, path, kind='pcd'):
+        self.profile = False
+        self.read_seconds = 0.
+        self.hits = self.misses = 0
+    def get(self, path, kind='pcd', *, reader=None):
         path = Path(path)
         stat = path.stat()
         expected=self.expected_sha256.get(str(path))
         key = (str(path), stat.st_size, stat.st_mtime_ns, kind, expected)
         if key in self.items:
+            self.hits += 1
             value, size = self.items.pop(key)
             self.items[key] = (value,size)
             return value
-        value = read_pcd(path,expected) if kind == 'pcd' else read_annotation(path,expected)
-        size = value.nbytes if kind == 'pcd' else max(1024,stat.st_size*6)
+        self.misses += 1
+        started = time.perf_counter() if self.profile else None
+        value = reader(path) if reader is not None else (read_pcd(path,expected) if kind == 'pcd' else read_annotation(path,expected))
+        if started is not None:
+            self.read_seconds += time.perf_counter() - started
+        size = value.nbytes if isinstance(value, np.ndarray) else max(1024,stat.st_size*6)
         if self.max_bytes and size <= self.max_bytes:
             while self.items and self.bytes + size > self.max_bytes:
                 _, (_, old_size) = self.items.popitem(last=False)

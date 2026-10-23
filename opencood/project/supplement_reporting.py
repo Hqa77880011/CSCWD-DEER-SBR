@@ -308,6 +308,11 @@ def efficiency(model, dataset, device, args, metadata):
     from opencood.project.evaluation import postprocess_predictions
     if args.samples < 1 or args.warmup < 0:
         raise ValueError('efficiency needs positive measured samples and nonnegative warmup')
+    # Training/development can reuse parsed raw arrays. This separate latency
+    # protocol explicitly includes point-file reads and parsing on every frame.
+    if hasattr(dataset, 'cache'):
+        dataset.cache.items.clear()
+        dataset.cache.bytes = dataset.cache.max_bytes = 0
     for i in range(args.warmup):
         batch = dataset.collate_batch([dataset[i % len(dataset)]])
         model(to_device(select_model_inputs(batch['ego']), device), return_aux=False)
@@ -370,6 +375,7 @@ def efficiency(model, dataset, device, args, metadata):
         end_to_end=stats(times), local_module=stats(local_times),
         peak_allocated_bytes=max(peaks) if peaks else None,
         scope=dict(preprocessing=True, point_file_io=True, host_to_device=True, decode=True, nms=True,
+            raw_point_cache=False, filesystem_cache='OS-managed; no claim of cold disk IO',
             scoring=False, disk_output=False, serialized_data_pipeline=True, cuda_synchronized=device.type == 'cuda',
             local_module='phi_base + DEER + SBR + phi_out, excludes PFN/Scatter/cooperation; separate timing pass'))
 

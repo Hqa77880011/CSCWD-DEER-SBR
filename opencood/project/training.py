@@ -36,6 +36,29 @@ def to_device(value, device):
     return value
 
 
+def nonfinite_gradients(model):
+    """One host decision on the normal path; name parameters only on failure."""
+    names, flags = [], []
+    for name, parameter in model.named_parameters():
+        if parameter.grad is not None:
+            names.append(name)
+            flags.append(torch.isfinite(parameter.grad).all())
+    if not flags:
+        return []
+    finite = torch.stack(flags)
+    if bool(finite.all()):
+        return []
+    return [name for name, good in zip(names, finite.cpu().tolist()) if not good]
+
+
+def loss_scalars(rows):
+    """Transfer detached logging scalars once per update, preserving double means."""
+    keys = list(rows[0])
+    values = torch.stack([torch.stack([row[key].detach().to(torch.float64) for key in keys])
+                          for row in rows]).cpu().tolist()
+    return {key: sum(row[i] for row in values) / len(values) for i, key in enumerate(keys)}
+
+
 def seed_everything(seed, deterministic=True):
     random.seed(seed)
     np.random.seed(seed)

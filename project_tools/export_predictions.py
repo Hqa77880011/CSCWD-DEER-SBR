@@ -154,7 +154,7 @@ def decode_predictions(output, anchors, sample_ids, score_floor=0.001):
 
 @torch.inference_mode()
 def export_loader(model, loader, dataset, device, *, postprocess=True,
-                  implementation="optimized", profile_callback=None):
+                  implementation="optimized", profile_callback=None, close_loader=True):
     """Export with optional exact, synchronized stage timings for diagnosis.
 
     The callback receives {stage, seconds}; CUDA synchronization happens only
@@ -254,7 +254,8 @@ def export_loader(model, loader, dataset, device, *, postprocess=True,
             for name, module in model.named_modules():
                 module.training = original_modes[name]
         finally:
-            shutdown_loader({"loader": loader, "iterator": iterator})
+            if close_loader:
+                shutdown_loader({"loader": loader, "iterator": iterator})
     return records
 
 

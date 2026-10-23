@@ -216,6 +216,17 @@ def validate_supplement_config(config):
         raise ValueError('invalid local module size or amplitude scale bounds')
     from opencood.project.supervision import controlled_corruption_config
     controlled_corruption_config(d['controlled_corruption'])
+    r = c['resources']
+    if (r['num_workers'] < 0 or r['prefetch_factor'] <= 0 or r['cpu_threads'] <= 0
+            or r['raw_cache_gib_per_worker'] < 0 or r['ram_budget_gib'] <= 0):
+        raise ValueError('invalid execution resources / RAM budget')
+    # Training, each development weather, and the fixed train BN stream can
+    # coexist. Budget every pool, including num_workers=0 in-process caches.
+    pools = 1 + len(c['selection']['domains']) + int(bn['evaluation_statistics'] != 'running')
+    if pools * max(1, r['num_workers']) * r['raw_cache_gib_per_worker'] > r['ram_budget_gib'] / 2:
+        raise ValueError('all live loader raw caches must fit within half the per-task RAM budget')
+    if r['num_workers'] == 0:
+        r['persistent_workers'] = False
     # Reject nonfinite values at the configuration boundary.
     json.dumps(c, allow_nan=False)
     return c

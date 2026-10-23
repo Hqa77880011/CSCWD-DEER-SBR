@@ -30,7 +30,7 @@ def save_json(path, value):
 def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
            epochs=60, *, data_root=None, output_root=None, device='auto',
            final_model_file=None, native=False, overrides=None,
-           radar_root=None, label_root=None, manifest_dir=None):
+           radar_root=None, label_root=None, manifest_dir=None, execution_config=None):
     c = load_config(REPO / 'cscwd_configs/supplement' / (dataset + '.yaml'))
     e, t, m = (c[k] for k in ('experiment', 'training', 'model'))
     e.update(method=method, variant=variant, seed=seed,
@@ -94,7 +94,37 @@ def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
     if method == 'where2comm' and m['local_variant'] != 'none':
         e['comparison'] = 'controlled_module'
     e['run_id'] = f'supp_{dataset}_{method}_{variant}_e{epochs}_s{seed}' + ('_native' if native else '') + suffix
+    if execution_config:
+        execution = load_config(execution_config)
+        if execution['version'] != 5:
+            raise ValueError('execution settings require a schema 5 configuration')
+        for key in ('num_workers', 'prefetch_factor', 'raw_cache_gib_per_worker', 'cpu_threads',
+                    'ram_budget_gib', 'pin_memory', 'persistent_workers'):
+            c['resources'][key] = execution['resources'][key]
+        t['checkpoint_interval_updates'] = execution['training']['checkpoint_interval_updates']
+        m['activation_checkpoint'] = execution['model']['activation_checkpoint']
     return validate_config(c)
+
+
+def performance_configs(config, stage, output_root):
+    """Generate one-factor candidates from the last measured winner; never launch."""
+    if config['version'] != 5:
+        raise ValueError('performance candidates require supplement schema 5')
+    stages = json.loads((REPO / 'cscwd_configs/supplement/performance_candidates.json').read_text())
+    spec = stages[stage]
+    if stage == 'prefetch' and not config['resources']['num_workers']:
+        raise ValueError('prefetch comparison requires num_workers > 0')
+    if stage == 'activation' and (config['experiment']['method'] != 'deer_sbr'
+                                  or config['experiment']['variant'] == 'S0'):
+        raise ValueError('activation checkpoint comparison requires an active internal local module (use AB)')
+    rows = []
+    for value in spec['values']:
+        candidate = deepcopy(config)
+        candidate[spec['section']][spec['key']] = value
+        candidate['artifacts']['output_root'] = str(Path(output_root).resolve())
+        candidate['experiment']['run_id'] += f'_perf_{stage}_{str(value).lower().replace(".", "p")}'
+        rows.append(validate_config(candidate))
+    return rows
 
 
 def write_config(config):
@@ -169,6 +199,10 @@ def main(argv=None):
     for key in ('radar-root', 'label-root', 'train-split', 'test-split'):
         prepared.add_argument('--' + key)
     configure = commands.add_parser('configure', help='write one concrete standalone recipe')
+    performance = commands.add_parser('performance-configs', help='write a small one-factor execution comparison; never train')
+    performance.add_argument('--config', required=True, help='base recipe or the last measured winning configuration')
+    performance.add_argument('--stage', required=True, choices=['workers', 'prefetch', 'cache', 'cpu', 'activation', 'checkpoint', 'workers12'])
+    performance.add_argument('--output-root', required=True)
     plan = commands.add_parser('plan', help='expand a suite without starting experiments')
     launch = commands.add_parser('run-suite', help='dry-run by default; --execute runs sequentially')
     suites = json.loads((REPO / 'cscwd_configs/supplement/matrix.json').read_text(encoding='utf8'))['suites']
@@ -180,6 +214,7 @@ def main(argv=None):
         command.add_argument('--output-root', required=True)
         command.add_argument('--device', default='auto')
         command.add_argument('--final-model-file')
+        command.add_argument('--execution-config', help='copy only validated worker/cache/thread/checkpoint execution settings')
     configure.add_argument('--dataset', choices=['v2xr', 'v2xradar', 'kradar'], default='v2xr')
     configure.add_argument('--method', choices=METHODS, default='deer_sbr')
     configure.add_argument('--variant', choices=(*INTERNAL, 'F'))
@@ -270,10 +305,21 @@ def main(argv=None):
         print(json.dumps(dict(manifest=str(path), samples=len(manifest['samples']),
             partitions=manifest['sequence_partitions'], summary=manifest['summary'],
             final_identity=manifest['final_identity']), ensure_ascii=False, indent=2))
+    elif args.action == 'performance-configs':
+        configs = performance_configs(load_config(args.config), args.stage, args.output_root)
+        rows = plan_records(configs, write=True)
+        for row in rows:
+            row['argv'] = ['python', 'project_tools/run_experiments.py', '--config', row['config'],
+                           '--mode', 'benchmark', '--steps', '40', '--warmup', '10', '--timing-mode', 'throughput']
+            output = Path(row['main_outputs'][0]).parent.parent / 'benchmark'
+            row['main_outputs'] = [str(output / name) for name in
+                ('report.rank0.json', 'steps.rank0.jsonl', 'telemetry.rank0.jsonl', 'latest.rank0.pt')]
+        print(json.dumps(dict(stage=args.stage, tasks=rows,
+                              experiment_started=False), ensure_ascii=False, indent=2))
     elif args.action in ('configure', 'plan', 'run-suite'):
         options = dict(data_root=args.data_root, output_root=args.output_root, device=args.device,
             final_model_file=args.final_model_file, radar_root=args.radar_root,
-            label_root=args.label_root, manifest_dir=args.manifest_dir)
+            label_root=args.label_root, manifest_dir=args.manifest_dir, execution_config=args.execution_config)
         if args.action == 'configure':
             print(write_config(recipe(args.dataset, args.method, args.variant or ('AB' if args.method == 'deer_sbr' else 'S0'), args.seed,
                 args.epochs, native=args.native_recipe, **options)))

@@ -4,6 +4,7 @@ Legacy datasets are kept for diagnostic reproduction. This path isolates model
 inputs from training-only labels/clean pairs and preserves every legal sample.
 """
 import copy,json,multiprocessing as mp
+import time
 from pathlib import Path
 import numpy as np
 import torch
@@ -116,6 +117,9 @@ class ProjectV2XRDataset(Dataset):
         output=self.pre_processor.preprocess(np.ascontiguousarray(points,dtype=np.float32))
         return {key:np.array(value,copy=True) for key,value in output.items()}
     def __getitem__(self,index):
+        started=time.perf_counter() if self.cache.profile else None
+        read_before=self.cache.read_seconds
+        hits_before,misses_before=self.cache.hits,self.cache.misses
         sid=self.sample_ids[index];sample=self.manifest['samples'][sid]
         seq=sample['sequence'];timestamp=sample['timestamp'];epoch=self.epoch_value.value
         # Manifest sequence is root-relative split/sequence. Accept only this
@@ -226,6 +230,11 @@ class ProjectV2XRDataset(Dataset):
                        'metadata':metadata,'augmentation':aug.astype(np.float32)},
                 'train_targets':targets if self.training or self.experiment_config else None}
         if references:result['ego']['reference_lidar']=references
+        if started is not None:
+            read_seconds=self.cache.read_seconds-read_before
+            result['data_timing']=dict(raw_read_parse_seconds=read_seconds,
+                preprocessing_seconds=time.perf_counter()-started-read_seconds,
+                raw_cache_hits=self.cache.hits-hits_before,raw_cache_misses=self.cache.misses-misses_before)
         return result
     def _collate_inputs(self,items):
         agents=[a for item in items for a in item['agents']]
@@ -245,6 +254,8 @@ class ProjectV2XRDataset(Dataset):
                    cameras=[x['camera'] for x in items],augmentations=[x['augmentation'] for x in items],
                    anchor_box=torch.from_numpy(self.anchor_box))
         out={'ego':ego}
+        if 'data_timing' in batch[0]:
+            out['data_timing']={k:sum(item['data_timing'][k] for item in batch) for k in batch[0]['data_timing']}
         if items[0].get('reference_lidar'):
             ego['reference_lidar']=self.pre_processor.collate_batch([r for item in items for r in item['reference_lidar']])
         if self.training or self.experiment_config:

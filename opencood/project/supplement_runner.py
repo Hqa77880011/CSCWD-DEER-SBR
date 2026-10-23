@@ -33,7 +33,7 @@ def build_dataset(config, hypes, split, *, training=False, augment=False, weathe
     d, e, r = (config[k] for k in ('data', 'experiment', 'resources'))
     return ProjectV2XRDataset(hypes, root=d['root'], split=split, training=training, track=e['track'],
         seed=e['seed'], weather=weather, paired=False, augment=augment,
-        cache_bytes=int(r['raw_cache_gib_per_worker'] * 1024 ** 3) if training else 0,
+        cache_bytes=int(r['raw_cache_gib_per_worker'] * 1024 ** 3),
         supervision_source=d['supervision_source'] if training else 'none',
         gt_manifest=str(Path(d['manifest_dir']) / 'eval_gt_manifest.json'),
         controlled_corruption=d['controlled_corruption'], experiment_config=config,

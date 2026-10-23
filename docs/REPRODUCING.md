@@ -154,6 +154,7 @@ CHECKS="$RUNS/checks"
 LOGS="$RUNS/logs"
 REPORTS="$RUNS/reports"
 FINAL_MODEL="$RUNS/frozen_final.json"
+EXECUTION_ARGS=()  # 测量并冻结执行配置后，设为 (--execution-config "$WINNER")
 mkdir -p "$PLANS" "$CHECKS" "$LOGS" "$REPORTS"
 git rev-parse HEAD | tee "$CHECKS/repository_commit.txt"
 ```
@@ -223,32 +224,131 @@ python project_tools/check_environment.py --output "$CHECKS/environment_gpu.json
 # 21 路 CPU 合成前向/反向/推理；零优化更新，无 AP。
 python scripts/supplement.py smoke --output "$CHECKS/synthetic_smoke.json"
 
-# 只生成先导配置，尚未启动训练。
-python scripts/supplement.py plan --suite pilot --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
-  | tee "$PLANS/pilot.json"
-check_plan "$PLANS/pilot.json"
 ```
 
 通过条件：`environment.json` 为 `ready`；`environment_gpu.json` 为 `passed`；每份先导预检的 `formal_blockers=[]`，train 样本可以真实读取且正 anchor/agent/点数合理。完整 GPU 检查含一次**合成**基线优化及 checkpoint 写读，不是数据集训练，也不报告 AP；它不能替代 L4DR FAD 等新路径的真实 CUDA 运行。缺少扩展时先按本文环境部分构建并重新检查，不通过导入成功推断数值正确。
 
 V2X-R 应已有 `data_manifest.json`、`split_manifest.json`、`weather_manifest.json`、`image_sizes.json`、`protocol_manifest.json` 和 `eval_gt_manifest.json`。本套新增命令不调用数据下载脚本，也没有合成数据回退。
 
+### 1.1 性能证据与计时口径
+
+2026-10-23 本地检查中，`outputs/`、`results/`、`repro/` 没有正式训练的 `steps.rank*.jsonl`、`telemetry.rank*.jsonl` 或逐轮 `validation_epoch*` 原件。`results/reference/validation_scores.csv` 仅记录选中轮次和分数，不能恢复训练曲线、BN 或保存耗时。已有 [并行导出核验摘要](../repro/pretrained_parallel_equivalence.json) 保留以下历史量，均来自旧 AB selected、829 个验证样本、8 个后处理进程：
+
+| 历史摘要（秒） | Normal | Fog | 可解释范围 |
+|---|---:|---:|---|
+| 记录的整项 wall time | 237.318 | 227.798 | 旧验证导出核验任务，非新增训练吞吐 |
+| loader wait 累计 | 1.310 | 1.440 | 主进程等待，不是全部文件 IO/预处理工作量 |
+| H2D / forward / decode | 9.447 / 104.412 / 27.416 | 6.701 / 94.721 / 31.038 | 原归档 `scripts/parallel_export.py` 对这些阶段前后同步 CUDA |
+| postprocess 累计 | 505.769 | 580.624 | 多进程工作时长之和，可以大于 wall time，不能相加作耗时占比 |
+
+这些记录提示前向与 CPU 后处理值得测量，但没有本轮前后对照；不能据此报告此次加速比。原始点云读/解析、训练几何与体素预处理、反向、optimizer、BN refit、AP scoring、checkpoint 保存均缺少可用的本轮实测。
+
+新训练入口默认 `--timing-mode throughput`：保留每个 microstep 的 loss 有限性拦截、每次更新的合并梯度判定和更新结束的 CUDA 同步；取消其余阶段计时专用栅栏。`update_wall_seconds` 和 `effective_samples_per_second` 包含 loader 等待、CPU 元数据、传输、前后向、梯度检查、optimizer 完成及 loss 标量汇总，排除 checkpoint/validation。`samples_per_second_including_periodic_io` 另包含周期保存与 step 日志；最终保存单列在 telemetry，不能将它遗漏后声称整任务完成时间。
+
+正常模式的 `h2d_seconds / compute_seconds / optimizer_seconds` 标为 `host_dispatch_and_required_waits`：异步阶段会重叠，不能当作 GPU kernel 耗时。`--timing-mode synchronized` 才提供逐阶段同步诊断，另开启数据 worker 计时；它会改变流水重叠，不用于速度排行。`worker_data_timing.raw_read_parse_seconds` 含读取、原有身份校验和解析，`preprocessing_seconds` 含几何、扰动、voxel、观测图和 anchor target；它们是样本工作时间累计，排除 collate/IPC，不能与主进程 loader wait 相加。正常验证遥测不再隐式启用同步 profiler。
+
+验证的 `dataset_loader_setup`、`refit_complete.seconds`、`validation_weather_complete.stage_seconds.scoring`、`validation_complete.seconds` 和 `checkpoint_commit.{seconds,serialization_fsync_seconds,checkpoint_bytes}` 分别支持定位构建、BN 重估、AP 评分、整个验证区间和保存。整个验证区间还包含 selected/预算快照及记录写盘，不能把其中子项再重复累加。checkpoint 的 `seconds` 含 BN 检查与序列化/fsync，不含随后日志持久化；step 中的 `checkpoint_seconds` 包含这次 commit 的日志开销。
+
+### 1.2 分阶段候选配置与有界服务器测量
+
+本节命令**仅供已准备数据的服务器执行，本地未运行真实 benchmark**。候选定义在 [performance_candidates.json](../cscwd_configs/supplement/performance_candidates.json)，由同一 schema 5 校验器生成完整 YAML；不修改三份模板、原七组配置或训练配方。默认始终 FP32、microbatch 4、累积 2、有效 batch 8。
+
+| 次序 / `--stage` | 单因素候选 | 固定其他设置及进入条件 |
+|---|---|---|
+| 1 / `workers` | 4、8 | 从同一 AB/seed17 配方开始；先定位 data wait |
+| 2 / `prefetch` | 1、2 | 基于上一步胜出配置；比较队列峰值 RAM |
+| 3 / `cache` | 每 worker 0.5、1.0 GiB | 只有 raw read/parse 占用值得优化且总 RAM 允许；需看第二次开发遍历命中率 |
+| 4 / `cpu` | 主进程 `cpu_threads` 2、4 | OMP/MKL/OpenBLAS 均先设 1，避免每个 worker 再开 BLAS 线程组 |
+| 5 / `activation` | true、false | 使用 AB 等确有局部模块的内部组；关闭后必须留出显存余量；S0/原生外部方法不生成无效比较 |
+| 6 / `checkpoint` | 100、500、1000 updates | 根据保存代价和可接受的中断丢失窗口选取；逐轮保存/验证/选模不变 |
+| 条件扩展 / `workers12` | 12 | 8 相对 4 有稳定收益，CPU/RAM/存储仍有余量时才测 |
+
+已经生效的路径为：`make_loader` 的 pin memory/persistent workers/prefetch；`to_device(..., non_blocking=True)`；optimizer 的 `zero_grad(set_to_none=True)`；模型与 loss 的 `efficient_features=True`。`cpu_threads` 进入主进程 `torch.set_num_threads`，worker 的 PyTorch 线程固定为 1。activation checkpoint 只重算无 BN 的局部分支；外部方法保留原生计算和配方。`raw_cache_gib_per_worker` 现同时接入 V2X-R 和两套真实数据 raw reader。
+
+runner 只复用 dataset/loader、manifest、固定预处理器及有界的原始点云/标注缓存；每轮验证前重新核对数据身份，V2X-R 文件哈希检查保留，文件 stat 或预期哈希变化不会命中旧项。真实点云在校准/增强前复制，训练的样本键控天气、扰动、点序和标签每次重新计算。缓存不含模型特征、预测或随机增强后的训练结果；每轮仍用当前权重重新拟合 BN 和评分，退出时回收所有 loader worker。
+
+```bash
+export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+PERF="$RUNS/performance"
+mkdir -p "$PERF"
+BASE="$(python scripts/supplement.py configure --dataset v2xr --method deer_sbr \
+  --variant AB --seed 17 --epochs "$EPOCHS" --data-root "$DATA" \
+  --output-root "$PERF/base" --device "$DEVICE")"
+check_config "$BASE"
+
+# 仅生成两份 workers 候选和对应 benchmark 命令，不运行。
+python scripts/supplement.py performance-configs --config "$BASE" --stage workers \
+  --output-root "$PERF/workers_r1" > "$PERF/workers_r1.json"
+
+# 最小测量：相同 seed/样本顺序，各 10 warmup + 40 measured updates。
+while IFS= read -r C; do
+  python project_tools/run_experiments.py --config "$C" --mode benchmark \
+    --warmup 10 --steps 40 --timing-mode throughput
+done < <(python -c 'import json,sys; print("\n".join(t["config"] for t in json.load(open(sys.argv[1]))["tasks"]))' \
+  "$PERF/workers_r1.json")
+```
+
+主输出为 `<候选 output-root>/<run_id>/benchmark/{report.rank0.json,steps.rank0.jsonl,telemetry.rank0.jsonl,latest.rank0.pt}`，清单 `argv` 就是有界 benchmark，`main_outputs` 指向该目录。该模式确实进行 train 样本优化更新，但最多 **200 updates（warmup+steps）**，不进入正式训练目录、不产生 selected，不计入正式先导。重新测量用 `workers_r2`、`workers_r3` 等新目录，交换候选执行顺序，避免把 OS 文件缓存预热差异误认为参数收益。
+
+只在上述结果有需要时进行分阶段同步定位。下面生成独立诊断路径，`C` 从实际生成清单读取；共 2+8 次更新，然后对每个开发域前 32 样本执行两遍诊断，并在每遍前严格按原 32 个 train 样本重估 BN：
+
+```bash
+python scripts/supplement.py performance-configs --config "$BASE" --stage workers \
+  --output-root "$PERF/diagnostic_r1" > "$PERF/diagnostic_r1.json"
+C="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["tasks"][0]["config"])' \
+  "$PERF/diagnostic_r1.json")"
+python project_tools/run_experiments.py --config "$C" --mode benchmark \
+  --warmup 2 --steps 8 --timing-mode synchronized --diagnose-validation-samples 32
+```
+
+两遍分别观察首次构建/读取和 loader/raw cache 复用，模型权重不在两遍之间更新。子集评分只服务管线计时，不写正式逐轮评分文件，不参加选模，也不能当作开发 AP 或外推全量缓存收益。正式逐轮验证仍覆盖全部 Normal/Fog，BN 规模、频率和选模规则不变。若中断，不继续额外诊断。
+
+每阶段从**实际测量后选择的完整 YAML**继续。例如将 `WINNER` 设为 workers 胜出配置的真实路径后，运行下一阶段；不要同时展开全部维度：
+
+```bash
+# WINNER 必须先设为上一步实测选择的 YAML，不能把本示例当成已选出最优值。
+: "${WINNER:?set WINNER to the measured winning YAML}"
+python scripts/supplement.py performance-configs --config "$WINNER" --stage prefetch \
+  --output-root "$PERF/prefetch_r1" > "$PERF/prefetch_r1.json"
+# 按需将 stage 改为 cache / cpu / activation / checkpoint；每步重新选择 WINNER。
+```
+
+选择标准：同一设备、软件、初始权重、agent/点数分布与测量窗口，至少三次运行比较每次正常模式吞吐及 step p50/p95。收益须超过运行波动；可预先采用“中位吞吐提升至少 5%，且三次方向一致”作为执行配置接受条件，而非论文精度结论。没有稳定收益时选较低资源候选。检查无非有限数值、无新增 allocator OOM、无 swap，峰值 allocated 建议不超过单卡可用显存 85%；主机按整个任务进程树/cgroup 的峰值内存核算，单个进程 RSS 不能替代总 RAM。训练缓存不足一轮时，短连续采样不能证明跨 epoch 命中收益；以先导的完整第二轮再核验。
+
+checkpoint 的 500/1000 间隔大于有界窗口，不能在 200 updates 内声称验证了其周期吞吐。所有 benchmark 都实际写最终 online checkpoint，并测量写盘；100 间隔可用 `--warmup 20 --steps 100` 在新目录实测一次周期保存。500/1000 先按实测单次保存 `C` 秒估算摊销 `C/500`、`C/1000`，明确为估计；最终在 seed17 先导中核验周期事件。每轮末保存及 selected/预算快照另计。间隔越大，意外退出时最多丢失的未提交更新越多；SIGINT/SIGTERM 会在完成有效更新后保存。
+
+冻结执行参数后设置 `EXECUTION_ARGS=(--execution-config "$WINNER")`，在**首次生成正式先导配置前**使用下节命令。这个参数只复制资源字段、activation checkpoint 和 online 保存间隔，保留各方法原生 batch/optimizer/schedule、BN、损失和选择规则。执行配置也属于严格恢复身份；正式任务开始后不要原地改配置或通过放宽恢复检查套用新参数。AMP/BF16/TF32、microbatch 和 `torch.compile` 仅保留为另行登记并完成数值验证后的研究候选；本次没有提供绕过 FP32 schema 的入口。
+
+### 1.3 多 GPU 总资源安排
+
+多卡优先独立任务，不改变单任务有效 batch 或训练 BN。下面是**容量规划示例，不代表已知服务器硬件**：2 张足够显存的 GPU、32 个可分配 CPU 核、128 GiB RAM 时，可让 GPU0/GPU1 各一任务，每任务先用 workers=4、prefetch=1、cache=0.5、cpu_threads=4、RAM budget=56 GiB，OMP/MKL/OpenBLAS=1；两任务预算合计112 GiB，另留16 GiB给系统，CPU每任务预留12核、其余8核供系统与文件服务。训练与一个评估流可能短时并行预取，需为两组 worker 加主进程线程留余量。
+
+V2X-R 内部组同时最多保留 train、BN refit、Normal、Fog 四组 loader；workers=4 时共 16 个 worker 进程/任务，多数在非所属阶段空闲，raw cache 上限 `4×4×0.5=8 GiB/任务`。workers=8、cache=1 时为 `4×8×1=32 GiB/任务`，两任务合计 64 GiB **仅缓存**，还需 manifest、预取张量、pinned memory、Python 进程和系统页缓存；每任务56 GiB预算时该候选会被拒绝，不能为了生成配置虚增RAM预算。schema 要求所有 loader 的 raw cache 总额不超过该任务 `ram_budget_gib` 的一半；这个门槛不替代整机实测。外部 running-BN、真实数据单开发域按实际流数计算，workers=0 仍有进程内缓存。
+
+磁盘按实测 checkpoint 大小 `S` 估算每任务常驻 `(2 + retain_epochs数量)×S`（online、selected、预算快照），另预留至少一份 `S` 给原子替换临时文件，以及初始化、日志和至少 20% 空闲空间；多任务相加。原子保存、fsync 和角色元数据保留，未采用异步保存。不同 GPU 的验证/保存尽量错峰，共享盘繁忙时先降低任务并发，不用测试成绩删选实验。
+
+执行顺序仍为 S0/AB/N2 的 seed17，随后 SUP；只有相同完整配方的先导计入 17/29/43 重复。开发曲线冻结预算后，先完成关键三种子与 M1/M3/M4，再按原研究问题开展 M2/M5/M6/NO_NULL 等扩展；F 只由 S0/AB/N2 三种子开发证据冻结。外部方法各自保留原生配方。把已有清单中互不重复的配置分给不同 GPU 即可，每个进程用 `CUDA_VISIBLE_DEVICES=<物理卡>`、配置 `device=cuda:0`；不要并发启动两个覆盖同一 suite/run_id 的队列。`run-suite --skip-completed` 继续要求成功报告、selected 存在且 resolved config 完全匹配。
+
 ### 2. 先导训练、独立预算与恢复
 
 先导为 S0/AB/N2 × seed 17，加 SUP 单列。只有下列含 `--execute` 的命令才启动正式训练。
 
 ```bash
+# EXECUTION_ARGS 默认空；若已冻结执行候选，则保持该数组用于后续同配方重复。
+python scripts/supplement.py plan --suite pilot --epochs "$EPOCHS" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
+  | tee "$PLANS/pilot.json"
+check_plan "$PLANS/pilot.json"
 python scripts/supplement.py run-suite --suite pilot --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --execute --skip-completed | tee -a "$LOGS/pilot_e${EPOCHS}.log"
 
 python scripts/supplement.py plan --suite pilot_sup --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
   | tee "$PLANS/pilot_sup.json"
 check_plan "$PLANS/pilot_sup.json"
 python scripts/supplement.py run-suite --suite pilot_sup --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --execute --skip-completed | tee -a "$LOGS/pilot_sup_e${EPOCHS}.log"
 
 PILOT_RUNS=()
@@ -267,11 +367,11 @@ python scripts/supplement.py convergence --run-dirs "${PILOT_RUNS[@]}" \
 E=30
 for SUITE in pilot pilot_sup; do
   python scripts/supplement.py plan --suite "$SUITE" --epochs "$E" \
-    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
+    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
     | tee "$PLANS/${SUITE}_e${E}.json"
   check_plan "$PLANS/${SUITE}_e${E}.json"
   python scripts/supplement.py run-suite --suite "$SUITE" --epochs "$E" \
-    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
     --execute --skip-completed | tee -a "$LOGS/${SUITE}_e${E}.log"
 done
 BUDGET_RUNS=()
@@ -288,11 +388,11 @@ python scripts/supplement.py convergence --run-dirs "${BUDGET_RUNS[@]}" \
 
 ```bash
 python scripts/supplement.py plan --suite external_pilot \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
   | tee "$PLANS/external_pilot.json"
 check_plan "$PLANS/external_pilot.json"
 python scripts/supplement.py run-suite --suite external_pilot \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --execute --skip-completed | tee -a "$LOGS/external_pilot.log"
 ```
 
@@ -317,19 +417,19 @@ python scripts/supplement.py train --config "$C" --execute \
 # 如开发证据决定使用 30 或 90，先修改此值，再生成全部重复配置。
 EPOCHS=60
 python scripts/supplement.py plan --suite internal_main --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
   | tee "$PLANS/internal_main.json"
 check_plan "$PLANS/internal_main.json"
 python scripts/supplement.py run-suite --suite internal_main --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --execute --skip-completed | tee -a "$LOGS/internal_main_e${EPOCHS}.log"
 
 python scripts/supplement.py plan --suite external_main \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
   | tee "$PLANS/external_main.json"
 check_plan "$PLANS/external_main.json"
 python scripts/supplement.py run-suite --suite external_main \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --execute --skip-completed | tee -a "$LOGS/external_main.log"
 
 DEV_RUNS=()
@@ -359,11 +459,11 @@ M1/M3/M4 为 seed 17 先导及 29/43 重复，共 9 项；M2/M5/M6/N1/NO_NULL �
 ```bash
 for SUITE in mechanism_pilot mechanism_repeat; do
   python scripts/supplement.py plan --suite "$SUITE" --epochs "$EPOCHS" \
-    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
+    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
     | tee "$PLANS/${SUITE}.json"
   check_plan "$PLANS/${SUITE}.json"
   python scripts/supplement.py run-suite --suite "$SUITE" --epochs "$EPOCHS" \
-    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
     --execute --skip-completed | tee -a "$LOGS/${SUITE}.log"
 done
 ```
@@ -372,11 +472,11 @@ done
 
 ```bash
 python scripts/supplement.py plan --suite mechanism_optional --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" --write-configs \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
   | tee "$PLANS/mechanism_optional.json"
 check_plan "$PLANS/mechanism_optional.json"
 python scripts/supplement.py run-suite --suite mechanism_optional --epochs "$EPOCHS" \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --execute --skip-completed | tee -a "$LOGS/mechanism_optional.log"
 ```
 
@@ -387,22 +487,22 @@ python scripts/supplement.py run-suite --suite mechanism_optional --epochs "$EPO
 ```bash
 for SUITE in rho radius; do
   python scripts/supplement.py plan --suite "$SUITE" --epochs "$EPOCHS" \
-    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
     --final-model-file "$FINAL_MODEL" --write-configs | tee "$PLANS/${SUITE}.json"
   check_plan "$PLANS/${SUITE}.json"
   python scripts/supplement.py run-suite --suite "$SUITE" --epochs "$EPOCHS" \
-    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+    --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
     --final-model-file "$FINAL_MODEL" --execute --skip-completed \
     | tee -a "$LOGS/${SUITE}.log"
 done
 
 # Where2comm 底座及 +F × 三种子；共 6 项，保留原生 40 轮，不传 --epochs。
 python scripts/supplement.py plan --suite second_backbone \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --final-model-file "$FINAL_MODEL" --write-configs | tee "$PLANS/second_backbone.json"
 check_plan "$PLANS/second_backbone.json"
 python scripts/supplement.py run-suite --suite second_backbone \
-  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" \
+  --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --final-model-file "$FINAL_MODEL" --execute --skip-completed \
   | tee -a "$LOGS/second_backbone.log"
 ```
@@ -443,7 +543,7 @@ for V in S0 "$F_VARIANT"; do
 done
 ```
 
-诊断输出来自实际模型：类型 MAE/soft Brier、路由、供体/null、支撑和归一化幅度，四种探针共用开发场景。`--drop-fraction`、`--inject-fraction` 可逐强度另存。干预结果与重训消融分开。效率端到端包含 IO、预处理、传输、forward、解码、NMS，排除 AP/落盘；局部模块另次计时，CUDA 前后同步并释放跨帧张量。当前不统计真实通信包字节。
+诊断输出来自实际模型：类型 MAE/soft Brier、路由、供体/null、支撑和归一化幅度，四种探针共用开发场景。`--drop-fraction`、`--inject-fraction` 可逐强度另存。干预结果与重训消融分开。效率端到端包含 IO、预处理、传输、forward、解码、NMS，排除 AP/落盘；局部模块另次计时，CUDA 前后同步并释放跨帧张量。该独立效率入口显式关闭解析后raw cache，确保每帧仍读文件/解析；OS页缓存由系统管理，不声称冷盘IO。当前不统计真实通信包字节。
 
 ### 5. 真实数据扩展（数据和监督条件具备后）
 

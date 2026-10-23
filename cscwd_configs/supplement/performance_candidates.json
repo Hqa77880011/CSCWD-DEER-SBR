@@ -1,0 +1,9 @@
+{
+  "workers": {"section": "resources", "key": "num_workers", "values": [4, 8]},
+  "prefetch": {"section": "resources", "key": "prefetch_factor", "values": [1, 2]},
+  "cache": {"section": "resources", "key": "raw_cache_gib_per_worker", "values": [0.5, 1.0]},
+  "cpu": {"section": "resources", "key": "cpu_threads", "values": [2, 4]},
+  "activation": {"section": "model", "key": "activation_checkpoint", "values": [true, false]},
+  "checkpoint": {"section": "training", "key": "checkpoint_interval_updates", "values": [100, 500, 1000]},
+  "workers12": {"section": "resources", "key": "num_workers", "values": [12]}
+}
