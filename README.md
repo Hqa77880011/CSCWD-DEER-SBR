@@ -240,7 +240,7 @@ python scripts/supplement.py run-suite --suite pilot --epochs 60 \
   --device cuda:0 --execute --skip-completed
 ```
 
-Supplemental runs write to `outputs/supplement/<run_id>/train/`, including resolved configurations, run metadata, step logs, per-epoch development scores, and checkpoints. They use independent outputs from the released experiments. See the [supplemental reproduction commands](docs/REPRODUCING.md#补充实验复现入口schema-5) for real-data indexing, repeated runs, F selection, evaluation, robustness, diagnostics, and summaries, and the [implementation mapping](docs/13_补充实验方案与实施说明.md) for each experiment's status and blockers.
+Supplemental runs write to `outputs/supplement/<run_id>/train/`, including resolved configurations, run metadata, step logs, per-epoch development scores, and checkpoints. They use independent outputs from the released experiments. The [server command sequence](docs/REPRODUCING.md#补充实验复现入口schema-5) covers environment preflight, pilot training, repeated seeds, F selection, ablations, real-data extensions, final evaluation, and statistical summaries, with explicit configuration and output paths. See the [implementation mapping](docs/13_补充实验方案与实施说明.md) for each experiment's status and blockers.
 
 ## Reproducibility Checks
 
