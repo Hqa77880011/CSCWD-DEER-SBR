@@ -118,9 +118,12 @@ def environment_report(native_v2xr=False, device='auto'):
         else:
             rows[name] = dict(status='imported', version=getattr(module, '__version__', None))
     cuda = torch.cuda.is_available()
+    from opencood.project.l4dr import pointnet2_identity
+    extension = pointnet2_identity(include_path=True)
     ready = all(r['status'] == 'imported' for r in rows.values()) and (not device.startswith('cuda') or cuda)
     return dict(schema='supplement_environment_v1', status='ready' if ready else 'blocked',
         python=platform.python_version(), torch=torch.__version__, cuda_runtime=torch.version.cuda,
         cuda_available=cuda, requested_device=device, modules=rows, data_read=False,
+        l4dr_pointnet2=extension,
         weights_downloaded=False, compiled_extensions_executed=False,
         note='import readiness only; run the explicit synthetic smoke and server data check next')

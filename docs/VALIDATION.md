@@ -179,3 +179,25 @@ python scripts/supplement.py smoke
 **真实未决项。** CPU检查没有验证L4DR CUDA FPS/ball-query/three_nn与CPU的数值对应、spconv真实预处理、真实字段/标定/训练轨迹或AP；已安装CUDA扩展二进制身份也须在服务器确认。CoBEVT/Where2comm的project epoch warmup/cosine、MDD参考目标/beta、Where2comm单轮机制和真实数据适配仍按方案§8.2登记，未改成新的科学协议。没有本轮正常吞吐、强制同步诊断、正式推理延迟或显存前后对照，所有收益待测，不填写加速比。
 
 已准备数据与CUDA环境的服务器上，最小下一步是为本轮源码生成新配置，先 `preflight` / `check-data --samples 2`，再对L4DR等受影响方法运行 `project_tools/run_experiments.py --config "$C" --mode smoke --warmup 0 --steps 1`；该命令会读取真实train并执行一次更新，只供服务器后续验证。随后使用[有界测量命令](REPRODUCING.md#12-分阶段候选配置与有界服务器测量)分别运行throughput和synchronized诊断；逐epoch完整验证、BN政策及选模不变。这些服务器步骤本轮均未执行。
+
+## 2026-10-24 transfer、真实输入与扩展身份的有界修复
+
+本轮从`29f25f0`开始，只检查四条指定调用链；没有多代理、实验服务器连接、数据/权重下载、正式训练、真实数据读取/评测或性能/CUDA benchmark。Windows/Python3.13.5/PyTorch2.7.1+cu118，显式`CUDA_VISIBLE_DEVICES=-1`并确认CUDA不可用；沿用sequential MKL与2 CPU threads。
+
+修复前先用最小合成checkpoint和格式文件复现：微调权重被重训标签接受、重训与微调共享初始化冲突、两套真实格式同路径传感器替换未被拒绝。修复后结果如下。
+
+| 检查 | 结果与边界 |
+|---|---|
+| 定向CPU回归 | **25个不同用例最终通过，无skip**。新增13项见[test_supplement_boundaries.py](../tests/test_supplement_boundaries.py)；其余12项仅选取受影响的runner恢复/NaN拦截、缓存、验证、角色、来源诊断、Release/legacy及导出检查，未全量跑模块或仓库 |
+| transfer与初始化 | 正常重训/微调接受，双向错标、来源摘要更换、来源文件更换/缺失拒绝；实际configure写入并读回来源身份。online恢复和完成判断绑定同一来源，推理仅需内嵌摘要。两次合成runner运行在同输出根目录不冲突；S0/AB/N2仍共享同一底座路径，不同微调摘要隔离 |
+| 真实输入内容 | V2X-Radar-C/K-Radar微型PCD/NPY，LiDAR/Radar、cache开/关均覆盖；文件大小/mtime保持相同的内容替换也拒绝。旧manifest缺证据明确报错，当前内容替换令完成判断失败，并在合成runner恢复加载前拒绝；GT/几何/天气的冻结归属仍为manifest |
+| 扩展证据 | 实际L4DR batch PointNet++源码/header及构建脚本身份、Python/PyTorch/CUDA ABI记录；合成非可执行二进制与模拟源码变化分别触发不同身份，selected加载拒绝源码/二进制/runtime不匹配。本机真实扩展为`unavailable`，数值状态为`not_verified_by_identity`；未执行CUDA算子 |
+| dataset修改前后对照 | 从`29f25f0`读取原dataset代码在内存对照当前实现，**78组严格相等，rtol=atol=0**：三套格式的注册外部方法、训练/验证、epoch0→1→0。比较消费端输入、训练目标/检测标签、MDD reference、FAD boxes、样本/来源/诊断、固定GT、Python/NumPy/Torch及每个样本局部generator状态。V2X-R使用相同CPU NumpyVoxelizer替换双方不可用的spconv预处理器，不据此声称spconv/CUDA等价 |
+| 模型输入筛选 | 五个外部方法及Where2comm+AB，在32×32合成网格比较完整输入/方法筛选输入：输出、总loss/各loss、全部存在的梯度、BN buffers、全局RNG严格相等，`rtol=atol=0`。无optimizer更新；MDD reference和FAD监督保留。实际export核对筛选键及模式恢复；efficiency仅静态检查传入配置，未运行计时入口 |
+| 保留边界 | 外部训练辅助目标仍被类型覆盖日志消费，未删除；可视化显式请求地图。真实数据导出和evaluator的重复NMS保留：过滤后archive还供可视化/bootstrap/分组使用，独立evaluator仍负责输入校验，未引入已后处理信任契约 |
+| 科学协议/历史产物 | 独立FP32/micro4/累积2/有效8、原生各自batch/optimizer/schedule、天气/扰动/采样/GT、验证/选模/BN政策保留；NaN/Inf在更新与online保存前拦截，selected/budget snapshot禁止online恢复。`repro/`、`results/reference/`、`cscwd_configs/`、legacy源码包无差异，历史七组身份回归通过 |
+| 静态与计时归属 | 13个受影响Python文件内存编译、输入筛选配置传递及`git diff --check`通过；`source_tree_hash`的AST与起点完全相同。真实reader的cache hit内容检查计入raw read/parse时间，缓存单项再次复查通过；没有执行效率计时入口 |
+
+组合检查中的原生K-Radar scheduler用例最初因其合成runner夹具只提供Python身份、缺新增扩展字段而报错；补齐夹具后只重跑该项，以及新增/修改的2项，3项通过。没有为适配夹具放宽生产身份校验。可核查本地日志位于忽略上传的`outputs/verification/supplement/bounded_regressions.txt`、`bounded_before_after.txt`与`bounded_static.txt`；临时夹具和检查脚本移入Windows回收站，不进入结果目录。
+
+仍需服务器验证的最小项目：L4DR CPU/CUDA FPS、ball-query、three_nn已知答案与梯度；已加载扩展的实际构建对应；spconv下的数据预处理；两套真实数据的字段/标定/manifest读取；受影响方法的真实训练/恢复与正式评分。吞吐、H2D、IO校验成本、显存及重复NMS收益均未测量，不填写估算加速比。MDD/CoBEVT/Where2comm已登记的协议适配结论保持不变。

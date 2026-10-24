@@ -235,13 +235,17 @@ class PerformanceTests(unittest.TestCase):
             self.assertLessEqual(cached.cache.bytes, cached.cache.max_bytes)
             self.assertEqual(cached.manifest, uncached.manifest)
             record = {**manifest['samples'][cached.sample_ids[0]]['agents']['0'], 'agent_id': '0'}
-            old = cached._points(record, 'radar')
+            read_before, hits_before = cached.cache.read_seconds, cached.cache.hits
+            cached._points(record, 'radar')
+            self.assertEqual(cached.cache.hits, hits_before + 1)
+            self.assertGreater(cached.cache.read_seconds, read_before)
             path = radar / record['radar']
             values = np.load(path)
             values[:, 3] += 1
             np.save(path, values)
-            # A changed stat key must reload, never serve the old raw cloud.
-            np.testing.assert_array_equal(cached._points(record, 'radar')[:, 3], old[:, 3] + 1)
+            # Cache refresh must reject bytes outside the frozen input identity.
+            with self.assertRaisesRegex(ValueError, 'SHA256'):
+                cached._points(record, 'radar')
 
     def _run_toy(self, directory, *, steps=4, resume=None, timing_mode='throughput', broken=None, config=None):
         from project_tools import run_experiments as runner
@@ -259,10 +263,14 @@ class PerformanceTests(unittest.TestCase):
             return ToyDataset(), model, criterion
         args = Namespace(mode='benchmark', allow_formal_run=False, steps=steps, warmup=0,
                          resume=resume, timing_mode=timing_mode, diagnose_validation_samples=0)
+        metadata = {'source_sha256': 'synthetic'}
+        if c['experiment']['method'] == 'l4dr':
+            from opencood.project.l4dr import pointnet2_identity
+            metadata['l4dr_pointnet2'] = pointnet2_identity()
         with ExitStack() as stack:
             stack.enter_context(patch.object(runner, 'build_components', side_effect=build))
             stack.enter_context(patch.object(runner, 'formal_blockers', return_value=[]))
-            stack.enter_context(patch.object(runner, 'artifact_metadata', return_value={'source_sha256': 'synthetic'}))
+            stack.enter_context(patch.object(runner, 'artifact_metadata', return_value=metadata))
             stack.enter_context(patch.object(runner, 'amp_audit_contract', return_value={'source_sha256': 'synthetic'}))
             stack.enter_context(redirect_stdout(io.StringIO()))
             report = runner.run(c, args)

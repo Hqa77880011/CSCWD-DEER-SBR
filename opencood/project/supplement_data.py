@@ -20,12 +20,14 @@ import torch
 from torch.utils.data import Dataset
 
 from opencood.project.data_io import ByteLRU, read_annotation
+from opencood.project.config import file_sha256
 from opencood.project.data_geometry import (augmentation_matrix, augment_boxes, bev_grid,
     count_map)
 from opencood.project.geometry import (pose_to_world, transform_points,
     boxes_to_corners, validate_boxes)
 from opencood.project.supervision import controlled_corruption, provenance_targets, normal_targets
 from opencood.project.weather import augmentation_seed
+from opencood.project.training import MODEL_KEYS, uses_local_inputs, select_model_inputs
 
 V2XRADAR_BOUNDS = [-102.4, -102.4, -8.5, 102.4, 102.4, 3.5]
 KRADAR_BOUNDS = [0., -15., -2., 72., 15., 7.6]
@@ -34,10 +36,10 @@ SOURCE_REVISIONS = {'v2xradar': '1624751e31260c68d544e60599079d2104ee8a73',
                     'kradar': 'f90c28993d1757ce0236632b4d912c92a14976b2'}
 
 
-def read_pcd_fields(path):
+def read_pcd_fields(path, *, payload=None):
     """Read actual named PCD fields, including organized/binary/compressed PCD."""
     path = Path(path)
-    with path.open('rb') as stream:
+    with (path.open('rb') if payload is None else io.BytesIO(payload)) as stream:
         header = {}
         while True:
             raw = stream.readline()
@@ -97,19 +99,24 @@ def read_pcd_fields(path):
     return result
 
 
-def real_points(path, dataset, modality, agent_id='0'):
+def real_points(path, dataset, modality, agent_id='0', *, expected_sha256=None):
     """Return xyz plus one documented scalar, never a fabricated Doppler field."""
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f'missing {dataset} {modality}: {path}; prepare official files first (no automatic download)')
+    payload = None
+    if expected_sha256 is not None:
+        payload = path.read_bytes()
+        if hashlib.sha256(payload).hexdigest() != expected_sha256:
+            raise ValueError(f'sensor source SHA256 mismatch: {path}')
     if dataset == 'kradar' and modality == 'radar':
-        values = np.load(path, allow_pickle=False)
+        values = np.load(path if payload is None else io.BytesIO(payload), allow_pickle=False)
         if values.ndim != 2 or values.shape[1] < 5 or not np.isfinite(values).all():
             raise ValueError('official K-Radar sprdr requires [x,y,z,power,Doppler,...], at least five columns')
         # sprdr is the already generated official sparse product; do not apply
         # a second 1e13 normalization or interpret power as velocity.
         return np.ascontiguousarray(values[:, :4], dtype=np.float32)
-    fields = read_pcd_fields(path)
+    fields = read_pcd_fields(path, payload=payload)
     for name in ('x', 'y', 'z'):
         if name not in fields:
             raise ValueError(f'missing PCD coordinate {name}: {path}')
@@ -229,6 +236,7 @@ def build_real_manifest(dataset, root, dev_sequences=(), *, radar_root=None,
                             raise FileNotFoundError('incomplete synchronized cooperative frame: ' + ', '.join(missing))
                         annotations[agent] = read_annotation(paths['annotation'])
                         records[agent] = {k: p.relative_to(root).as_posix() for k, p in paths.items()}
+                        records[agent]['sensor_sha256'] = {m: file_sha256(paths[m]) for m in ('lidar', 'radar')}
                         records[agent]['pose'] = list(map(float, annotations[agent]['lidar_pose']))
                     gt = {}
                     from opencood.utils import box_utils
@@ -298,6 +306,7 @@ def build_real_manifest(dataset, root, dev_sequences=(), *, radar_root=None,
                     verified_clear=(climate.lower() == 'normal' or seq in clean_sequences),
                     agents={'0': dict(lidar=lidar.relative_to(root).as_posix(),
                         radar=radar.relative_to(radar_root).as_posix(), annotation=label.relative_to(label_root).as_posix(),
+                        sensor_sha256=dict(lidar=file_sha256(lidar), radar=file_sha256(radar)),
                         calibration=calibration.tolist(), pose=[0.] * 6)})
         final_identity = 'official_test_frames_unchanged_official_sequence_overlap_disclosed'
         fields = dict(lidar='OS2-64 intensity, native sensor units; xyz translated to Radar',
@@ -330,6 +339,39 @@ def build_real_manifest(dataset, root, dev_sequences=(), *, radar_root=None,
             verified_clear_frames=sum(s['verified_clear'] for s in part))
     result['protocol_sha256'] = hashlib.sha256(json.dumps({k: result[k] for k in ('dataset', 'bounds', 'classes', 'source_revision', 'label_version', 'roi_rule', 'final_identity')}, sort_keys=True).encode()).hexdigest()
     return result
+
+
+def real_sensor_sources(config, manifest):
+    """Resolve registered sensor bytes; GT/poses/calibration are frozen in manifest."""
+    dataset = config['experiment']['dataset_id']
+    if manifest['dataset'] != dataset:
+        raise ValueError('manifest dataset identity mismatch')
+    sources = {}
+    for sample in manifest['samples'].values():
+        for record in sample['agents'].values():
+            for modality in ('lidar', 'radar'):
+                digest = record.get('sensor_sha256', {}).get(modality)
+                if (not isinstance(digest, str) or len(digest) != 64
+                        or any(c not in '0123456789abcdef' for c in digest)):
+                    raise ValueError('real manifest lacks sensor SHA256 evidence; prepare a new manifest from reviewed inputs')
+                base = config['data']['radar_root'] if dataset == 'kradar' and modality == 'radar' else config['data']['root']
+                key = (modality, record[modality])
+                value = (Path(base) / record[modality], digest)
+                if key in sources and sources[key] != value:
+                    raise ValueError('conflicting sensor SHA256 entries in immutable manifest')
+                sources[key] = value
+    return sources
+
+
+def real_input_identity(config, manifest):
+    """Check all registered files at run/load/completion boundaries, never per batch."""
+    sources = real_sensor_sources(config, manifest)
+    rows = []
+    for key, (path, expected) in sorted(sources.items()):
+        if file_sha256(path) != expected:
+            raise ValueError(f'sensor source SHA256 mismatch: {path}')
+        rows.append((*key, expected))
+    return hashlib.sha256(json.dumps(rows, separators=(',', ':')).encode()).hexdigest()
 
 
 def perturb_points(lidar, radar, valid, *, sample_id, agent, ego, config, bounds, voxel, legal_mask=None):
@@ -451,6 +493,8 @@ class SupplementalDataset(Dataset):
         if self.manifest['dataset'] != self.dataset_id:
             raise ValueError('manifest dataset identity mismatch')
         self.training, self.split, self.augment = training, split, augment
+        self.observation_maps_required = uses_local_inputs(config)
+        self.auxiliary_targets_required = training or self.observation_maps_required
         if training and split != 'train':
             raise ValueError('training and BN fitting require the train partition')
         self.weather = weather
@@ -462,6 +506,8 @@ class SupplementalDataset(Dataset):
         self.grid = bev_grid(self.bounds, self.voxel)
         self.epoch_value = mp.Value('q', 0)
         self.cache = ByteLRU(int(config['resources']['raw_cache_gib_per_worker'] * 1024**3))
+        self.cache.expected_sha256 = {str(path): digest for path, digest in
+                                     real_sensor_sources(config, self.manifest).values()}
         self.max_agents = config['evaluation']['agents']
         self.seed = config['experiment']['seed']
         self.pre_processor = NumpyVoxelizer(hypes, training)
@@ -542,7 +588,7 @@ class SupplementalDataset(Dataset):
                 return np.ascontiguousarray(points[keep])
             lidar, radar = crop(lidar), crop(radar)
             reference = lidar.copy()
-            target = normal_targets(lidar, self.bounds, self.voxel)
+            target = normal_targets(lidar, self.bounds, self.voxel) if self.auxiliary_targets_required else {}
             if not sample['verified_clear']:
                 target = {k: np.zeros_like(v) for k, v in target.items()}
             applied = False
@@ -558,24 +604,30 @@ class SupplementalDataset(Dataset):
             if not self.training:
                 lidar, radar, valid, explicit, trace = perturb_points(lidar, radar, valid, sample_id=sid,
                     agent=agent, ego=ego, config=self.config, bounds=self.bounds, voxel=self.voxel)
-                if explicit is not None and sample['verified_clear']:
+                if explicit is not None and sample['verified_clear'] and self.auxiliary_targets_required:
                     target = explicit
-            target['normal_mask'] = np.full((1, 1, 1), float(sample['verified_clear'] and not applied), np.float32)
-            origin = (aug @ transform)[:3, 3]
-            lc, rc = (count_map(p, self.bounds, self.voxel, self.grid[0].shape) for p in (lidar, radar))
-            # No camera FOV is borrowed from V2X-R. Valid geometry is the
-            # dataset's own ROI; Radar donors always require measured occupancy.
-            available = np.ones_like(lc)
-            distance = np.sqrt((self.grid[0] - origin[0]) ** 2 + (self.grid[1] - origin[1]) ** 2)[None]
-            distance = (distance / np.linalg.norm(np.asarray(self.bounds[3:5]) - np.asarray(self.bounds[:2]))).astype(np.float32)
-            maps = dict(lidar_count=lc, radar_count=rc, lidar_occupancy=(lc > 0).astype(np.float32),
-                radar_occupancy=(rc > 0).astype(np.float32), lidar_valid=available * valid[0],
-                radar_valid=available * valid[1], lidar_distance=distance, radar_distance=distance.copy())
+            if self.auxiliary_targets_required:
+                target['normal_mask'] = np.full((1, 1, 1), float(sample['verified_clear'] and not applied), np.float32)
+            maps = {}
+            if self.observation_maps_required:
+                origin = (aug @ transform)[:3, 3]
+                lc, rc = (count_map(p, self.bounds, self.voxel, self.grid[0].shape) for p in (lidar, radar))
+                # Geometry uses this dataset's ROI, without a borrowed camera FOV.
+                available = np.ones_like(lc)
+                distance = np.sqrt((self.grid[0] - origin[0]) ** 2 + (self.grid[1] - origin[1]) ** 2)[None]
+                distance = (distance / np.linalg.norm(np.asarray(self.bounds[3:5]) - np.asarray(self.bounds[:2]))).astype(np.float32)
+                maps = dict(lidar_count=lc, radar_count=rc, lidar_occupancy=(lc > 0).astype(np.float32),
+                    radar_occupancy=(rc > 0).astype(np.float32), lidar_valid=available * valid[0],
+                    radar_valid=available * valid[1], lidar_distance=distance, radar_distance=distance.copy())
             if self.training:
                 prng = np.random.default_rng(augmentation_seed(sid + '/' + agent, epoch, self.seed, stream='point_order'))
                 lidar, radar = lidar[prng.permutation(len(lidar))], radar[prng.permutation(len(radar))]
-            current.append(dict(lidar=self.pre_processor.preprocess(lidar), radar=self.pre_processor.preprocess(radar), maps=maps, valid=valid,
-                                raw_radar=radar if self.config['experiment']['method'] == 'l4dr' else None))
+            entry = dict(lidar=self.pre_processor.preprocess(lidar), maps=maps, valid=valid)
+            if self.config['experiment']['method'] == 'l4dr':
+                entry['raw_radar'] = radar
+            else:
+                entry['radar'] = self.pre_processor.preprocess(radar)
+            current.append(entry)
             if self.config['experiment']['method'] == 'mdd' and self.training:
                 if not sample['verified_clear']:
                     raise ValueError('unverified natural-weather clean reference reached MDD')
@@ -592,7 +644,8 @@ class SupplementalDataset(Dataset):
             boxes = augment_boxes(boxes, aug) if self.training else boxes
             labels[name] = assigner(boxes)
             diagnostics.append(deepcopy(assigner.last_diagnostics))
-        fad_boxes = augment_boxes(np.asarray([g['box'] for g in sample['gt']]).reshape(-1, 7), aug)
+        fad_boxes = (augment_boxes(np.asarray([g['box'] for g in sample['gt']]).reshape(-1, 7), aug)
+                     if self.config['experiment']['method'] == 'l4dr' and self.training else None)
         result = dict(agents=current, sample_id=sid, labels=labels, targets=targets, refs=refs, fad_boxes=fad_boxes,
                       metadata=metadata, target_diagnostics=diagnostics[0])
         if started is not None:
@@ -606,8 +659,8 @@ class SupplementalDataset(Dataset):
         agents = [a for item in batch for a in item['agents']]
         labels = {name: {k: torch.from_numpy(np.stack([item['labels'][name][k] for item in batch]))
                         for k in batch[0]['labels'][name]} for name in self.classes}
-        ego = dict(processed_lidar=self.pre_processor.collate_batch([a['lidar'] for a in agents]),
-            processed_radar=self.pre_processor.collate_batch([a['radar'] for a in agents]),
+        ego = dict(**{'processed_' + m: self.pre_processor.collate_batch([a[m] for a in agents])
+                      for m in ('lidar', 'radar') if m in agents[0]},
             record_len=torch.tensor([len(item['agents']) for item in batch]), batch_size=len(agents),
             observation_maps={k: torch.from_numpy(np.stack([a['maps'][k] for a in agents])) for k in agents[0]['maps']},
             modality_valid=torch.from_numpy(np.stack([a['valid'] for a in agents])),
@@ -615,6 +668,9 @@ class SupplementalDataset(Dataset):
             sample_ids=[item['sample_id'] for item in batch], metadata=[item['metadata'] for item in batch],
             target_diagnostics=[item['target_diagnostics'] for item in batch],
             label_dict={**labels[self.classes[0]], 'class_labels': labels})
+        model_inputs = select_model_inputs(ego, self.config)
+        ego = {k: v for k, v in ego.items() if k not in MODEL_KEYS}
+        ego.update(model_inputs)
         if batch[0]['refs']:
             ego['reference_lidar'] = self.pre_processor.collate_batch([r for item in batch for r in item['refs']])
         targets = [t for item in batch for t in item['targets']]

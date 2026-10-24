@@ -12,7 +12,7 @@ import yaml
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from opencood.project.config import load_config, validate_config
+from opencood.project.config import load_config, validate_config, file_sha256
 from opencood.project.supplement import INTERNAL, METHODS, NATIVE_HYPES, SCHEDULES, resolve_final
 
 SUITE_ALIASES = {'real_b': 'real_cooperative', 'real_b_l4dr_fallback': 'real_cooperative_l4dr',
@@ -30,12 +30,16 @@ def save_json(path, value):
 def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
            epochs=None, *, data_root=None, output_root=None, device='auto',
            final_model_file=None, native=False, overrides=None,
-           radar_root=None, label_root=None, manifest_dir=None, execution_config=None):
+           radar_root=None, label_root=None, manifest_dir=None, execution_config=None,
+           transfer='retrained', initialize_from=None):
     c = load_config(REPO / 'cscwd_configs/supplement' / (dataset + '.yaml'))
     e, t, m = (c[k] for k in ('experiment', 'training', 'model'))
     epochs = t['epochs'] if epochs is None else epochs
     e.update(method=method, variant=variant, seed=seed,
-             comparison='controlled_module' if method == 'deer_sbr' else 'complete_method')
+             comparison='controlled_module' if method == 'deer_sbr' else 'complete_method', transfer=transfer)
+    if initialize_from:
+        e.update(initialization_checkpoint=str(Path(initialize_from).resolve()),
+                 initialization_checkpoint_sha256=file_sha256(initialize_from))
     if dataset == 'kradar':
         e['comparison'] = 'local_single_agent'
     if final_model_file:
@@ -100,6 +104,10 @@ def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
     if method == 'where2comm' and m['local_variant'] != 'none':
         e['comparison'] = 'controlled_module'
     e['run_id'] = f'supp_{dataset}_{method}_{variant}_e{epochs}_s{seed}' + ('_native' if native else '') + suffix
+    if transfer != 'retrained':
+        e['run_id'] += '_' + transfer
+        if initialize_from:
+            e['run_id'] += '_' + e['initialization_checkpoint_sha256'][:12]
     if execution_config:
         execution = load_config(execution_config)
         if execution['version'] != 5:
@@ -201,7 +209,11 @@ def completed_run_matches(config, output):
             or report.get('status') != 'checkpoint_selected'
             or json.loads((output / required[1]).read_text(encoding='utf8')) != config):
         return False
-    expected = artifact_metadata(config)
+    try:
+        expected = artifact_metadata(config)
+    except (FileNotFoundError, ValueError):
+        # Missing/replaced inputs or initialization never count as completed.
+        return False
     recorded = json.loads((output / required[2]).read_text(encoding='utf8'))
     if any(recorded.get(key) != value for key, value in expected.items()):
         return False
@@ -258,6 +270,8 @@ def main(argv=None):
     configure.add_argument('--epochs', type=int, choices=list(SCHEDULES),
                            help='independent budget; default comes from the dataset template (60/30/30)')
     configure.add_argument('--native-recipe', action='store_true')
+    configure.add_argument('--transfer', choices=['retrained', 'fine_tuned', 'zero_shot'], default='retrained')
+    configure.add_argument('--initialize-from', help='bind selected source path and content identity in the configuration')
     for command in (plan, launch):
         command.add_argument('--suite', choices=[*suites, *SUITE_ALIASES], required=True)
         command.add_argument('--epochs', type=int, choices=list(SCHEDULES), help='override controlled recipe budget and its schedule')
@@ -358,6 +372,7 @@ def main(argv=None):
             final_model_file=args.final_model_file, radar_root=args.radar_root,
             label_root=args.label_root, manifest_dir=args.manifest_dir, execution_config=args.execution_config)
         if args.action == 'configure':
+            options.update(transfer=args.transfer, initialize_from=args.initialize_from)
             print(write_config(recipe(args.dataset, args.method, args.variant or ('AB' if args.method == 'deer_sbr' else 'S0'), args.seed,
                 args.epochs, native=args.native_recipe, **options)))
         else:

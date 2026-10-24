@@ -95,13 +95,25 @@ class ByteLRU:
         expected=self.expected_sha256.get(str(path))
         key = (str(path), stat.st_size, stat.st_mtime_ns, kind, expected)
         if key in self.items:
+            # Supplemental readers validate the exact parsed bytes on misses.
+            # Hits must still check the registered source, even if stat is equal.
+            if reader is not None and expected is not None:
+                started = time.perf_counter() if self.profile else None
+                actual = hashlib.sha256(path.read_bytes()).hexdigest()
+                if started is not None:
+                    self.read_seconds += time.perf_counter() - started
+                if actual != expected:
+                    raise ValueError(f'sensor source SHA256 mismatch: {path}')
             self.hits += 1
             value, size = self.items.pop(key)
             self.items[key] = (value,size)
             return value
         self.misses += 1
         started = time.perf_counter() if self.profile else None
-        value = reader(path) if reader is not None else (read_pcd(path,expected) if kind == 'pcd' else read_annotation(path,expected))
+        if reader is not None:
+            value = reader(path, expected_sha256=expected) if expected is not None else reader(path)
+        else:
+            value = read_pcd(path,expected) if kind == 'pcd' else read_annotation(path,expected)
         if started is not None:
             self.read_seconds += time.perf_counter() - started
         size = value.nbytes if isinstance(value, np.ndarray) else max(1024,stat.st_size*6)

@@ -21,6 +21,7 @@ from opencood.project.supervision import (normal_targets,mutual_nn_targets,contr
     controlled_corruption_config,provenance_targets)
 from opencood.project.fixed_gt import load_manifest
 from opencood.project.config import file_sha256
+from opencood.project.training import uses_local_inputs, select_model_inputs
 
 class ProjectV2XRDataset(Dataset):
     def __init__(self,hypes,*,root='/root/autodl-tmp/CSCWD/datasets/v2xr',split='train',
@@ -31,6 +32,9 @@ class ProjectV2XRDataset(Dataset):
         self.hypes=copy.deepcopy(hypes);self.root=Path(root).resolve();self.split=split
         self.training=bool(training);self.track=track;self.weather=weather;self.seed=int(seed)
         self.experiment_config=copy.deepcopy(experiment_config)
+        self.observation_maps_required=uses_local_inputs(experiment_config)
+        # External training still logs exact type coverage from these targets.
+        self.auxiliary_targets_required=self.training or self.observation_maps_required
         self.reference=bool(reference)
         if split not in ('train','validate','test'):raise ValueError('Invalid split')
         if training and split!='train':raise ValueError('Training only uses train split')
@@ -192,17 +196,22 @@ class ProjectV2XRDataset(Dataset):
                 radar_to_lidar=np.linalg.solve(pose_to_world(a['lidar_pose']),pose_to_world(a.get('radar_pose',a['lidar_pose'])))
                 origins[1]=(transform@radar_to_lidar)[:3,3]
             origins=[transform_points(np.asarray(o)[None],aug)[0] for o in origins]
-            maps=observation_maps(lidar,radar,valid,origins,sample['camera'],aug,self.bounds,self.voxel,self.grid)
+            maps=(observation_maps(lidar,radar,valid,origins,sample['camera'],aug,self.bounds,self.voxel,self.grid)
+                  if self.observation_maps_required else {})
             point_rng=np.random.default_rng(augmentation_seed(sid+'/'+agent,epoch,self.seed,stream='point_order'))
-            entry={'lidar':self._voxelize(lidar,point_rng),'radar':self._voxelize(radar,point_rng),'maps':maps,'valid':valid}
-            if self.experiment_config and self.experiment_config['experiment']['method']=='l4dr':entry['raw_radar']=radar.copy()
+            entry={'lidar':self._voxelize(lidar,point_rng),'maps':maps,'valid':valid}
+            if self.experiment_config and self.experiment_config['experiment']['method']=='l4dr':
+                # Keep the former point-order RNG advance; FAD consumes raw Radar.
+                if self.training and len(radar):point_rng.permutation(len(radar))
+                entry['raw_radar']=radar.copy()
+            else:entry['radar']=self._voxelize(radar,point_rng)
             current.append(entry)
             reference=None
             need_reference=self.training and self.supervision_source=='mutual_nn_v1' and domain=='fog'
             if need_reference:
                 reference=self.cache.get(str(base)+'.pcd') if valid[0] else np.empty((0,4),np.float32)
                 reference=prepare_points(reference,transform,sample['camera'],aug,self.bounds)
-            target=normal_targets(lidar,self.bounds,self.voxel)
+            target=normal_targets(lidar,self.bounds,self.voxel) if self.auxiliary_targets_required else {}
             stats={}
             if source_reference is not None:
                 target=provenance_targets(source_reference,lidar,source_ids,self.bounds,self.voxel)
@@ -214,8 +223,9 @@ class ProjectV2XRDataset(Dataset):
                 else:
                     target={k:np.zeros_like(v) for k,v in target.items()}
             if not valid[0]:target={k:np.zeros_like(v) for k,v in target.items()}
-            if eval_target is not None:target=eval_target
-            target['normal_mask']=np.full((1,1,1),float(domain=='normal' and not corruption_applied),np.float32)
+            if eval_target is not None and self.auxiliary_targets_required:target=eval_target
+            if self.auxiliary_targets_required:
+                target['normal_mask']=np.full((1,1,1),float(domain=='normal' and not corruption_applied),np.float32)
             targets.append(target)
             metadata.append({'agent_id':agent,'weather':domain,'lidar_points':len(lidar),'radar_points':len(radar),
                              'source_timestamp':source_timestamp,
@@ -238,13 +248,15 @@ class ProjectV2XRDataset(Dataset):
         return result
     def _collate_inputs(self,items):
         agents=[a for item in items for a in item['agents']]
-        processed={m:self.pre_processor.collate_batch([a[m] for a in agents]) for m in ('lidar','radar')}
-        return {'processed_lidar':processed['lidar'],'processed_radar':processed['radar'],
+        processed={'processed_'+m:self.pre_processor.collate_batch([a[m] for a in agents])
+                   for m in ('lidar','radar') if m in agents[0]}
+        inputs={**processed,
                 'record_len':torch.tensor([len(item['agents']) for item in items],dtype=torch.long),
                 'batch_size':len(agents),
                 'pairwise_t_matrix':torch.eye(4).reshape(1,1,1,4,4).repeat(len(items),self.max_agents,self.max_agents,1,1),
                 'observation_maps':{k:torch.from_numpy(np.stack([a['maps'][k] for a in agents])) for k in agents[0]['maps']},
                 'modality_valid':torch.from_numpy(np.stack([a['valid'] for a in agents]))}
+        return select_model_inputs(inputs,self.experiment_config)
     def collate_batch(self,batch):
         items=[x['ego'] for x in batch];ego=self._collate_inputs(items)
         ego.update(label_dict={k:torch.from_numpy(np.stack([x['label_dict'][k] for x in items])) for k in items[0]['label_dict']},

@@ -25,7 +25,8 @@ def defaults():
     c['experiment'].update(run_id='supp_v2xr_deer_sbr_AB_e60_s17',
                            training_protocol='supplement_v1', method='deer_sbr',
                            comparison='controlled_module', transfer='retrained',
-                           final_model_file=None)
+                           final_model_file=None, initialization_checkpoint=None,
+                           initialization_checkpoint_sha256=None)
     c['data'].update(root='datasets/v2xr', manifest_dir='datasets/v2xr',
                      radar_root=None, label_root=None, supervision_source='provenance_v1',
                      clean_only=False)
@@ -48,6 +49,34 @@ def defaults():
                            delay_frames=0, perturbation_seed=17029,
                            intervention='none', sample_ids=None, natural_weather=None)
     return c
+
+
+def initialization_metadata(config, *, verify_file=True):
+    """Bind the trained transfer role; evaluation needs only the stored digest."""
+    from opencood.project.config import file_sha256
+    e = config['experiment']
+    digest = e.get('initialization_checkpoint_sha256')
+    path = e.get('initialization_checkpoint')
+    if e['transfer'] == 'fine_tuned':
+        if not path or not digest:
+            raise ValueError('fine_tuned transfer lacks initialization checkpoint identity')
+        if verify_file and file_sha256(path) != digest:
+            raise ValueError('initialization checkpoint SHA256 mismatch; use a new configuration for another source')
+    elif path is not None or digest is not None:
+        raise ValueError('initialization checkpoint conflicts with transfer identity')
+    return dict(training_transfer=e['transfer'], initialization_checkpoint_sha256=digest)
+
+
+def shared_initialization_path(config):
+    """Pair local variants while isolating retraining and each fine-tuning source."""
+    e = config['experiment']
+    name = f"v2xr_{e['training_protocol']}_shared_s{e['seed']}.pt"
+    if config['version'] == 5:
+        identity = initialization_metadata(config, verify_file=False)
+        source = ('_' + identity['initialization_checkpoint_sha256']
+                  if identity['initialization_checkpoint_sha256'] else '')
+        name = f"{e['dataset_id']}_{e['method']}_{e['transfer']}{source}_shared_s{e['seed']}.pt"
+    return Path(config['artifacts']['output_root']) / 'initializations' / name
 
 
 def final_decision(evidence, tolerance):
@@ -161,6 +190,13 @@ def validate_supplement_config(config):
         raise ValueError('separate roots and clean_only apply to registered real datasets')
     if e['transfer'] not in ('retrained', 'zero_shot', 'fine_tuned'):
         raise ValueError('invalid transfer identity')
+    path, digest = e['initialization_checkpoint'], e['initialization_checkpoint_sha256']
+    if e['transfer'] == 'fine_tuned':
+        if (not isinstance(path, str) or not path or not isinstance(digest, str)
+                or len(digest) != 64 or any(c not in '0123456789abcdef' for c in digest)):
+            raise ValueError('fine_tuned requires a configured initialization checkpoint and SHA256')
+    elif path is not None or digest is not None:
+        raise ValueError('only fine_tuned configurations may bind an initialization checkpoint')
     native_kradar_l4dr = e['method'] == 'l4dr' and e['dataset_id'] == 'kradar' and t['epochs'] == 35
     if t['epochs'] not in SCHEDULES and not (e['method'] in ('cobevt', 'where2comm') and t['epochs'] == 40) and not native_kradar_l4dr:
         raise ValueError('registered budgets: 20/30/60/90; native CoBEVT/Where2comm 40; native K-Radar L4DR 35')

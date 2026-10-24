@@ -289,8 +289,11 @@ def batchnorm_evaluation(model, config, device, telemetry=None, *, loader_cache=
 
 def data_contract_metadata(config):
     if config['version'] == 5 and config['experiment']['dataset_id'] != 'v2xr':
+        from opencood.project.supplement_data import real_input_identity
+        manifest = Path(config['data']['manifest_dir']) / 'supplement_manifest.json'
         return {'base_hypes_sha256': file_sha256(resolve_repo(config['data']['base_hypes'])),
-                'gt_manifest_sha256': file_sha256(Path(config['data']['manifest_dir']) / 'supplement_manifest.json')}
+                'gt_manifest_sha256': file_sha256(manifest),
+                'sensor_inputs_sha256': real_input_identity(config, json.loads(manifest.read_text(encoding='utf8')))}
     manifest = Path(config["data"]["manifest_dir"]) / "eval_gt_manifest.json"
     metadata = {"base_hypes_sha256": file_sha256(resolve_repo(config["data"]["base_hypes"])),
                 "gt_manifest_sha256": file_sha256(manifest)}
@@ -315,7 +318,11 @@ def artifact_metadata(config):
     metadata["supervision_contract"] = supervision_contract(config)
     metadata["source_sha256"] = source_tree_hash()
     if config['version'] == 5:
-        from opencood.project.supplement import resolve_final
+        from opencood.project.supplement import resolve_final, initialization_metadata
+        metadata.update(initialization_metadata(config))
+        if config['experiment']['method'] == 'l4dr':
+            from opencood.project.l4dr import pointnet2_identity
+            metadata['l4dr_pointnet2'] = pointnet2_identity()
         e = config['experiment']
         path = e['final_model_file']
         metadata['final_model_sha256'] = file_sha256(path) if path else None
@@ -671,19 +678,25 @@ def _run(config, args, resources):
         torch.distributed.init_process_group(backend="nccl" if device.type == "cuda" else "gloo")
     torch.set_num_threads(config["resources"]["cpu_threads"])
     seed_everything(e["seed"] + rank, t["deterministic"])
-    dataset, model, criterion = build_components(config, args.mode)
-    if hasattr(dataset, 'cache'):
-        dataset.cache.profile = synchronized
     initialize = getattr(args, 'initialize_from', None)
     if config['version'] == 5:
+        from opencood.project.supplement import initialization_metadata
         transfer = e['transfer']
         if transfer == 'zero_shot':
             raise ValueError('zero_shot is evaluation-only; target training is forbidden')
-        if bool(initialize) != (transfer == 'fine_tuned'):
-            raise ValueError('fine_tuned requires --initialize-from; retrained recipes start from random initialization')
+        initialization_metadata(config)
+        configured = e.get('initialization_checkpoint')
+        if initialize and (not configured or Path(initialize).resolve() != Path(configured).resolve()):
+            raise ValueError('--initialize-from must match the configured initialization checkpoint')
+        initialize = configured
+    dataset, model, criterion = build_components(config, args.mode)
+    if hasattr(dataset, 'cache'):
+        dataset.cache.profile = synchronized
+    if config['version'] == 5:
         if initialize:
             saved = torch.load(initialize, map_location='cpu', weights_only=False)
-            if saved.get('metadata', {}).get('checkpoint_role') != 'selected':
+            if (saved.get('schema_version') != 5 or saved.get('training_protocol') != 'supplement_v1'
+                    or saved.get('metadata', {}).get('checkpoint_role') != 'selected'):
                 raise ValueError('fine-tuning initialization requires selected source weights')
             model.load_state_dict(saved['model'], strict=True)
     if args.mode == "smoke":
@@ -715,8 +728,6 @@ def _run(config, args, resources):
     amp_dtype = torch.float16 if t["precision"] == "amp_fp16" else torch.bfloat16
     scaler = torch.cuda.amp.GradScaler(init_scale=FP16_INITIAL_SCALE, enabled=t["precision"] == "amp_fp16")
     state, metadata = TrainState(), artifact_metadata(config)
-    if initialize:
-        metadata['initialization_checkpoint_sha256'] = file_sha256(initialize)
     output = Path(config["artifacts"]["output_root"]) / e["run_id"] / args.mode
     output.mkdir(parents=True, exist_ok=True)
     telemetry_started = time.perf_counter()
@@ -759,9 +770,8 @@ def _run(config, args, resources):
     elif (output / f"latest.rank{rank}.pt").exists():
         raise ValueError("output already has a checkpoint; pass --resume or choose a new run_id")
     if rank == 0:
-        common_path = Path(config["artifacts"]["output_root"]) / "initializations" / f"v2xr_{e['training_protocol']}_shared_s{e['seed']}.pt"
-        if config['version'] == 5:
-            common_path = common_path.with_name(f"{e['dataset_id']}_{e['method']}_shared_s{e['seed']}.pt")
+        from opencood.project.supplement import shared_initialization_path
+        common_path = shared_initialization_path(config)
         if common_path.exists():
             previous = torch.load(common_path, map_location="cpu", weights_only=False)
             if previous["sha256"] != initial_hash:
@@ -1062,6 +1072,10 @@ def _run(config, args, resources):
               "timing_scope": "update wall includes loader wait, metadata, H2D, forward/backward, finite checks, optimizer completion and scalar logging preparation; inclusive metric adds periodic checkpoint and step log IO; excludes validation and final checkpoint"}
     report["source_unchanged"] = report["audit_contract"]["source_sha256"] == metadata["source_sha256"]
     report["passed"] = report["passed"] and report["source_unchanged"]
+    if config['version'] == 5 and e['method'] == 'l4dr':
+        from opencood.project.l4dr import pointnet2_identity
+        report['extension_identity_unchanged'] = metadata['l4dr_pointnet2'] == pointnet2_identity()
+        report['passed'] = report['passed'] and report['extension_identity_unchanged']
     (output / f"report.rank{rank}.json").write_text(json.dumps(report, indent=2))
     telemetry("run_complete", status=report["status"], passed=report["passed"], selected_epoch=state.selected_epoch)
     if rank == 0:

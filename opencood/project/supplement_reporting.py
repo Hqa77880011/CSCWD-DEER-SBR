@@ -46,6 +46,21 @@ def load_selected(config, checkpoint, device, *, budget_snapshot=False):
     if _model_identity(original_identity_config) != _model_identity(config):
         raise ValueError('selected architecture differs from the frozen experiment; inference interventions belong in evaluation.intervention')
     transfer = config['experiment']['transfer']
+    from opencood.project.supplement import initialization_metadata
+    trained_identity = initialization_metadata(original, verify_file=False)
+    if trained_identity['training_transfer'] not in ('retrained', 'fine_tuned'):
+        raise ValueError('selected checkpoint has no trained transfer identity')
+    if any(metadata.get(key) != value for key, value in trained_identity.items()):
+        raise ValueError('selected checkpoint transfer/initialization evidence is missing or inconsistent')
+    if transfer in ('retrained', 'fine_tuned'):
+        if initialization_metadata(config, verify_file=False) != trained_identity:
+            raise ValueError('evaluation transfer/initialization differs from the actual trained checkpoint')
+    # zero_shot retains the architecture-only cross-dataset adaptation above.
+    # Source files are unnecessary for inference from self-contained weights.
+    if config['experiment']['method'] == 'l4dr':
+        from opencood.project.l4dr import pointnet2_identity
+        if metadata.get('l4dr_pointnet2') != pointnet2_identity():
+            raise ValueError('selected L4DR extension source/binary/runtime identity changed or is unavailable in old evidence')
     final_file = config['experiment']['final_model_file']
     if final_file and metadata.get('final_model_sha256') != file_sha256(final_file):
         # V2X-R's winning AB/N2 weights were trained before F was frozen. Reuse
@@ -131,11 +146,17 @@ def _metadata(config, args, saved, dataset):
             'traceable type fractions on controlled inputs; no clean feature target' if training_e['method'] == 'deer_sbr' and training_e['variant'] not in ('S0', 'B') or training_e['method'] == 'where2comm' and saved['config']['model']['local_variant'] != 'none'
             else 'none; shared input corruption only',
         model_selection_split='validate', evaluation_bn_fitting=False)
-    result['gt_manifest_sha256'] = data_contract_metadata(config)['gt_manifest_sha256']
+    input_contract = data_contract_metadata(config)
+    result['gt_manifest_sha256'] = input_contract['gt_manifest_sha256']
+    if 'sensor_inputs_sha256' in input_contract:
+        result['sensor_inputs_sha256'] = input_contract['sensor_inputs_sha256']
     result['input_fields'] = dataset.manifest.get('fields', dict(lidar='xyz + encoded red scalar', radar='xyz + encoded red scalar; not calibrated Doppler'))
     result['training_sample_count'] = saved.get('sampler', {}).get('size')
     result['training_dataset'] = training_e['dataset_id']
     result['initialization_checkpoint_sha256'] = saved['metadata'].get('initialization_checkpoint_sha256')
+    result['training_transfer'] = saved['metadata']['training_transfer']
+    if 'l4dr_pointnet2' in saved['metadata']:
+        result['l4dr_pointnet2'] = deepcopy(saved['metadata']['l4dr_pointnet2'])
     n_train = result['training_sample_count']
     result['planned_optimizer_updates'] = (saved['config']['training']['epochs'] * (n_train // result['effective_batch_size'])
                                             if n_train is not None else None)
@@ -265,9 +286,10 @@ def _diagnose(model, dataset, device, args, metadata):
     if args.samples <= 0:
         raise ValueError('diagnostic sample count must be positive')
     sums, counts, rows = Counter(), Counter(), []
+    config = getattr(dataset, 'config', getattr(dataset, 'experiment_config', None))
     for i in range(min(args.samples, len(dataset))):
         batch = dataset.collate_batch([dataset[i]])
-        output = model(to_device(select_model_inputs(batch['ego']), device), return_aux=True)
+        output = model(to_device(select_model_inputs(batch['ego'], config), device), return_aux=True)
         aux = output.get('aux')
         if aux is None:
             raise ValueError('selected method has no DEER/SBR mechanism outputs')
@@ -308,6 +330,7 @@ def efficiency(model, dataset, device, args, metadata):
     from opencood.project.evaluation import postprocess_predictions
     if args.samples < 1 or args.warmup < 0:
         raise ValueError('efficiency needs positive measured samples and nonnegative warmup')
+    config = getattr(dataset, 'config', getattr(dataset, 'experiment_config', None))
     # Training/development can reuse parsed raw arrays. This separate latency
     # protocol explicitly includes point-file reads and parsing on every frame.
     if hasattr(dataset, 'cache'):
@@ -315,7 +338,7 @@ def efficiency(model, dataset, device, args, metadata):
         dataset.cache.bytes = dataset.cache.max_bytes = 0
     for i in range(args.warmup):
         batch = dataset.collate_batch([dataset[i % len(dataset)]])
-        model(to_device(select_model_inputs(batch['ego']), device), return_aux=False)
+        model(to_device(select_model_inputs(batch['ego'], config), device), return_aux=False)
     _sync(device)
     times, local_times, peaks, agents = [], [], [], []
     for i in range(min(args.samples, len(dataset))):
@@ -324,7 +347,7 @@ def efficiency(model, dataset, device, args, metadata):
         _sync(device)
         start = time.perf_counter()
         batch = dataset.collate_batch([dataset[i]])
-        inputs = to_device(select_model_inputs(batch['ego']), device)
+        inputs = to_device(select_model_inputs(batch['ego'], config), device)
         output = model(inputs, return_aux=False)
         class_outputs = output.get('class_outputs', {getattr(dataset, 'classes', ['Vehicle'])[0]: output})
         records = []
@@ -765,6 +788,8 @@ def visualize(config, args):
     c['evaluation'] = deepcopy(metadata['condition'])
     c['evaluation']['sample_ids'] = None
     dataset, loader = make_eval_loader(c, metadata['split'], metadata['weather'])
+    # Observation counts are an explicit consumer of visualization-only maps.
+    dataset.observation_maps_required = True
     rows = {r['sample_id']: r for r in records}
     ids = args.sample_ids or sorted(rows)[:5]
     if not 1 <= len(ids) <= 5 or not set(ids) <= set(rows) & set(dataset.sample_ids):

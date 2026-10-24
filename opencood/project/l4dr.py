@@ -12,6 +12,45 @@ from torch.nn import functional as F
 from opencood.models.common_modules.pillar_vfe import PFNLayer
 
 
+def pointnet2_identity(*, include_path=False):
+    """Record L4DR's batch extension evidence without executing any CUDA op."""
+    import hashlib
+    import importlib
+    import os
+    from pathlib import Path
+    import sys
+    from opencood.project.config import file_sha256
+
+    root = Path(__file__).resolve().parents[2]
+    folder = root / 'opencood/pcdet_utils/pointnet2/pointnet2_batch'
+    sources = {p.relative_to(root).as_posix(): file_sha256(p)
+               for p in sorted((folder / 'src').iterdir()) if p.suffix in ('.cpp', '.cu', '.h')}
+    digest = hashlib.sha256()
+    for name, value in sorted(sources.items()):
+        digest.update(name.encode())
+        digest.update(bytes.fromhex(value))
+    try:
+        wrapper = importlib.import_module('opencood.pcdet_utils.pointnet2.pointnet2_batch.pointnet2_utils')
+    except (ImportError, OSError):
+        binary = dict(status='unavailable', sha256=None)
+    else:
+        # This is the module object referenced by FPS/ball query/three_nn.
+        path = Path(wrapper.pointnet2.__file__)
+        binary = dict(status='loaded', sha256=file_sha256(path))
+        if include_path:
+            binary['path'] = str(path.resolve())
+    result = dict(schema='l4dr_pointnet2_identity_v1', sources=sources, source_sha256=digest.hexdigest(),
+        build_script_sha256=file_sha256(root / 'opencood/pcdet_utils/setup.py'), binary=binary,
+        runtime=dict(python_abi=sys.implementation.cache_tag, torch=torch.__version__,
+                     torch_cuda=torch.version.cuda, torch_cxx11_abi=getattr(torch._C, '_GLIBCXX_USE_CXX11_ABI', None)),
+        build_provenance='source/settings and current environment only; compiler invocation is not embedded in binary',
+        operator_numerics='not_verified_by_identity')
+    if include_path:
+        result['observed_build_environment'] = {k: os.environ.get(k) for k in
+            ('TORCH_CUDA_ARCH_LIST', 'CUDA_HOME', 'CC', 'CXX', 'CFLAGS', 'CXXFLAGS', 'NVCC_FLAGS')}
+    return result
+
+
 class SafeBatchNorm1d(nn.BatchNorm1d):
     def forward(self, value):
         if self.training and value.numel() // value.shape[1] == 1:

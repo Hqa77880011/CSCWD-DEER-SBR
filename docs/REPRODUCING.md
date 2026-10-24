@@ -204,9 +204,15 @@ git rev-parse HEAD | tee "$CHECKS/repository_commit.txt"
 
 真实数据上的MDD/CoBEVT等继承所列V2X-R候选的超参数来源并适配目标数据，不能称已取得各目标数据集的原论文配方。`cosine_warmup`的epoch实现与作者timm调用链存在时间单位差异；MDD的参考目标/beta和Where2comm完整论文机制也有明确区别。采用的论文版本、作者commit、A/B/C/D分类和输入/监督/成本边界统一见[方案§8.2](13_补充实验方案与实施说明.md#82-原文作者版本与当前适配的核查结论)，不能仅看 `_native` 后缀判断完成了原生复现。
 
-`run_id`区分dataset/method/variant/budget/seed/native及单因素；它不是所有参数的编码。完整YAML与resolved config保存全部字段，已有不同内容配置拒绝覆盖；data/GT/base-hypes/frozen-F及Python源码身份由artifact metadata绑定。online resume还核对完整配置、角色和状态。`--skip-completed`现要求成功报告、完整配置、当前源码/数据元数据及selected内嵌身份/角色均匹配；不会因为旧selected文件存在就跳过当前配方。新源码或本轮L4DR修正需新批次，不能放宽检查续接旧schema5 checkpoint。
+`run_id`区分dataset/method/variant/budget/seed/native及单因素；它不是所有参数的编码。完整YAML与resolved config保存全部字段，已有不同内容配置拒绝覆盖；data/GT/base-hypes/frozen-F及Python源码身份由artifact metadata绑定。online resume还核对完整配置、角色和状态。`--skip-completed`要求成功报告、完整配置、当前源码/数据/初始化及selected内嵌身份/角色均匹配；缺文件或内容变化返回不匹配，随后实际启动会明确报错，不静默采用另一来源。新源码需新批次，不能放宽检查续接旧schema5 checkpoint。
 
-`preflight.execution_resource_budget`报告每任务loader流数、worker/预取batch/原始缓存上界，需按同时运行任务相加；它不包含模型、manifest、pinned队列和系统页缓存字节，不代替进程树/cgroup峰值实测。当前Python源码身份也不证明已安装CUDA扩展二进制与源码一致，服务器须重新确认扩展构建和算子功能。
+`retrained`和`fine_tuned`评测必须等于checkpoint内嵌的训练transfer；metadata中的`training_transfer`与配置一致。微调通过 `configure --transfer fine_tuned --initialize-from <source-selected.pt>` 将绝对来源路径和`experiment.initialization_checkpoint_sha256`一并冻结到配置，run_id另加transfer和来源摘要。训练默认使用该配置路径；训练入口的`--initialize-from`仅可重复指定同一路径。首次启动、online恢复、完成判断均要求该文件存在且字节相同；替换来源须生成新配置/批次，不迁移优化器/RNG。独立推理使用checkpoint内嵌的来源摘要，无需保留初始化文件，但不能改成另一来源或重训标签。`zero_shot`继续按明确的架构匹配规则跨数据集适配，并保留实际训练transfer和来源记录，禁止目标训练/BN拟合；不自动转换单类/双类检测头。
+
+共享初始化按dataset/method/seed/transfer/完整来源摘要隔离；同一来源下的S0/AB/N2等配对变体仍检查共同底座tensor身份。只改变variant不会建立新的底座，重训和不同微调来源则互不冲突。
+
+`preflight.execution_resource_budget`报告每任务loader流数、worker/预取batch/原始缓存上界，需按同时运行任务相加；它不包含模型、manifest、pinned队列和系统页缓存字节，不代替进程树/cgroup峰值实测。
+
+`source_tree_hash()`继续保持Python源码算法；schema5的L4DR另在artifact metadata绑定`l4dr_pointnet2`：仅实际使用的PointNet++ batch扩展C++/CUDA/header、构建脚本、wrapper所引用二进制文件内容，以及Python ABI/PyTorch/CUDA runtime/C++ ABI。`environment`还记录实际加载路径和当前构建环境变量；这些变量不声称是该二进制的历史编译命令。源码相同、二进制相同均不证明二者来自同一次构建或算子数值等价；`operator_numerics=not_verified_by_identity`明确保留此边界。本地无扩展时记录`binary.status=unavailable`，没有CUDA数值证据。新schema5的恢复、选中权重加载和完成判断要求相同扩展证据；缺证据的旧schema5 checkpoint拒绝复用。原七组配置、Release清单、legacy源码包及其身份算法保持原样。
 
 下面两个终端函数用于逐配置预检和读取两个真实 train 样本。`preflight` 的退出码本身不代表没有阻塞，函数会另外检查 `formal_blockers` 和输入路径；检查通过后才进入训练。它们不执行优化更新。
 
@@ -299,7 +305,11 @@ V2X-R 应已有 `data_manifest.json`、`split_manifest.json`、`weather_manifest
 
 已经生效的路径为：`make_loader` 的 pin memory/persistent workers/prefetch；`to_device(..., non_blocking=True)`；optimizer 的 `zero_grad(set_to_none=True)`；模型与 loss 的 `efficient_features=True`。`cpu_threads` 进入主进程 `torch.set_num_threads`，worker 的 PyTorch 线程固定为 1。activation checkpoint 只重算无 BN 的局部分支；外部方法保留原生计算和配方。`raw_cache_gib_per_worker` 现同时接入 V2X-R 和两套真实数据 raw reader。
 
-runner 只复用 dataset/loader、manifest、固定预处理器及有界的原始点云/标注缓存；每轮验证前重新核对数据身份，V2X-R 文件哈希检查保留，文件 stat 或预期哈希变化不会命中旧项。真实点云在校准/增强前复制，训练的样本键控天气、扰动、点序和标签每次重新计算。缓存不含模型特征、预测或随机增强后的训练结果；每轮仍用当前权重重新拟合 BN 和评分，退出时回收所有 loader worker。
+runner 只复用 dataset/loader、manifest、固定预处理器及有界的原始点云/标注缓存；每轮验证前重新核对数据身份，V2X-R 文件哈希检查保留，文件 stat 或预期哈希变化不会命中旧项。V2X-Radar-C/K-Radar在manifest中登记全部实际读取的LiDAR/Radar内容摘要，K-Radar Radar相对`radar_root`解析；run/load/completion边界扫描登记文件并生成`sensor_inputs_sha256`，不在每个batch重扫整个数据集。自定义reader的cache miss对同一份将被解析的字节校验，cache hit也核验当前来源内容，包括大小/mtime不变的替换；不匹配直接拒绝。缓存因此省去解析，不省去来源字节检查。旧manifest缺少`sensor_sha256`时明确拒绝，须从已审阅输入准备新的manifest，不能补写摘要后继续旧实验。GT、pose、calibration、划分和天气字段已冻结在manifest内，由`gt_manifest_sha256`绑定；运行时不重读原annotation/标定/description文件来改写这些字段。
+
+真实点云在校准/增强前复制，训练的样本键控天气、扰动、点序和标签每次重新计算。内容检查的IO/摘要时间（含cache hit）计入诊断的raw read/parse，不归入预处理计算。缓存不含模型特征、预测或随机增强后的训练结果；每轮仍用当前权重重新拟合 BN 和评分，退出时回收所有 loader worker。
+
+训练、验证导出、机制诊断和独立效率路径现均按实际方法筛选模型输入。无局部DEER/SBR模块的外部方法不生成observation maps，验证阶段也不生成无人消费的常规辅助目标；可视化显式请求地图。外部训练的类型覆盖日志仍消费辅助目标，保留其生成和原语义；MDD reference、FAD监督和来源trace保留。L4DR仅传raw Radar给FAD，不再提前生成随后废弃的Radar voxel；V2X-R仍消耗原Radar点序permutation以保持局部RNG状态。导出与真实数据evaluator的两次NMS暂保留：导出后预测还供可视化/bootstrap/距离分组使用，独立evaluator仍校验并处理输入，未新增“已后处理”信任契约。这些改动没有吞吐或显存收益实测。
 
 2026-10-24新增的执行优化只删除Where2comm无用的feature count/.item、在H2D前筛除外部网络/loss未消费的观测图和类型target，以及将BN快照读取合并为浮点buffer/int64计数两批；没有删除有限性拦截、改变多尺度重复前向或BN更新次数。L4DR的detach、插值epsilon与K-Radar optimizer/scheduler修复另计为方法实现更正，不能把它们的训练变化解释为等价提速。CPU已知答案与严格等价范围见[验证记录](VALIDATION.md)；没有本轮真实数据或CUDA提速比。
 
@@ -443,7 +453,7 @@ python scripts/supplement.py train --config "$C" --execute \
 
 `latest.rank0.pt` 保存 online BN、优化器/调度器/采样器/RNG，仅供 resume；`selected.pt` 用于开发选中权重评测；`budget_epochNNN.pt` 用于显式预算快照评测。不能用 selected 续训，也不能用旧 20 轮 resume 冒充独立 60 轮配方。
 
-新任务继续调用 `project_tools/run_experiments.py`；本套矩阵均为 `retrained`。底层 `--initialize-from` 仅用于另行登记为 `fine_tuned` 的配方，不迁移优化器/RNG；`zero_shot` 配置禁止目标训练和目标 BN 拟合。当前没有将 V2X-R 单类权重自动转换为 K-Radar 双类权重的路径。
+新任务继续调用 `project_tools/run_experiments.py`；本套矩阵均为 `retrained`。另行微调须先通过configure绑定transfer、初始化文件和内容摘要，详见[配置与恢复身份](#01-有效配置参数范围与恢复身份)；底层`--initialize-from`不可覆盖配置来源，不迁移优化器/RNG。`zero_shot`配置禁止目标训练和目标BN拟合。当前没有将V2X-R单类权重自动转换为K-Radar双类权重的路径。
 
 ### 3. 多种子主矩阵与冻结唯一 F
 

@@ -193,7 +193,8 @@ def export_loader(model, loader, dataset, device, *, postprocess=True,
             if any(module.training for module in model.modules()):
                 raise ValueError("prediction export requires every module in eval mode")
             ego = batch["ego"]
-            inputs = stage("h2d", lambda: to_device(select_model_inputs(ego), device))
+            config = getattr(dataset, 'config', getattr(dataset, 'experiment_config', None))
+            inputs = stage("h2d", lambda: to_device(select_model_inputs(ego, config), device))
             def forward():
                 if getattr(model, 'method', None) == 'mdd':
                     from opencood.project.weather import augmentation_seed

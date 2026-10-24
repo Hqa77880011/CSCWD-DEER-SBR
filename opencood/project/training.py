@@ -21,12 +21,18 @@ MODEL_KEYS = frozenset(("processed_lidar", "processed_radar", "raw_radar", "reco
                         "observation_maps", "modality_valid", "batch_size"))
 
 
+def uses_local_inputs(config):
+    """Whether observation maps have a local DEER/SBR consumer."""
+    return (config is None or config['version'] != 5 or config['experiment']['method'] == 'deer_sbr'
+            or config['experiment']['method'] == 'where2comm' and config['model']['local_variant'] != 'none')
+
+
 def select_model_inputs(ego, config=None):
     """Explicitly prevent labels, clean features and weather provenance leaking."""
     keys = MODEL_KEYS
     if config is not None and config['version'] == 5:
         method = config['experiment']['method']
-        if method != 'deer_sbr' and not (method == 'where2comm' and config['model']['local_variant'] != 'none'):
+        if not uses_local_inputs(config):
             keys = {'processed_lidar', 'record_len', 'batch_size',
                     'raw_radar' if method == 'l4dr' else 'processed_radar'}
             if method == 'where2comm':
