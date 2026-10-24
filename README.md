@@ -224,18 +224,18 @@ The smoke check performs synthetic forward, backward, and inference passes with 
 
 <a id="server-training-commands"></a>
 
-### 服务器分阶段训练命令
+### Staged Server Training Commands
 
-以下命令用于**已安装项目环境、已准备数据的 Linux 服务器**，按阶段复制执行。先修改服务器路径，再在同一 Bash 会话运行；每个 `run-suite --execute` 都会启动真实训练。同一个 suite 内顺序运行，已成功完成且配置完全一致的先导由 `--skip-completed` 复用。此次 README 更新只校验命令，没有连接实验服务器或启动训练。
+Run the following stages on a **Linux server with the project environment installed and the datasets prepared**. Set the server paths first, then use the same Bash session throughout. Each `run-suite --execute` command starts real training. Tasks within a suite run sequentially; `--skip-completed` reuses completed pilots only when their configurations match exactly. These commands have been checked locally and await execution on the server.
 
-阶段顺序：环境预检 → 可选执行配置测量 → S0/AB/N2 seed17 → SUP seed17 → 根据开发曲线冻结预算 → 内部/外部三种子 → 冻结 F → M1/M3/M4 → 按研究问题执行扩展。外部方法可在独立 GPU 上与内部阶段并行；依赖 F 的阶段必须等待三种子开发证据齐全。
+Stage order: environment preflight → optional execution-configuration measurements → S0/AB/N2 with seed 17 → SUP with seed 17 → freeze the training budget from development curves → internal/external three-seed runs → freeze F → M1/M3/M4 → extensions required by the research questions. External methods can run on separate GPUs alongside the internal experiments. Stages that depend on F require complete development evidence from all three seeds.
 
-#### 阶段 0：设置服务器路径和预检函数
+#### Stage 0: Set Server Paths and Preflight Helpers
 
-`RUNS` 使用新的补充实验批次目录。`CUDA_VISIBLE_DEVICES` 选择物理 GPU，进程内统一使用 `DEVICE=cuda:0`。`EPOCHS=60` 是先导候选；内部组保持 FP32、microbatch4、累积2、有效batch8。外部方法保留原生 batch 和 schedule。
+Use a new supplemental campaign directory for `RUNS`. `CUDA_VISIBLE_DEVICES` selects the physical GPU; the process uses `DEVICE=cuda:0`. `EPOCHS=60` is the initial pilot candidate. Internal configurations retain FP32, microbatch size 4, gradient accumulation over 2 microbatches, and effective batch size 8. External methods retain their native batch sizes and schedules.
 
 ```bash
-# 按服务器实际位置修改这三项；不要填本地 Windows 路径。
+# Set these three paths to their actual locations on the Linux server.
 export REPO=/data/projects/CSCWD-DEER-SBR
 export DATA=/data/v2xr
 export RUNS=/data/runs/supplement_v1_20261024
@@ -253,12 +253,12 @@ CHECKS="$RUNS/checks"
 LOGS="$RUNS/logs"
 REPORTS="$RUNS/reports"
 FINAL_MODEL="$RUNS/frozen_final.json"
-EXECUTION_ARGS=()  # 测量并冻结执行配置后，设为 (--execution-config "$WINNER")
+EXECUTION_ARGS=()  # After measuring and freezing execution settings, use (--execution-config "$WINNER").
 mkdir -p "$PLANS" "$CHECKS" "$LOGS" "$REPORTS"
 git rev-parse HEAD | tee "$CHECKS/repository_commit.txt"
 ```
 
-每阶段先 `plan --write-configs`，再 `check_plan`，最后训练。下面的函数检查预检报告中的路径和 `formal_blockers`，并读取两个真实 train 样本；单看 `preflight` 的退出码不足以判断能否训练。
+For each stage, run `plan --write-configs`, then `check_plan`, and finally the training command. The helpers below check the paths and `formal_blockers` in each preflight report and read two real training samples. The `preflight` exit code alone does not establish training readiness.
 
 ```bash
 check_config() {
@@ -291,29 +291,29 @@ check_plan() {
 }
 ```
 
-#### 阶段 1：环境和数据预检
+#### Stage 1: Check the Environment and Data
 
 ```bash
 nvidia-smi
 python -m pip check
 
-# 依赖/设备导入预检，无下载、训练或数据读取。
+# Inspect dependency imports and device availability without downloading or reading data.
 python scripts/supplement.py environment --native-v2xr --device "$DEVICE" \
   --output "$CHECKS/environment.json"
 
-# CUDA 算子、spconv、合成基线及 checkpoint 检查。
+# Check CUDA operations, spconv, a synthetic baseline, and checkpoint handling.
 python project_tools/check_environment.py --output "$CHECKS/environment_gpu.json" \
   | tee "$LOGS/environment_gpu.log"
 
-# 21 路 CPU 合成前向/反向/推理；零优化更新，无 AP。
+# Check 21 synthetic CPU forward/backward/inference paths; zero optimizer updates and no AP.
 python scripts/supplement.py smoke --output "$CHECKS/synthetic_smoke.json"
 ```
 
-通过条件：依赖导入报告为 `ready`，GPU 合成环境检查为 `passed`；后续各配置 `formal_blockers=[]` 且 train 样本可读。V2X-R 必须已经包含固定 GT 和数据/划分/天气 manifest。
+Proceed when the dependency report is `ready`, the synthetic GPU environment check is `passed`, and every subsequent configuration has `formal_blockers=[]` with readable training samples. V2X-R must already contain the fixed-GT manifest and the data, split, and weather manifests.
 
-#### 阶段 1A：可选的执行配置测量
+#### Stage 1A: Optional Execution-Configuration Measurements
 
-先比较 workers4/8；以下命令每份候选运行10次 warmup和40次测量更新，属于有界真实数据 benchmark，输出在独立的 `performance/`，不计入正式先导。
+Compare 4 and 8 data-loader workers first. The commands below run 10 warmup updates and 40 measured updates per candidate on real training data. These bounded benchmarks write to a separate `performance/` directory and do not count toward the formal pilots.
 
 ```bash
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
@@ -324,11 +324,11 @@ BASE="$(python scripts/supplement.py configure --dataset v2xr --method deer_sbr 
   --output-root "$PERF/base" --device "$DEVICE")"
 check_config "$BASE"
 
-# 仅生成两份 workers 候选和对应 benchmark 命令，不运行。
+# Generate two worker-count candidates and their benchmark commands without running them.
 python scripts/supplement.py performance-configs --config "$BASE" --stage workers \
   --output-root "$PERF/workers_r1" > "$PERF/workers_r1.json"
 
-# 最小测量：相同 seed/样本顺序，各 10 warmup + 40 measured updates。
+# Use the same seed and sample order: 10 warmup + 40 measured updates per candidate.
 while IFS= read -r C; do
   python project_tools/run_experiments.py --config "$C" --mode benchmark \
     --warmup 10 --steps 40 --timing-mode throughput
@@ -336,20 +336,20 @@ done < <(python -c 'import json,sys; print("\n".join(t["config"] for t in json.l
   "$PERF/workers_r1.json")
 ```
 
-随后按需逐项比较 prefetch1/2、cache0.5/1.0 GiB、cpu_threads2/4、activation checkpoint开/关、保存间隔100/500/1000。生成命令、RAM总量及选择标准见[性能测量步骤](docs/REPRODUCING.md#12-分阶段候选配置与有界服务器测量)。如果采用实测选出的执行参数，在**首次生成正式先导配置之前**设置下面的数组；不做测量则保持 `EXECUTION_ARGS=()`。
+Then compare one factor at a time as needed: prefetch factors 1/2, raw caches of 0.5/1.0 GiB per worker, `cpu_threads` 2/4, activation checkpointing enabled/disabled, and checkpoint intervals of 100/500/1000 updates. See the [performance measurement procedure](docs/REPRODUCING.md#12-分阶段候选配置与有界服务器测量) for generation commands, total RAM accounting, and selection criteria. To use measured execution settings, set the array below **before generating the formal pilot configurations for the first time**. Otherwise, keep `EXECUTION_ARGS=()`.
 
 ```bash
-# WINNER 设为实测选择的完整候选 YAML 路径。
+# Set WINNER to the full candidate YAML selected from actual measurements.
 : "${WINNER:?set WINNER to the measured winning YAML}"
 EXECUTION_ARGS=(--execution-config "$WINNER")
 ```
 
-执行参数在先导与重复中保持一致。这个选项只复制资源、activation checkpoint和online保存间隔，不替换原生方法的优化器、batch、schedule或BN政策。
+Keep execution settings consistent between pilots and repeated runs. This option copies only resource settings, activation checkpointing, and the online-checkpoint interval. Each method retains its registered optimizer, batch size, schedule, and BN policy.
 
-#### 阶段 2：S0 / AB / N2 的 seed17，随后 SUP
+#### Stage 2: Run S0 / AB / N2 with Seed 17, Then SUP
 
 ```bash
-# EXECUTION_ARGS 默认空；若已冻结执行候选，则保持该数组用于后续同配方重复。
+# EXECUTION_ARGS is empty by default; retain frozen execution settings for matching repeats.
 python scripts/supplement.py plan --suite pilot --epochs "$EPOCHS" \
   --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
   | tee "$PLANS/pilot.json"
@@ -374,11 +374,11 @@ python scripts/supplement.py convergence --run-dirs "${PILOT_RUNS[@]}" \
   --output "$REPORTS/pilot_e${EPOCHS}_convergence.json"
 ```
 
-每组输出为 `$RUNS/<run_id>/train/`，包含 `steps.rank0.jsonl`、`telemetry.rank0.jsonl`、逐轮 `validation_epochNNN.json`、online/selected和预算快照。`convergence` 输出JSON/CSV/PNG开发曲线。
+Each run writes to `$RUNS/<run_id>/train/`, including `steps.rank0.jsonl`, `telemetry.rank0.jsonl`, per-epoch `validation_epochNNN.json`, online/selected checkpoints, and budget snapshots. `convergence` exports development curves as JSON, CSV, and PNG.
 
-#### 阶段 2A：需要时比较独立预算，再冻结 EPOCHS
+#### Stage 2A: Compare Independent Budgets If Needed, Then Freeze EPOCHS
 
-以下示例只比较一个独立30轮配方；需要20轮时设 `E=20`，只有60轮仍持续改善时再考虑 `E=90`。不默认启动 `budgets` 的四组×四预算完整矩阵。
+The example below compares one independent 30-epoch recipe. Set `E=20` for a 20-epoch control; consider `E=90` only if development performance is still improving at 60 epochs. The full four-configuration × four-budget `budgets` matrix is not launched by default.
 
 ```bash
 E=30
@@ -399,11 +399,11 @@ python scripts/supplement.py convergence --run-dirs "${BUDGET_RUNS[@]}" \
   --output "$REPORTS/budget_e${E}_convergence.json"
 ```
 
-依据开发曲线决定最终预算：两次降学习率均发生、最后10轮最佳开发均值改善低于0.3个百分点且无持续上升趋势，可作为平台候选。60轮配方的第30轮快照不是独立30轮终点。后续 `EPOCHS` 必须填已经冻结的20/30/60/90之一，不能由测试成绩决定。
+Choose the final budget from development curves. A run is a plateau candidate once both learning-rate reductions have occurred, the best development mean has improved by less than 0.3 percentage points over the last 10 epochs, and no sustained upward trend remains. The epoch-30 snapshot of a 60-epoch recipe is not an independent 30-epoch endpoint. Set subsequent `EPOCHS` values to the frozen budget of 20, 30, 60, or 90; test scores must not determine this choice.
 
-#### 阶段 3：外部方法 seed17 先导
+#### Stage 3: Run External-Method Pilots with Seed 17
 
-AttFuse、MDD、L4DR各30轮，CoBEVT为40轮；本阶段**不传 `--epochs`**。可分配另一张GPU执行，保留相同数据/固定GT协议及各方法原生配方。
+AttFuse, MDD, and L4DR use 30 epochs; CoBEVT uses 40. **Do not pass `--epochs` in this stage.** These runs can use another GPU while retaining the common data/fixed-GT protocol and each method's native recipe.
 
 ```bash
 python scripts/supplement.py plan --suite external_pilot \
@@ -415,12 +415,12 @@ python scripts/supplement.py run-suite --suite external_pilot \
   --execute --skip-completed | tee -a "$LOGS/external_pilot.log"
 ```
 
-#### 阶段 4：内部六组与外部四方法的三种子重复
+#### Stage 4: Complete Three Seeds for Six Internal Configurations and Four External Methods
 
-内部 S0/A/B/AB/SUP/N2 × 17/29/43，共18项；外部四方法×三种子，共12项。完整同配方先导会跳过，历史20轮结果不自动计入新的长预算。下面 `EPOCHS=60` 应按上一阶段开发决定修改。
+The internal matrix contains S0/A/B/AB/SUP/N2 × seeds 17/29/43, for 18 runs. Four external methods × three seeds add 12 runs. Completed pilots with identical recipes are skipped. Historical 20-epoch results do not automatically count toward a new longer budget. Adjust `EPOCHS=60` below to the budget selected from the preceding development stage.
 
 ```bash
-# 如开发证据决定使用 30 或 90，先修改此值，再生成全部重复配置。
+# Set this to the frozen development-based budget before generating all repeated runs.
 EPOCHS=60
 python scripts/supplement.py plan --suite internal_main --epochs "$EPOCHS" \
   --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" --write-configs \
@@ -439,9 +439,9 @@ python scripts/supplement.py run-suite --suite external_main \
   --execute --skip-completed | tee -a "$LOGS/external_main.log"
 ```
 
-#### 阶段 5：只用三种子开发证据冻结 F
+#### Stage 5: Freeze F Using Development Evidence from All Three Seeds
 
-需要 S0/AB/N2 × 17/29/43 的完整开发日志和selected。按Normal/Fog开发均值，在相对S0的三种子平均Normal降幅不超过1个百分点条件下选择AB或N2；相同均值选AB。F是共用结构，V2X-R复用该结构已经训练好的各seed权重。
+This stage requires complete development logs and selected checkpoints for S0/AB/N2 × seeds 17/29/43. Choose AB or N2 by the Normal/Fog development mean, subject to a three-seed mean Normal decrease of at most 1 percentage point relative to S0; select AB on an exact tie. F is one shared structure. V2X-R reuses the already trained checkpoint for that structure at each seed.
 
 ```bash
 DEV_RUNS=()
@@ -460,9 +460,9 @@ F_VARIANT="$(python -c \
 printf 'Frozen F = %s\n' "$F_VARIANT"
 ```
 
-#### 阶段 6：优先完成 M1 / M3 / M4
+#### Stage 6: Prioritize M1 / M3 / M4
 
-先seed17，再补29/43；三组均以AB为基础，F若为N2，不把这些控制称作N2的完整消融。需要在正文保留机制结论时补齐重复。
+Run seed 17 first, then add seeds 29/43. All three controls are based on AB; if F is N2, they do not constitute a complete N2 ablation. Complete the repeats when the corresponding mechanism claims are retained in the manuscript.
 
 ```bash
 for SUITE in mechanism_pilot mechanism_repeat; do
@@ -476,9 +476,9 @@ for SUITE in mechanism_pilot mechanism_repeat; do
 done
 ```
 
-#### 阶段 6A：按研究问题执行扩展机制
+#### Stage 6A: Run Additional Mechanism Controls as Required
 
-可选 M2/M5/M6/N1/NO_NULL × 17/29/43，共15项；按预先研究问题启用，不按测试表现保留或删选。
+The optional matrix contains M2/M5/M6/N1/NO_NULL × seeds 17/29/43, for 15 runs. Enable controls according to the predefined research questions; do not retain or discard experiments based on test performance.
 
 ```bash
 python scripts/supplement.py plan --suite mechanism_optional --epochs "$EPOCHS" \
@@ -490,9 +490,9 @@ python scripts/supplement.py run-suite --suite mechanism_optional --epochs "$EPO
   --execute --skip-completed | tee -a "$LOGS/mechanism_optional.log"
 ```
 
-#### 阶段 7：rho / 支撑半径与第二协同骨干
+#### Stage 7: Compare rho / Support Radius and the Second Cooperative Backbone
 
-此时必须已产生真实的 `$FINAL_MODEL`。rho和radius各3项，默认seed17且分别比较；Where2comm底座/+F各三seed，共6项，保留原生40轮。
+A valid `$FINAL_MODEL` must exist before this stage. The rho and radius suites each contain three separate comparisons with seed 17 by default. The Where2comm baseline and +F each use three seeds, for six runs with the native 40-epoch recipe.
 
 ```bash
 for SUITE in rho radius; do
@@ -506,7 +506,7 @@ for SUITE in rho radius; do
     | tee -a "$LOGS/${SUITE}.log"
 done
 
-# Where2comm 底座及 +F × 三种子；共 6 项，保留原生 40 轮，不传 --epochs。
+# Where2comm baseline and +F across three seeds: six native 40-epoch runs; omit --epochs.
 python scripts/supplement.py plan --suite second_backbone \
   --data-root "$DATA" --output-root "$RUNS" --device "$DEVICE" "${EXECUTION_ARGS[@]}" \
   --final-model-file "$FINAL_MODEL" --write-configs | tee "$PLANS/second_backbone.json"
@@ -517,16 +517,16 @@ python scripts/supplement.py run-suite --suite second_backbone \
   | tee -a "$LOGS/second_backbone.log"
 ```
 
-#### 阶段 8：V2X-Radar-C 真实协同扩展
+#### Stage 8: Extend to Real Cooperative Data with V2X-Radar-C
 
-仅在服务器已有官方协同数据后运行。先从官方train按sequence留出开发集，官方validate保留最终评测身份；输入是真实车辆ego及路侧。`CLEAR_SEQS` 只能填写已经核验的晴天train sequence；空数组会使需要类型/MDD参考监督的整组预检阻塞。
+Run this stage once the official cooperative data is available on the server. Hold out development sequences from the official training split and reserve the official validation split for final evaluation. Inputs use the actual vehicle ego and roadside partner. Populate `CLEAR_SEQS` only with verified clear-weather training sequences. An empty array blocks preflight for the complete suite when type supervision or an MDD reference is required.
 
 ```bash
 REAL=/data/v2x-radar-c
 REAL_META=/data/metadata/v2xradar_supp_v1_20261024
 REAL_RUNS=/data/runs/v2xradar_supp_v1_20261024
 mkdir -p "$REAL_RUNS/plans"
-# 仅填已经核验为晴天的官方 train sequence；不得按目录名称猜测。
+# Include only verified clear-weather sequences from official train; do not infer weather from names.
 CLEAR_SEQS=()
 python scripts/supplement.py prepare --dataset v2xradar --data-root "$REAL" \
   --manifest-dir "$REAL_META" --dev-count 4 --split-seed 17 \
@@ -543,10 +543,10 @@ python scripts/supplement.py run-suite --suite real_cooperative --data-root "$RE
   | tee -a "$LOGS/real_cooperative.log"
 ```
 
-主矩阵为S0/F/MDD-CORR/CoBEVT × 三seed。下面是独立L4DR候选槽，需要时执行；MDD没有合法clean参考时，先处理数据/监督条件，不用自然雨天冒充clean target。
+The main matrix contains S0/F/MDD-CORR/CoBEVT × three seeds. The separate L4DR candidate below can be run when required. If a valid clean MDD reference is unavailable, resolve the data/supervision requirements before proceeding; naturally rainy frames are not clean targets.
 
 ```bash
-# 独立 L4DR 槽；三 seed，不依赖 MDD clean target。
+# Separate L4DR candidate across three seeds; no MDD clean target is required.
 python scripts/supplement.py plan --suite real_cooperative_l4dr --data-root "$REAL" \
   --manifest-dir "$REAL_META" --output-root "$REAL_RUNS" --device "$DEVICE" --write-configs \
   | tee "$REAL_RUNS/plans/real_cooperative_l4dr.json"
@@ -556,9 +556,9 @@ python scripts/supplement.py run-suite --suite real_cooperative_l4dr --data-root
   --execute --skip-completed | tee -a "$LOGS/real_cooperative_l4dr.log"
 ```
 
-#### 阶段 9：K-Radar 真实天气扩展
+#### Stage 9: Extend to Real Weather with K-Radar
 
-先填写已有OS2-64、官方sparse Radar、v2.0 labels和官方split路径。主矩阵为S0/F/MDD-CORR/L4DR × 三seed；L4DR实际采用35轮AdamW/cosine、batch3，其余保留注册配方，不向原生suite传 `--epochs`。
+Set the paths to the existing OS2-64 data, official sparse radar products, v2.0 labels, and official split files. The main matrix contains S0/F/MDD-CORR/L4DR × three seeds. L4DR uses 35 epochs with AdamW/cosine and batch size 3; the other methods retain their registered recipes. Do not pass `--epochs` to native suites.
 
 ```bash
 KR=/data/kradar
@@ -582,11 +582,11 @@ python scripts/supplement.py run-suite --suite real_weather --data-root "$KR" \
   --execute --skip-completed | tee -a "$LOGS/real_weather.log"
 ```
 
-K-Radar是单车双类别输入；MDD需要官方天气记录支持的晴天train参考。两个真实数据集分别使用自己的manifest与输出目录，均使用同一冻结F。
+K-Radar uses single-vehicle inputs and two detection classes. MDD requires clear-weather training references supported by official weather records. The two real datasets use separate manifests and output directories, with the same frozen F structure.
 
-#### 任意阶段：从 online checkpoint 恢复
+#### Any Stage: Resume from an Online Checkpoint
 
-下面是内部AB/seed17的例子；其他任务使用其计划JSON中的准确run_id和配置路径。
+The example below resumes the internal AB/seed-17 run. For other tasks, use the exact run ID and configuration path from their plan JSON.
 
 ```bash
 C="$RUNS/configs/supp_v2xr_deer_sbr_AB_e${EPOCHS}_s17.yaml"
@@ -595,11 +595,11 @@ python scripts/supplement.py train --config "$C" --execute \
   | tee -a "$LOGS/resume_AB_e${EPOCHS}_s17.log"
 ```
 
-`latest.rank0.pt` 保存online BN、optimizer、scheduler、sampler和RNG，用于resume；`selected.pt`用于开发选中权重评测；`budget_epochNNN.pt`是显式预算快照。`--skip-completed`只跳过已完成任务，不自动恢复中断任务。正式任务开始后保持源码、配置和数据身份一致。
+`latest.rank0.pt` stores online BN statistics, optimizer, scheduler, sampler, and RNG state for resume. `selected.pt` is the development-selected checkpoint for evaluation; `budget_epochNNN.pt` is an explicit budget snapshot. `--skip-completed` skips completed tasks but does not automatically resume interrupted runs. Keep the source, configuration, and data identities consistent once formal training has started.
 
-多GPU优先分配互不重复的单卡任务。不同终端设置各自的 `CUDA_VISIBLE_DEVICES=<物理卡>`，进程内仍用 `device=cuda:0`；不要并发启动覆盖相同run_id的两个suite。workers、CPU线程、RAM缓存和磁盘预留按所有并发任务相加，容量示例见[总资源安排](docs/REPRODUCING.md#13-多-gpu-总资源安排)。
+For multiple GPUs, prioritize independent single-GPU tasks. Set `CUDA_VISIBLE_DEVICES=<physical_gpu_id>` separately in each terminal while keeping `device=cuda:0` inside each process. Do not launch two suites concurrently if they contain the same run ID. Sum worker counts, CPU threads, RAM caches, and disk reservations across all concurrent tasks; see the [total resource allocation example](docs/REPRODUCING.md#13-多-gpu-总资源安排).
 
-完成开发冻结和相应训练后，再执行[开发诊断与效率](docs/REPRODUCING.md#43-固定权重的开发诊断干预与效率)、[最终评测、鲁棒性与汇总](docs/REPRODUCING.md#6-最终评测鲁棒性与统计汇总)中的命令。训练期间每轮已经自动完成正式开发验证；最终测试不参与预算或结构选择。全部步骤的详细协议与阻塞条件仍维护在[复现指南](docs/REPRODUCING.md#补充实验复现入口schema-5)。
+After freezing development decisions and completing the corresponding training runs, follow the commands for [development diagnostics and efficiency](docs/REPRODUCING.md#43-固定权重的开发诊断干预与效率) and [final evaluation, robustness, and summaries](docs/REPRODUCING.md#6-最终评测鲁棒性与统计汇总). Full development validation already runs automatically after every training epoch. Final tests do not determine the training budget or model structure. Detailed protocols and readiness conditions remain in the [reproduction guide](docs/REPRODUCING.md#补充实验复现入口schema-5).
 
 ## Reproducibility Checks
 
