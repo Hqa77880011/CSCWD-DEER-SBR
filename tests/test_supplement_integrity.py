@@ -107,6 +107,113 @@ class SupplementIntegrityTests(unittest.TestCase):
         b = recipe(method='attfuse', variant='S0', epochs=30, native=True)
         self.assertNotEqual(a['experiment']['run_id'], b['experiment']['run_id'])
 
+    def test_omitted_budget_uses_dataset_template(self):
+        for dataset, epochs in [('v2xr', 60), ('v2xradar', 30), ('kradar', 30)]:
+            self.assertEqual(recipe(dataset)['training']['epochs'], epochs)
+
+    def test_configuration_rejects_disconnected_method_and_recipe_fields(self):
+        from opencood.project.config import validate_config
+        mutations = [
+            ('data', 'base_hypes', 'cscwd_configs/baseline_full_data_check.yaml'),
+            ('model', 'local_variant', 'AB'),
+            ('training', 'adam_eps', 0.),
+            ('training', 'recipe', 'independent_e90'),
+            ('training', 'milestones', [10, 15]),
+            ('loss', 'type_weight', -1.),
+        ]
+        for section, key, value in mutations:
+            c = recipe(method='attfuse', variant='S0', epochs=30)
+            c[section][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                validate_config(c)
+        c = recipe()
+        c['training']['batchnorm']['eps'] = .01
+        with self.assertRaisesRegex(ValueError, 'BN|BatchNorm|batchnorm'):
+            validate_config(c)
+
+    def test_external_configs_do_not_advertise_internal_execution_or_losses(self):
+        from opencood.project.config import validate_config
+        for method in ('attfuse', 'mdd', 'l4dr', 'cobevt', 'where2comm'):
+            c = recipe(method=method, variant='S0', native=True)
+            self.assertFalse(c['model']['activation_checkpoint'], method)
+            self.assertFalse(c['model']['efficient_features'], method)
+            self.assertEqual(set(c['loss'].values()), {0.})
+            c['model']['activation_checkpoint'] = True
+            with self.assertRaisesRegex(ValueError, 'local|internal|checkpoint'):
+                validate_config(c)
+
+    def test_skip_completed_checks_current_source_data_and_selected_role(self):
+        from unittest.mock import patch
+        from opencood.project.config import config_hash
+        from scripts.supplement import completed_run_matches
+        c = recipe()
+        metadata = dict(source_sha256='source', gt_manifest_sha256='data')
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            (output / 'report.rank0.json').write_text(json.dumps(dict(
+                passed=True, source_unchanged=True, status='checkpoint_selected')))
+            (output / 'resolved_config.json').write_text(json.dumps(c))
+            (output / 'run_metadata.json').write_text(json.dumps(metadata))
+            selected = dict(schema_version=5, training_protocol='supplement_v1', config_sha256=config_hash(c), config=c,
+                metadata={**metadata, 'checkpoint_role': 'selected', 'bn_statistics_role': 'train_refit_cma_v1'})
+            torch.save(selected, output / 'selected.pt')
+            with patch('project_tools.run_experiments.artifact_metadata', return_value=metadata):
+                self.assertTrue(completed_run_matches(c, output))
+            for changed in ({**metadata, 'source_sha256': 'new_source'},
+                            {**metadata, 'gt_manifest_sha256': 'new_data'}):
+                with patch('project_tools.run_experiments.artifact_metadata', return_value=changed):
+                    self.assertFalse(completed_run_matches(c, output))
+            for role in ('resume', 'budget_snapshot'):
+                selected['metadata']['checkpoint_role'] = role
+                torch.save(selected, output / 'selected.pt')
+                with patch('project_tools.run_experiments.artifact_metadata', return_value=metadata):
+                    self.assertFalse(completed_run_matches(c, output))
+
+    def test_microbatch_and_selection_labels_cannot_bypass_registered_policy(self):
+        from opencood.project.config import validate_config
+        c = recipe()
+        c['training'].update(micro_batch_size=8, accumulation_steps=1)
+        with self.assertRaisesRegex(ValueError, 'microbatch4'):
+            validate_config(c)
+        c = recipe(method='mdd', variant='S0', native=True)
+        c['training'].update(micro_batch_size=1, accumulation_steps=2)
+        with self.assertRaisesRegex(ValueError, 'source single-device microbatch'):
+            validate_config(c)
+        c = recipe('kradar')
+        c['selection']['class_name'] = 'Sedan'
+        with self.assertRaisesRegex(ValueError, 'class_name'):
+            validate_config(c)
+
+    def test_mdd_runtime_betas_and_reference_objective_match_author_code(self):
+        from opencood.loss.point_pillar_loss_mdd import PointPillarLossMDD
+        from opencood.project.supplement_models import SupplementalLoss
+        c = recipe(method='mdd', variant='S0', native=True)
+        h = read_hypes(c)
+        diffusion = h['model']['args']['mdd_block']['diffusion']
+        self.assertEqual((diffusion['beta_start'], diffusion['beta_end']), (.005, .05))
+        model = SupplementalModel(c, h)
+        expected = torch.linspace(.005 ** .5, .05 ** .5, 3, dtype=torch.float64).square().float()
+        torch.testing.assert_close(model.native.mdd.betas, expected, atol=0, rtol=0)
+        loss_fn = SupplementalLoss(h['loss']['args'], 'mdd')
+        native_loss = PointPillarLossMDD(h['loss']['args'])
+        for epoch in (0, 19, 29):
+            loss_fn.epoch = epoch
+            reference = torch.ones(1, 2, 2, 2, requires_grad=True)
+            prediction = torch.full_like(reference, 3., requires_grad=True)
+            output = dict(psm=torch.zeros(1, 2, 2, 2, requires_grad=True),
+                          rm=torch.zeros(1, 14, 2, 2, requires_grad=True),
+                          gt_feature=reference, pred_feature=prediction)
+            target = dict(pos_equal_one=torch.zeros(1, 2, 2, 2), neg_equal_one=torch.ones(1, 2, 2, 2),
+                          targets=torch.zeros(1, 2, 2, 14))
+            loss_fn(output, target).backward()
+            native_prediction = prediction.detach().clone().requires_grad_()
+            expected_loss = native_loss.diff_loss_func(native_prediction, reference.detach(),
+                native_loss.sigmoid_weight(3, epoch + 1))
+            expected_loss.backward()
+            torch.testing.assert_close(loss_fn.loss_dict['mdd_reference_loss'], expected_loss, atol=0, rtol=0)
+            self.assertIsNone(reference.grad)
+            torch.testing.assert_close(prediction.grad, native_prediction.grad, atol=0, rtol=0)
+
     def test_Where2comm_common_weights_and_module_identity(self):
         from opencood.project.config import validate_config
         baseline = recipe(method='where2comm', variant='S0', native=True)
@@ -121,6 +228,24 @@ class SupplementIntegrityTests(unittest.TestCase):
         local['model']['local_variant'] = 'none'
         with self.assertRaisesRegex(ValueError, 'actual local module'):
             validate_config(local)
+
+    def test_cobevt_window_padding_preserves_agent_and_spatial_masks(self):
+        from opencood.project.supplement_models import WindowPaddedFusion
+        class Capture(torch.nn.Module):
+            def forward(self, features, mask):
+                self.features, self.mask = features, mask
+                return features[:, 0]
+        native = Capture()
+        fusion = WindowPaddedFusion(native, 4)
+        features = torch.arange(1 * 3 * 2 * 5 * 6, dtype=torch.float32).reshape(1, 3, 2, 5, 6)
+        mask = torch.zeros(1, 5, 6, 1, 3)
+        mask[..., :2] = 1
+        result = fusion(features, mask)
+        self.assertTrue(torch.equal(result, features[:, 0]))
+        self.assertEqual(native.features.shape[-2:], (8, 8))
+        self.assertTrue(torch.equal(native.mask[:, :5, :6], mask))
+        self.assertEqual(int(native.mask[:, 5:].sum() + native.mask[:, :, 6:].sum()), 0)
+        self.assertEqual(int(native.mask[..., 2].sum()), 0)
 
     def test_agent_count_uses_communicating_agents_including_ego(self):
         from opencood.project.data_geometry import communicating_agents

@@ -280,11 +280,12 @@ class SupplementTests(unittest.TestCase):
             resume = Path(directory) / 'latest.pt'
             save_checkpoint(resume, model, optimizer, scheduler, None, TrainState(), sampler, config)
             load_checkpoint(resume, model, optimizer, scheduler, None, sampler, config)
-            selected = Path(directory) / 'selected.pt'
-            save_checkpoint(selected, model, optimizer, scheduler, None, TrainState(), sampler, config,
-                dict(checkpoint_role='selected', bn_statistics_role='native_running_frozen'))
-            with self.assertRaisesRegex(ValueError, 'resume requires'):
-                load_checkpoint(selected, model, optimizer, scheduler, None, sampler, config)
+            for role in ('selected', 'budget_snapshot'):
+                artifact = Path(directory) / (role + '.pt')
+                save_checkpoint(artifact, model, optimizer, scheduler, None, TrainState(), sampler, config,
+                    dict(checkpoint_role=role, bn_statistics_role='native_running_frozen'))
+                with self.subTest(role=role), self.assertRaisesRegex(ValueError, 'resume'):
+                    load_checkpoint(artifact, model, optimizer, scheduler, None, sampler, config)
 
     def test_true3d_extension_does_not_relabel_bev(self):
         manifest = dict(dataset='v2xradar', classes=['Vehicle'], bounds=[-100, -100, -10, 100, 100, 10],

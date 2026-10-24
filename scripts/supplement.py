@@ -28,11 +28,12 @@ def save_json(path, value):
 
 
 def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
-           epochs=60, *, data_root=None, output_root=None, device='auto',
+           epochs=None, *, data_root=None, output_root=None, device='auto',
            final_model_file=None, native=False, overrides=None,
            radar_root=None, label_root=None, manifest_dir=None, execution_config=None):
     c = load_config(REPO / 'cscwd_configs/supplement' / (dataset + '.yaml'))
     e, t, m = (c[k] for k in ('experiment', 'training', 'model'))
+    epochs = t['epochs'] if epochs is None else epochs
     e.update(method=method, variant=variant, seed=seed,
              comparison='controlled_module' if method == 'deer_sbr' else 'complete_method')
     if dataset == 'kradar':
@@ -45,6 +46,10 @@ def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
     if method != 'deer_sbr':
         c['data']['base_hypes'] = NATIVE_HYPES[method]
         t['batchnorm'].update(evaluation_statistics='running', refit_samples=0)
+        if method != 'where2comm' or variant == 'S0':
+            # These switches/weights belong to DEER/SBR, not native detectors.
+            m.update(activation_checkpoint=False, efficient_features=False)
+            c['loss'] = {key: 0. for key in c['loss']}
         if method == 'mdd' and dataset != 'v2xr':
             c['data']['clean_only'] = True
         if method == 'where2comm' and variant != 'S0':
@@ -55,11 +60,12 @@ def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
             native_batch = int(source['train_params']['batch_size'])
             t.update(effective_batch_size=native_batch, micro_batch_size=native_batch,
                      accumulation_steps=1, world_size=1)
+            t['optimizer'] = source['optimizer']['core_method'].lower()
             t.update(lr=float(source['optimizer']['lr']), weight_decay=float(source['optimizer']['args']['weight_decay']),
                      adam_eps=float(source['optimizer']['args']['eps']))
             schedule = source['lr_scheduler']
             if schedule['core_method'] == 'multistep':
-                t.update(scheduler='multistep', milestones=schedule['step_size'])
+                t.update(scheduler='multistep', milestones=schedule['step_size'], gamma=float(schedule['gamma']))
             elif schedule['core_method'] == 'cosineannealwarm':
                 t.update(scheduler='cosine_warmup', warmup_epochs=schedule['warmup_epoches'],
                          warmup_lr=float(schedule['warmup_lr']), min_lr=float(schedule['lr_min']), milestones=[])
@@ -69,9 +75,9 @@ def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
                 # Official cfg_PP_L4DR.yml at fcf2d7f: use its 35-epoch
                 # AdamW/cosine candidate, retaining this project's fixed GT.
                 epochs = 35
-                t.update(optimizer='adamw', lr=.001, weight_decay=.01,
+                t.update(optimizer='adamw', lr=.001, weight_decay=.01, adam_eps=1e-8,
                          effective_batch_size=3, micro_batch_size=3, accumulation_steps=1,
-                         scheduler='cosine_warmup', warmup_epochs=0, min_lr=.0001, milestones=[])
+                         scheduler='cosine_update', warmup_epochs=0, min_lr=.0001, milestones=[])
     t.update(epochs=epochs, recipe=('native_' if native else 'independent_') + f'e{epochs}',
              retain_epochs=sorted({x for x in (20, 30, 60, epochs) if x <= epochs}))
     if not native:
@@ -102,7 +108,8 @@ def recipe(dataset='v2xr', method='deer_sbr', variant='AB', seed=17,
                     'ram_budget_gib', 'pin_memory', 'persistent_workers'):
             c['resources'][key] = execution['resources'][key]
         t['checkpoint_interval_updates'] = execution['training']['checkpoint_interval_updates']
-        m['activation_checkpoint'] = execution['model']['activation_checkpoint']
+        if method == 'deer_sbr' or m['local_variant'] != 'none':
+            m['activation_checkpoint'] = execution['model']['activation_checkpoint']
     return validate_config(c)
 
 
@@ -114,8 +121,9 @@ def performance_configs(config, stage, output_root):
     spec = stages[stage]
     if stage == 'prefetch' and not config['resources']['num_workers']:
         raise ValueError('prefetch comparison requires num_workers > 0')
-    if stage == 'activation' and (config['experiment']['method'] != 'deer_sbr'
-                                  or config['experiment']['variant'] == 'S0'):
+    has_branch = (config['experiment']['method'] == 'deer_sbr' and config['experiment']['variant'] != 'S0'
+                  or config['experiment']['method'] == 'where2comm' and config['model']['local_variant'] != 'none')
+    if stage == 'activation' and not has_branch:
         raise ValueError('activation checkpoint comparison requires an active internal local module (use AB)')
     rows = []
     for value in spec['values']:
@@ -176,7 +184,35 @@ def runtime_config(args):
         raise ValueError('supplement entrypoint requires version 5; use scripts/reproduce.py for the historical seven groups')
     if getattr(args, 'device', None):
         c['resources']['device'] = args.device
-    return c
+    return validate_config(c)
+
+
+def completed_run_matches(config, output):
+    """Skip only a completed recipe with current artifacts and selected weights."""
+    import torch
+    from opencood.project.config import config_hash
+    from project_tools.run_experiments import artifact_metadata
+    output = Path(output)
+    required = ('report.rank0.json', 'resolved_config.json', 'run_metadata.json', 'selected.pt')
+    if not all((output / name).is_file() for name in required):
+        return False
+    report = json.loads((output / required[0]).read_text(encoding='utf8'))
+    if (report.get('passed') is not True or report.get('source_unchanged') is not True
+            or report.get('status') != 'checkpoint_selected'
+            or json.loads((output / required[1]).read_text(encoding='utf8')) != config):
+        return False
+    expected = artifact_metadata(config)
+    recorded = json.loads((output / required[2]).read_text(encoding='utf8'))
+    if any(recorded.get(key) != value for key, value in expected.items()):
+        return False
+    selected = torch.load(output / 'selected.pt', map_location='cpu', weights_only=False)
+    bn_role = ('train_refit_cma_v1' if config['training']['batchnorm']['evaluation_statistics'] != 'running'
+               else 'native_running_frozen')
+    return (selected.get('schema_version') == 5 and selected.get('training_protocol') == 'supplement_v1'
+            and selected.get('config_sha256') == config_hash(config) and selected.get('config') == config
+            and selected.get('metadata', {}).get('checkpoint_role') == 'selected'
+            and selected['metadata'].get('bn_statistics_role') == bn_role
+            and all(selected['metadata'].get(key) == value for key, value in expected.items()))
 
 
 def main(argv=None):
@@ -219,7 +255,8 @@ def main(argv=None):
     configure.add_argument('--method', choices=METHODS, default='deer_sbr')
     configure.add_argument('--variant', choices=(*INTERNAL, 'F'))
     configure.add_argument('--seed', type=int, choices=[17, 29, 43], default=17)
-    configure.add_argument('--epochs', type=int, choices=list(SCHEDULES), default=60)
+    configure.add_argument('--epochs', type=int, choices=list(SCHEDULES),
+                           help='independent budget; default comes from the dataset template (60/30/30)')
     configure.add_argument('--native-recipe', action='store_true')
     for command in (plan, launch):
         command.add_argument('--suite', choices=[*suites, *SUITE_ALIASES], required=True)
@@ -332,15 +369,9 @@ def main(argv=None):
                 for row in rows:
                     if args.skip_completed:
                         output = Path(row['main_outputs'][0]).parent
-                        report = output / 'report.rank0.json'
-                        resolved = output / 'resolved_config.json'
-                        if report.is_file() and resolved.is_file():
-                            done = json.loads(report.read_text())
-                            if (done.get('passed') and done.get('status') == 'checkpoint_selected'
-                                    and (output / 'selected.pt').is_file()
-                                    and json.loads(resolved.read_text()) == load_config(row['config'])):
-                                print('SKIP complete matching recipe: ' + row['run_id'], flush=True)
-                                continue
+                        if completed_run_matches(load_config(row['config']), output):
+                            print('SKIP complete matching recipe: ' + row['run_id'], flush=True)
+                            continue
                     subprocess.run([sys.executable, *row['argv'][1:]], cwd=REPO, check=True)
     elif args.action == 'smoke':
         from project_tools.smoke_supplement import smoke_matrix

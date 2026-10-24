@@ -26,7 +26,7 @@ class L4DRSupplementTests(unittest.TestCase):
         gt = [torch.tensor([[0., 0., 0., 2., 2., 2., .3]]), torch.empty(0, 7)]
         self.assertEqual(foreground_labels(xyz, gt).tolist(), [1, -1, 0, 0])
 
-    def test_post_FAD_voxel_caps_keep_first_points_and_gradient(self):
+    def test_post_FAD_voxel_caps_keep_points_and_detach_detector_input(self):
         hypes = dict(cav_lidar_range=[0., 0., 0., 4., 4., 4.], args=dict(voxel_size=[1., 1., 4.],
             max_points_per_voxel=2, max_voxel_train=2, max_voxel_test=4))
         points = torch.tensor([[1.1, 1.1, 1., 1.], [.1, .1, 1., 2.], [1.2, 1.2, 1., 3.],
@@ -36,8 +36,10 @@ class L4DRSupplementTests(unittest.TestCase):
         self.assertEqual(value['voxel_num_points'].tolist(), [2, 1])
         self.assertEqual(value['voxel_coords'].tolist(), [[2, 0, 1, 1], [2, 0, 0, 0]])
         self.assertEqual(value['voxel_features'][0, :, 3].tolist(), [1., 3.])
-        value['voxel_features'].sum().backward()
-        self.assertEqual(scores.grad[:, 0].tolist(), [1., 1., 1., 0., 0.])
+        # The author's MMESparseProcessor detaches before hard voxelization.
+        # Detection must not become a second training objective for FAD scores.
+        self.assertFalse(value['voxel_features'].requires_grad)
+        self.assertIsNone(scores.grad)
 
     def test_bidirectional_MME_propagates_scalar_and_cross_offsets(self):
         args = read_hypes(recipe(method='l4dr', variant='S0'))['model']['args']
@@ -57,6 +59,32 @@ class L4DRSupplementTests(unittest.TestCase):
         torch.testing.assert_close(captured['lidar'][0, 0, 13:], torch.tensor([5., .8]))
         self.assertEqual(captured['radar'][0, 0, 3], 7.)
         torch.testing.assert_close(captured['radar'][0, 0, 4:7], torch.tensor([-.1, 0., 0.]))
+
+    def test_FAD_interpolation_uses_native_additive_epsilon(self):
+        from unittest.mock import patch
+        from opencood.project.l4dr import ForegroundDenoising
+        torch.manual_seed(17)
+        model = ForegroundDenoising().eval()
+        points = torch.tensor([[0., 0., 0., .2], [.2, .3, .4, .7],
+                               [.6, .7, .8, 1.], [1.2, 1.4, 1.6, .3]])
+        captured = {}
+        hooks = [model.fp[1].register_forward_hook(
+            lambda module, args, output: captured.update(source=output.detach().clone())),
+            model.fp[0].register_forward_pre_hook(
+                lambda module, args: captured.update(interpolated=args[0].detach().clone()))]
+        def near_distances(query, source, **kwargs):
+            distances = query.new_ones((1, query.shape[1], source.shape[1]))
+            distances[..., :3] = query.new_tensor([0., 2e-8, 4e-8])
+            return distances
+        with patch('opencood.project.l4dr.torch.cdist', side_effect=near_distances), torch.no_grad():
+            model(points)
+        for hook in hooks:
+            hook.remove()
+        # Native 1/(d+1e-8) gives the analytic ratio 15:5:3. A clamp
+        # would give 4:2:1 and fails this small-distance boundary case.
+        expected = (captured['source'][..., :3] * torch.tensor([15., 5., 3.]) / 23).sum(-1)
+        actual = captured['interpolated'][:, :256]
+        torch.testing.assert_close(actual, expected[..., None].expand_as(actual), rtol=2e-6, atol=1e-7)
 
     def test_kradar_format_forward_FAD_loss_backward_and_label_free_inference(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -85,6 +113,11 @@ class L4DRSupplementTests(unittest.TestCase):
             for hook in hooks:
                 hook.remove()
             loss_fn = SupplementalLoss({**hypes['loss']['args'], 'training_line': 'C'}, 'l4dr')
+            detection = loss_fn.detection_loss(output, batch['ego']['label_dict'])
+            detection.backward(retain_graph=True)
+            self.assertTrue(all(p.grad is None for p in model.l4dr_frontend.fad.parameters()))
+            self.assertTrue(any(p.grad is not None for p in model.l4dr_frontend.mme.parameters()))
+            model.zero_grad(set_to_none=True)
             loss = loss_fn(output, batch['ego']['label_dict'], batch['train_targets'])
             self.assertGreater(float(loss_fn.loss_dict['fad_foreground_loss']), 0)
             loss.backward()
@@ -105,7 +138,8 @@ class L4DRSupplementTests(unittest.TestCase):
         self.assertEqual(config['training']['optimizer'], 'adamw')
         self.assertEqual(config['training']['epochs'], 35)
         self.assertEqual(config['training']['effective_batch_size'], 3)
-        self.assertEqual(config['training']['scheduler'], 'cosine_warmup')
+        self.assertEqual(config['training']['adam_eps'], 1e-8)
+        self.assertEqual(config['training']['scheduler'], 'cosine_update')
 
 
 if __name__ == '__main__':

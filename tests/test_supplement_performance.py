@@ -93,8 +93,90 @@ class PerformanceTests(unittest.TestCase):
         self.assertEqual(loss_scalars(rows), expected)
         self.assertTrue(all(row['loss'].grad is None for row in rows))
 
+    def test_only_consumed_loss_targets_are_transferred(self):
+        from opencood.project.training import select_loss_targets, select_model_inputs
+        targets = {'miss': torch.ones(3, 1, 8, 8), 'normal_mask': torch.ones(3),
+                   'fad_boxes': [torch.ones(1, 7)]}
+        self.assertIs(select_loss_targets(recipe(), targets), targets)
+        for method in ('attfuse', 'mdd', 'cobevt', 'where2comm'):
+            c = recipe(method=method, variant='S0')
+            self.assertEqual(select_loss_targets(c, targets), {})
+        c = recipe(method='l4dr', variant='S0')
+        self.assertEqual(set(select_loss_targets(c, targets)), {'fad_boxes'})
+        self.assertIs(select_loss_targets(c, targets)['fad_boxes'], targets['fad_boxes'])
+        c = recipe(method='where2comm', variant='AB')
+        self.assertIs(select_loss_targets(c, targets), targets)
+        ego = {key: object() for key in ('processed_lidar', 'processed_radar', 'raw_radar',
+            'record_len', 'pairwise_t_matrix', 'observation_maps', 'modality_valid', 'label_dict')}
+        for method, fields in [('attfuse', {'processed_lidar', 'processed_radar', 'record_len'}),
+                               ('l4dr', {'processed_lidar', 'raw_radar', 'record_len'}),
+                               ('where2comm', {'processed_lidar', 'processed_radar', 'record_len', 'pairwise_t_matrix'})]:
+            selected = select_model_inputs(ego, recipe(method=method, variant='S0'))
+            self.assertEqual(set(selected), fields)
+            self.assertTrue(all(value is ego[key] for key, value in selected.items()))
+
+    def test_where2comm_removes_unused_reduction_without_numerical_changes(self):
+        from project_tools.run_experiments import read_hypes
+        from project_tools.smoke_supplement import synthetic_inputs, synthetic_labels
+        from opencood.project.supplement_models import SupplementalModel, SupplementalLoss
+        from opencood.project.training import seed_everything, select_model_inputs, rng_state
+        c = recipe(method='where2comm', variant='S0', native=True)
+        h = read_hypes(c)
+        h['model']['args']['point_pillar_scatter']['grid_size'] = [32, 32, 1]
+        optimized = SupplementalModel(c, h).train()
+        reference = deepcopy(optimized)
+        # Restore exactly the removed expression at its original call site.
+        def unused_count(module, args):
+            args[0]['spatial_features'].count_nonzero().item()
+        hook = reference.native.backbone.register_forward_pre_hook(unused_count)
+        inputs = synthetic_inputs(h)
+        evidence = []
+        for model in (reference, optimized):
+            seed_everything(17)
+            criterion = SupplementalLoss(h['loss']['args'], 'where2comm')
+            with ExitStack() as stack:
+                current = inputs
+                if model is optimized:
+                    current = select_model_inputs(inputs, c)
+                    stack.enter_context(patch.object(torch.Tensor, 'count_nonzero',
+                        side_effect=AssertionError('unused feature count must not run')))
+                output = model(deepcopy(current))
+                loss = criterion(output, synthetic_labels(output), {})
+                loss.backward()
+            evidence.append((output, loss.detach(), criterion.loss_dict,
+                {n: p.grad for n, p in model.named_parameters() if p.grad is not None},
+                dict(model.named_buffers()), rng_state()))
+        hook.remove()
+        self.assert_nested_equal(*evidence)
+
+    def test_bn_snapshot_batches_transfers_and_preserves_integer_counters(self):
+        from project_tools.run_experiments import batchnorm_snapshot
+        model = torch.nn.Sequential(*(torch.nn.BatchNorm1d(3) for _ in range(3)))
+        model[0].num_batches_tracked.fill_(2 ** 40 + 1)
+        model[1].running_mean[0] = float('nan')
+        model[2].running_var[1] = -2.
+        before = deepcopy(model.state_dict())
+        original = torch.Tensor.cpu
+        calls = []
+        def transfer(value, *args, **kwargs):
+            calls.append(value.numel())
+            return original(value, *args, **kwargs)
+        with patch.object(torch.Tensor, 'cpu', transfer):
+            report = batchnorm_snapshot(model)
+        self.assertLessEqual(len(calls), 2)
+        self.assertEqual(report['modules']['0']['num_batches_tracked'], 2 ** 40 + 1)
+        self.assertEqual(report['invalid_modules'], ['1', '2'])
+        self.assertEqual(report['running_var_min'], -2.)
+        for key, value in before.items():
+            torch.testing.assert_close(value, model.state_dict()[key], atol=0, rtol=0, equal_nan=True)
+
     def test_resource_validation_accounts_for_all_live_loader_caches(self):
+        from opencood.project.supplement import loader_resource_budget
         c = recipe()
+        budget = loader_resource_budget(c)
+        self.assertEqual((budget['loader_pools'], budget['worker_processes_upper_bound'],
+                          budget['raw_cache_gib_upper_bound'], budget['prefetched_batches_upper_bound']),
+                         (4, 32, 16., 64))
         c['resources'].update(num_workers=8, raw_cache_gib_per_worker=1., ram_budget_gib=32)
         with self.assertRaisesRegex(ValueError, 'cache|RAM'):
             validate_config(c)
@@ -161,9 +243,10 @@ class PerformanceTests(unittest.TestCase):
             # A changed stat key must reload, never serve the old raw cloud.
             np.testing.assert_array_equal(cached._points(record, 'radar')[:, 3], old[:, 3] + 1)
 
-    def _run_toy(self, directory, *, steps=4, resume=None, timing_mode='throughput', broken=None):
+    def _run_toy(self, directory, *, steps=4, resume=None, timing_mode='throughput', broken=None, config=None):
         from project_tools import run_experiments as runner
-        c = recipe(output_root=directory, device='cpu')
+        c = recipe(output_root=directory, device='cpu') if config is None else deepcopy(config)
+        c['artifacts']['output_root'] = str(directory)
         c['resources'].update(num_workers=0, cpu_threads=2, raw_cache_gib_per_worker=0.)
         c['training']['checkpoint_interval_updates'] = 2
         c = validate_config(c)
@@ -218,6 +301,31 @@ class PerformanceTests(unittest.TestCase):
                 with self.assertRaisesRegex(FloatingPointError, 'nonfinite training'):
                     self._run_toy(directory, broken=broken)
                 self.assertEqual(list(Path(directory).rglob('latest.rank0.pt')), [])
+
+    def test_native_kradar_update_cosine_matches_author_and_resumes_exactly(self):
+        from opencood.project.supplement_runner import scheduler_for
+        c = recipe('kradar', method='l4dr', variant='S0', native=True, device='cpu')
+        updates = len(ToyDataset()) // c['training']['effective_batch_size']
+        parameter = torch.nn.Parameter(torch.zeros(()))
+        optimizer = torch.optim.AdamW([parameter], lr=.001)
+        expected = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=updates, eta_min=.0001)
+        expected_lr = []
+        for _ in range(12):
+            expected_lr.append(optimizer.param_groups[0]['lr'])
+            optimizer.step()
+            expected.step()
+        with self.assertRaisesRegex(ValueError, 'actual complete updates'):
+            scheduler_for(optimizer, c)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, full, rows, _ = self._run_toy(root / 'full', steps=12, config=c)
+            first, _, _, _ = self._run_toy(root / 'resume', steps=4, config=c)
+            _, resumed, restarted, _ = self._run_toy(root / 'resume', steps=8, config=c,
+                resume=str(Path(first['output']) / 'latest.rank0.pt'))
+            self.assertEqual([row['lr'] for row in rows], expected_lr)
+            self.assertEqual([row['lr'] for row in restarted], expected_lr)
+            for key in ('model', 'optimizer', 'scheduler', 'train_state', 'sampler', 'rng'):
+                self.assert_nested_equal(full[key], resumed[key])
 
     def test_activation_checkpoint_keeps_forward_gradients_and_bn(self):
         from project_tools.run_experiments import read_hypes

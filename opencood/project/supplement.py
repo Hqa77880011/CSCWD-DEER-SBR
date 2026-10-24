@@ -104,6 +104,18 @@ def resolve_final(path):
     return record['variant']
 
 
+def loader_resource_budget(config):
+    """Per-task upper bounds for all retained data streams, in GiB/batches."""
+    r = config['resources']
+    pools = (1 + len(config['selection']['domains'])
+             + int(config['training']['batchnorm']['evaluation_statistics'] != 'running'))
+    return dict(loader_pools=pools, worker_processes_upper_bound=pools * r['num_workers'],
+        raw_cache_gib_upper_bound=pools * max(1, r['num_workers']) * r['raw_cache_gib_per_worker'],
+        prefetched_batches_upper_bound=pools * r['num_workers'] * r['prefetch_factor'],
+        main_torch_threads=r['cpu_threads'], torch_threads_per_worker=1,
+        ram_budget_gib_per_task=r['ram_budget_gib'])
+
+
 def validate_supplement_config(config):
     c = _merge(defaults(), config)
     e, d, t, m, v = (c[k] for k in ('experiment', 'data', 'training', 'model', 'evaluation'))
@@ -128,6 +140,25 @@ def validate_supplement_config(config):
         raise ValueError('run_id must be one directory component')
     if e['comparison'] not in ('controlled_module', 'complete_method', 'local_single_agent'):
         raise ValueError('invalid comparison identity')
+    expected_hypes = NATIVE_HYPES.get(e['method'], 'cscwd_configs/baseline_full_data_check.yaml')
+    if Path(d['base_hypes']).as_posix() != expected_hypes:
+        raise ValueError('data.base_hypes must match the registered method; use its native hypes')
+    if e['method'] != 'where2comm' and m['local_variant'] != 'none':
+        raise ValueError('model.local_variant applies only to Where2comm')
+    if e['method'] == 'where2comm' and ((e['variant'] == 'S0' and m['local_variant'] != 'none')
+            or (e['variant'] != 'S0' and m['local_variant'] != e['variant'])):
+        raise ValueError('Where2comm variant identity must match the actual local module')
+    has_local = e['method'] == 'deer_sbr' or (e['method'] == 'where2comm' and m['local_variant'] != 'none')
+    if not has_local and (m['activation_checkpoint'] or m['efficient_features'] or any(c['loss'].values())):
+        raise ValueError('internal checkpoint/features/loss settings require an active local DEER/SBR model')
+    expected_comparison = ('local_single_agent' if e['dataset_id'] == 'kradar' else
+                           'controlled_module' if has_local else 'complete_method')
+    if e['comparison'] != expected_comparison:
+        raise ValueError('comparison identity must match the actual local/complete method')
+    if d['supervision_audit'] is not None or d['matching'] != DEFAULTS['data']['matching'] or c['artifacts']['amp_audit'] is not None:
+        raise ValueError('legacy matching/supervision/AMP audits are inactive in supplement_v1')
+    if e['dataset_id'] == 'v2xr' and (d['clean_only'] or d['radar_root'] is not None or d['label_root'] is not None):
+        raise ValueError('separate roots and clean_only apply to registered real datasets')
     if e['transfer'] not in ('retrained', 'zero_shot', 'fine_tuned'):
         raise ValueError('invalid transfer identity')
     native_kradar_l4dr = e['method'] == 'l4dr' and e['dataset_id'] == 'kradar' and t['epochs'] == 35
@@ -143,30 +174,54 @@ def validate_supplement_config(config):
         raise ValueError('batch sizes and checkpoint interval must be positive')
     if t['precision'] != 'fp32' or t['normalization'] != 'batchnorm':
         raise ValueError('supplement_v1 uses FP32 and online BatchNorm')
-    if t['scheduler'] not in ('multistep', 'cosine_warmup'):
+    if t['scheduler'] not in ('multistep', 'cosine_warmup', 'cosine_update'):
         raise ValueError('unregistered learning rate schedule')
+    if t['scheduler'] == 'cosine_update' and not (native_kradar_l4dr and t['recipe'] == 'native_e35'):
+        raise ValueError('cosine_update is the native K-Radar L4DR per-update schedule')
+    if t['scheduler'].startswith('cosine') and (t['milestones'] or not 0 <= t['min_lr'] <= t['lr']
+            or not 0 < t['warmup_lr'] <= t['lr'] or (t['scheduler'] == 'cosine_update' and t['warmup_epochs'])):
+        raise ValueError('cosine schedules need valid LR bounds, no multistep milestones and a supported warmup')
+    if t['recipe'] not in (f"independent_e{t['epochs']}", f"native_e{t['epochs']}"):
+        raise ValueError('recipe identity must match its actual independent/native epoch budget')
+    if t['recipe'].startswith('independent_') and (t['epochs'] not in SCHEDULES
+            or t['scheduler'] != 'multistep' or t['milestones'] != SCHEDULES[t['epochs']]):
+        raise ValueError('independent budget must use its registered multistep schedule')
+    if t['recipe'].startswith('independent_') and tuple(t[key] for key in
+            ('micro_batch_size', 'accumulation_steps', 'world_size', 'effective_batch_size')) != (4, 2, 1, 8):
+        raise ValueError('independent recipes keep microbatch4 / accumulation2 / one device / effective batch8')
+    if t['recipe'].startswith('native_') and (t['micro_batch_size'] != t['effective_batch_size']
+            or t['accumulation_steps'] != 1 or t['world_size'] != 1):
+        raise ValueError('native candidates retain the source single-device microbatch without accumulation')
+    if t['recipe'].startswith('native_') and e['method'] == 'deer_sbr':
+        raise ValueError('native recipes belong to external methods')
     if (t['milestones'] != sorted(set(t['milestones']))
-            or any(not 0 < x < t['epochs'] for x in t['milestones'])
+            or any(type(x) is not int or not 0 < x < t['epochs'] for x in t['milestones'])
             or not 0 <= t['warmup_epochs'] < t['epochs']):
         raise ValueError('invalid learning rate schedule bounds')
-    if any(not 0 < x <= t['epochs'] for x in t['retain_epochs']):
+    if (t['retain_epochs'] != sorted(set(t['retain_epochs']))
+            or any(type(x) is not int or not 0 < x <= t['epochs'] for x in t['retain_epochs'])):
         raise ValueError('retained epochs must be within the recipe')
-    if t['lr'] <= 0 or t['weight_decay'] < 0 or not 0 < t['gamma'] <= 1:
+    if (t['lr'] <= 0 or t['weight_decay'] < 0 or t['adam_eps'] <= 0 or not 0 < t['gamma'] <= 1
+            or any(value < 0 for value in c['loss'].values())):
         raise ValueError('invalid optimizer parameters')
     bn = t['batchnorm']
+    if bn['eps'] != .001 or bn['momentum'] != .01:
+        raise ValueError('supplement_v1 keeps native PFN/backbone BN eps=.001 and momentum=.01')
+    if (bn['refit_sampling'] != 'uniform_midpoints_v1' or bn['refit_epoch'] != 0
+            or bn['refit_augment'] or bn['refit_micro_batch_size'] != 4):
+        raise ValueError('unregistered batchnorm refit input policy')
     if bn['evaluation_statistics'] not in ('running', 'train_refit_cma_v1'):
         raise ValueError('BN statistics may use train only or native running state')
     if bn['evaluation_statistics'] == 'train_refit_cma_v1' and (bn['refit_samples'] <= 0 or bn['refit_samples'] % bn['refit_micro_batch_size']):
         raise ValueError('BN train subset must contain complete micro batches')
+    if bn['evaluation_statistics'] == 'running' and bn['refit_samples'] != 0:
+        raise ValueError('running BN does not execute refit_samples; set it to zero')
     if e['method'] != 'deer_sbr' and bn['evaluation_statistics'] != 'running':
         raise ValueError('complete external methods retain native normalization')
     if e['method'] not in ('deer_sbr', 'where2comm') and e['variant'] != 'S0':
         raise ValueError('external complete methods do not accept internal variants')
     if e['method'] == 'where2comm' and m['local_variant'] not in ('none', 'AB', 'N2', 'F'):
         raise ValueError('Where2comm local module must be none/AB/N2/frozen F')
-    if e['method'] == 'where2comm' and ((e['variant'] == 'S0' and m['local_variant'] != 'none')
-            or (e['variant'] != 'S0' and m['local_variant'] != e['variant'])):
-        raise ValueError('Where2comm variant identity must match the actual local module')
     if e['method'] == 'deer_sbr' or (e['method'] == 'where2comm' and m['local_variant'] != 'none'):
         actual = resolve_final(e['final_model_file']) if e['variant'] == 'F' else e['variant']
         if (m['amplitude_context'] != ('normalized_mean' if actual == 'N1' else 'rms')
@@ -183,6 +238,8 @@ def validate_supplement_config(config):
         raise ValueError('supplement_v1 model selection is frozen to development AP3D07 with tolerance 1e-6')
     if c['selection']['normal_tolerance_pp'] < 0:
         raise ValueError('Normal tolerance must be fixed nonnegative percentage points')
+    if c['selection']['class_name'] != ('two_class_macro' if e['dataset_id'] == 'kradar' else 'Vehicle'):
+        raise ValueError('selection.class_name must match the evaluator actually used for this dataset')
     if c['scoring'] != DEFAULTS['scoring']:
         raise ValueError('supplement_v1 postprocessing/IoU thresholds are registered; do not tune them on final results')
     if e['method'] == 'mdd' and e['dataset_id'] != 'v2xr' and not d['clean_only']:
@@ -222,8 +279,7 @@ def validate_supplement_config(config):
         raise ValueError('invalid execution resources / RAM budget')
     # Training, each development weather, and the fixed train BN stream can
     # coexist. Budget every pool, including num_workers=0 in-process caches.
-    pools = 1 + len(c['selection']['domains']) + int(bn['evaluation_statistics'] != 'running')
-    if pools * max(1, r['num_workers']) * r['raw_cache_gib_per_worker'] > r['ram_budget_gib'] / 2:
+    if loader_resource_budget(c)['raw_cache_gib_upper_bound'] > r['ram_budget_gib'] / 2:
         raise ValueError('all live loader raw caches must fit within half the per-task RAM budget')
     if r['num_workers'] == 0:
         r['persistent_workers'] = False

@@ -21,9 +21,29 @@ MODEL_KEYS = frozenset(("processed_lidar", "processed_radar", "raw_radar", "reco
                         "observation_maps", "modality_valid", "batch_size"))
 
 
-def select_model_inputs(ego):
+def select_model_inputs(ego, config=None):
     """Explicitly prevent labels, clean features and weather provenance leaking."""
-    return {key: value for key, value in ego.items() if key in MODEL_KEYS}
+    keys = MODEL_KEYS
+    if config is not None and config['version'] == 5:
+        method = config['experiment']['method']
+        if method != 'deer_sbr' and not (method == 'where2comm' and config['model']['local_variant'] != 'none'):
+            keys = {'processed_lidar', 'record_len', 'batch_size',
+                    'raw_radar' if method == 'l4dr' else 'processed_radar'}
+            if method == 'where2comm':
+                keys.add('pairwise_t_matrix')
+    return {key: value for key, value in ego.items() if key in keys}
+
+
+def select_loss_targets(config, targets):
+    """Keep only targets consumed by the configured loss, before device transfer."""
+    if config['version'] != 5 or config['experiment']['method'] == 'deer_sbr':
+        return targets
+    method = config['experiment']['method']
+    if method == 'where2comm' and config['model']['local_variant'] != 'none':
+        return targets
+    if method == 'l4dr':
+        return {key: targets[key] for key in ('fad_boxes',) if key in targets}
+    return {}
 
 
 def to_device(value, device):

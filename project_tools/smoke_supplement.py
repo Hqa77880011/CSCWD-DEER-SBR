@@ -7,6 +7,7 @@ import torch
 
 from opencood.project.supplement import INTERNAL, METHODS, NATIVE_HYPES, defaults, validate_supplement_config
 from opencood.project.supplement_models import SupplementalModel, SupplementalLoss
+from opencood.project.training import select_model_inputs, select_loss_targets
 from project_tools.run_experiments import read_hypes
 
 
@@ -68,7 +69,10 @@ def smoke_one(config, *, single_agent=False, empty_radar=False):
                                for agent in range(int(inputs['record_len'].sum()))]
     if config['experiment']['method'] == 'mdd':
         inputs['processed_de_lidar'] = deepcopy(inputs['processed_lidar'])
-    output = model(inputs)
+    model_inputs = select_model_inputs(inputs, config)
+    if config['experiment']['method'] == 'mdd':
+        model_inputs['processed_de_lidar'] = inputs['processed_de_lidar']
+    output = model(model_inputs)
     targets = {k: torch.zeros_like(inputs['observation_maps']['lidar_count']) for k in ('miss', 'spur', 'deg_valid')}
     for key in ('miss', 'spur'):
         targets[key + '_valid'] = inputs['observation_maps']['lidar_occupancy'].clone()
@@ -76,8 +80,10 @@ def smoke_one(config, *, single_agent=False, empty_radar=False):
     if config['experiment']['method'] == 'l4dr':
         targets['fad_boxes'] = [torch.tensor([[0., 0., 0., 4., 2., 2., 0.]]) for _ in inputs['raw_radar']]
     criterion = SupplementalLoss({**hypes['loss']['args'], 'training_line': config['experiment']['track'],
-                                 'efficient_features': True}, config['experiment']['method'])
-    loss = criterion(output, synthetic_labels(output), targets)
+        'lambda_a': config['loss']['type_weight'], 'lambda_correction': config['loss']['correction_weight'],
+        'lambda_id': config['loss']['identity_weight'],
+        'efficient_features': config['model']['efficient_features']}, config['experiment']['method'])
+    loss = criterion(output, synthetic_labels(output), select_loss_targets(config, targets))
     if not torch.isfinite(loss):
         raise AssertionError('nonfinite synthetic loss')
     loss.backward()
@@ -86,14 +92,14 @@ def smoke_one(config, *, single_agent=False, empty_radar=False):
         raise AssertionError('synthetic backward produced invalid or entirely absent gradients')
     model.eval()
     with torch.no_grad():
-        prediction = model({k: v for k, v in inputs.items() if k != 'processed_de_lidar'}, return_aux=False)
+        prediction = model(select_model_inputs(inputs, config), return_aux=False)
     if prediction['psm'].shape[0] != len(inputs['record_len']) or not torch.isfinite(prediction['rm']).all():
         raise AssertionError('native inference contract failed')
     report = dict(method=config['experiment']['method'], variant=config['experiment']['variant'],
         dataset_head=config['experiment']['dataset_id'], single_agent=single_agent, empty_radar=empty_radar,
         forward=True, backward=True, inference=True, finite=True, synthetic_only=True,
         optimizer_updates=0, experimental_metrics_produced=False)
-    del output, prediction, model, loss, gradients, criterion, inputs
+    del output, prediction, model, loss, gradients, criterion, inputs, model_inputs
     gc.collect()
     return report
 
@@ -116,11 +122,15 @@ def smoke_matrix(config=None):
         c['experiment'].update(method=method, variant='S0', comparison='complete_method')
         c['data']['base_hypes'] = NATIVE_HYPES[method]
         c['training']['batchnorm'].update(evaluation_statistics='running', refit_samples=0)
+        c['model'].update(activation_checkpoint=False, efficient_features=False)
+        c['loss'] = {key: 0. for key in c['loss']}
         rows.append(smoke_one(validate_supplement_config(c), single_agent=method == 'mdd', empty_radar=method != 'l4dr'))
         print(f"PASS synthetic native forward/backward/inference: {method}", flush=True)
     c['experiment'].update(method='where2comm', variant='AB', comparison='controlled_module')
     c['data']['base_hypes'] = NATIVE_HYPES['where2comm']
     c['model']['local_variant'] = 'AB'
+    c['model'].update(activation_checkpoint=True, efficient_features=True)
+    c['loss'] = deepcopy(defaults()['loss'])
     rows.append(smoke_one(validate_supplement_config(c)))
     c['experiment'].update(method='deer_sbr', dataset_id='kradar', protocol='kradar_revised_v2', track='C', comparison='local_single_agent')
     c['data']['base_hypes'] = 'cscwd_configs/baseline_full_data_check.yaml'

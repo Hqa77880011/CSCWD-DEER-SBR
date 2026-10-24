@@ -134,3 +134,48 @@ python -m unittest test_supplement_performance test_bn_runner test_batchnorm_ref
 将已有复现指南中的各阶段命令直接补入 [README 的服务器训练入口](../README.md#server-training-commands)，覆盖环境/执行配置、内部与外部先导、独立预算、三种子、F冻结、核心与扩展机制、单因素、第二骨干、两套真实数据和online恢复。本轮只修改文档，未连接实验服务器、访问真实数据、下载或启动训练/评测。
 
 实际检查：17个新增Bash块通过 `bash -n`；49组项目命令参数调用实际parser校验、4段内嵌Python编译通过；7个不依赖F的suite及8种独立预算展开检查通过，外部原生30/40轮身份保持；5处新增本地文件/锚点链接与 `git diff --check` 通过。F依赖阶段只验证参数与冻结文件传递，未伪造F记录或生成对应配置；未因文档修改重跑模型测试。全部检查在内存进行，没有新增临时产物。
+
+## 2026-10-24 配置接线、方法依据与训练开销核查
+
+本节为当前代码结论。原七组配置、参考结果、Release身份和legacy源码包保持原样；前文日期更早的检查描述其当时版本，不能用来推断本轮L4DR修复前后训练轨迹相同。本轮未调用多代理、连接实验服务器、下载数据/权重、启动正式训练或真实数据评测，也未执行CUDA benchmark。
+
+本地环境为Windows、Python3.13.5、PyTorch2.7.1+cu118、NumPy2.1.3。核验环境时发现PowerShell赋值空字符串会移除 `CUDA_VISIBLE_DEVICES`，不能据此判断CUDA已隐藏；当前CPU检查改用 `-1` 并实际确认 `torch.cuda.is_available()==False`。模型矩阵始终显式在CPU执行，未执行CUDA模型计算或benchmark。
+
+原文与作者源文件的采用版本、逐方法A/B/C/D结论见[方案§8.2](13_补充实验方案与实施说明.md#82-原文作者版本与当前适配的核查结论)；有效参数与资源单位见[复现指南§0.1](REPRODUCING.md#01-有效配置参数范围与恢复身份)。本轮先复现了错误hypes/variant、无效optimizer/schedule/BN配置被接受、外部方法携带内部开关、BN逐模块传输和L4DR分数未detach等触发条件，再修复并检查相应路径。
+
+| 实际检查 | 结果、比较对象与数值标准 |
+|---|---|
+| 定向回归 | **10个模块、105项全部通过，0 skip/0 failure/0 error**。模块为 `test_supplement_performance`、`test_supplement_integrity`、`test_l4dr_supplement`、`test_supplement`、`test_bn_runner`、`test_batchnorm_refit`、`test_training_protocol`、`test_validation_fastpath`、`test_v4_protocol`、`test_data_geometry_review`。未运行全仓库测试 |
+| 当前配置的模型矩阵 | **21路CPU合成前向/各项loss/反向/推理通过，零优化更新，无AP**。14内部变体、5外部方法、Where2comm+AB、K-Radar双类别。smoke现在使用实际配置的loss权重、efficient_features和输入/target筛选，避免合成入口硬编码另一条loss路径 |
+| 配置真实生效 | CLI省略预算得到60/30/30；15份pilot/external_main配置和5份单项配置写入临时目录并读回；执行设置不覆盖原生batch/optimizer/schedule/BN，外部无局部模块时activation/efficient/内部loss为false/false/0。num_workers、prefetch、persistent、pin的实际loader属性及0/2 worker样本顺序检查通过。独立micro4/累积2/有效8、原生无累积及类别选择标签均不能以手改配置绕过 |
+| Where2comm执行优化 | 在32×32合成网格，将旧的无用count/.item在原位置恢复为reference hook，再与删除后的前向及筛选输入比较；psm/rm/通信比例、loss、所有存在的梯度、BN buffers及Python/NumPy/Torch RNG **逐位相同，rtol=atol=0**。原有两次backbone/shrink调用及其BN更新未删 |
+| activation checkpoint | 开/关同初始AB真实模型、完整辅助loss；输出、各loss、梯度和BN buffers严格相同，`rtol=atol=0`。仅无BN局部分支重算；无局部模块外部方法拒绝开启该开关 |
+| BN快照与有限性 | 三个BN的CPU传输调用从6次降为2批，统计/模式/参数/RNG不变；int64的 `2^40+1` 更新数精确保留，NaN及负variance仍识别。NaN loss/Inf或NaN梯度仍在optimizer更新/online保存前拦截 |
+| L4DR目标与梯度 | FAD→voxel分数detach后，单独检测loss不产生FAD梯度，MME仍有梯度；加回前景focal后FAD梯度非零且有限。前景/外扩忽略带、首点voxel cap、双向MME偏移、MSGF来源、空Radar及无GT推理回归通过。该detach更正不以旧训练梯度等价为验收标准 |
+| L4DR插值已知答案 | 三邻点距离为[0,2e-8,4e-8]时，作者加法epsilon的权重比为15:5:3；旧clamp为4:2:1。实际FAD传播输入与解析值比较采用 `rtol=2e-6, atol=1e-7`，容差仅覆盖FP32倒数/归约与有理式运算顺序。内存恢复旧clamp后该回归确实失败；未放宽容差 |
+| MDD构造器与参考loss | 有效hypes的beta端点对应实际三个buffer；与作者 `make_beta_schedule` 计算逐位一致。epoch0/19/29的参考loss和预测梯度，与保留的原生 `PointPillarLossMDD` 函数严格相同；参考target不获梯度，`rtol=atol=0`。自然未知天气参考拒绝回归通过；没有声称Normal参考与作者noise-masked参考等价 |
+| optimizer/scheduler与恢复 | K-Radar L4DR按作者eps=1e-8、CosineAnnealingLR的一轮T_max逐更新执行；12次合成更新的实际LR与原生PyTorch scheduler逐值相同。完整12次与4+8恢复的模型、AdamW、scheduler、sampler、TrainState和RNG严格相同。内部4次与2+2恢复、正常/同步计时模式同样严格相同；均使用替换的数据/模型工厂，无真实数据 |
+| 数据/缓存/固定GT | 合成K-Radar格式文件的cache开/关、epoch0→1→0，点云/标签、样本、天气、扰动、来源metadata和固定GT严格相同；LRU字节受限、文件变化重读。V2X-R PCD/YAML哈希篡改拦截及几何/FOV回归通过，未缓存增强后的结果或模型特征 |
+| 身份与角色 | `--skip-completed`拒绝源码或GT元数据变化、错误selected/resume角色；online、selected、budget snapshot恢复边界通过。完整配置/源码/数据恢复检查保留。原七份配置与归档科学源码的字节/身份回归通过；未读取Release真实权重重新评测 |
+| CLI、静态与文档 | 8次实际无数据CLI action通过；12个修改Python文件内存编译通过；58个Bash块、75处本地文件/锚点通过检查，Bash仅做 `bash -n`，未执行服务器命令。检查发现并修正方案中一处过期数据准备锚点；`git diff --check`通过 |
+
+最终回归日志为忽略上传的 `outputs/verification/supplement/config_method_review_final.txt`，CPU矩阵为 `config_method_smoke.json`，CLI/静态检查摘要为 `config_method_cli_checks.json`（均在同目录）。临时候选、夹具和检查脚本使用回收站清理，不作为新实验结果保留。
+
+可重跑的定向检查（Windows、本地CPU，不读取真实数据）：
+
+```powershell
+$env:PYTHONUTF8 = '1'
+$env:PYTHONDONTWRITEBYTECODE = '1'
+$env:CUDA_VISIBLE_DEVICES = '-1'
+$env:MKL_THREADING_LAYER = 'SEQUENTIAL'
+$env:OMP_NUM_THREADS = '2'
+$env:MKL_NUM_THREADS = '2'
+$env:OPENBLAS_NUM_THREADS = '1'
+$env:PYTHONPATH = (Join-Path (Get-Location) 'tests')
+python -m unittest test_supplement_performance test_supplement_integrity test_l4dr_supplement test_supplement test_bn_runner test_batchnorm_refit test_training_protocol test_validation_fastpath test_v4_protocol test_data_geometry_review -v
+python scripts/supplement.py smoke
+```
+
+**真实未决项。** CPU检查没有验证L4DR CUDA FPS/ball-query/three_nn与CPU的数值对应、spconv真实预处理、真实字段/标定/训练轨迹或AP；已安装CUDA扩展二进制身份也须在服务器确认。CoBEVT/Where2comm的project epoch warmup/cosine、MDD参考目标/beta、Where2comm单轮机制和真实数据适配仍按方案§8.2登记，未改成新的科学协议。没有本轮正常吞吐、强制同步诊断、正式推理延迟或显存前后对照，所有收益待测，不填写加速比。
+
+已准备数据与CUDA环境的服务器上，最小下一步是为本轮源码生成新配置，先 `preflight` / `check-data --samples 2`，再对L4DR等受影响方法运行 `project_tools/run_experiments.py --config "$C" --mode smoke --warmup 0 --steps 1`；该命令会读取真实train并执行一次更新，只供服务器后续验证。随后使用[有界测量命令](REPRODUCING.md#12-分阶段候选配置与有界服务器测量)分别运行throughput和synchronized诊断；逐epoch完整验证、BN政策及选模不变。这些服务器步骤本轮均未执行。

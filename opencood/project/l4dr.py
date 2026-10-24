@@ -116,7 +116,7 @@ class ForegroundDenoising(nn.Module):
                 else:
                     distances = torch.cdist(query[None], source[None], compute_mode='donot_use_mm_for_euclid_dist')[0]
                     distance, index = distances.topk(min(3, len(source)), largest=False, sorted=True)
-                weight = distance.clamp_min(1e-8).reciprocal()
+                weight = (distance + 1e-8).reciprocal()
                 weight = weight / weight.sum(-1, keepdim=True)
                 pieces.append((features[level + 1][index] * weight[..., None]).sum(1))
             combined = torch.cat((torch.cat(pieces), features[level]), -1)
@@ -127,7 +127,9 @@ class ForegroundDenoising(nn.Module):
 def voxelize_radar(points, scores, agent, hypes, training):
     """Hard voxelize after FAD; caps follow the registered data preprocessing."""
     args = hypes['args']
-    features = torch.cat((points, scores), -1)
+    # Native MMESparseProcessor detaches before CPU hard voxelization. FAD
+    # learns from its foreground loss, not detection gradients through scores.
+    features = torch.cat((points, scores), -1).detach()
     coords = ((points[:, :3] - points.new_tensor(hypes['cav_lidar_range'][:3])) /
               points.new_tensor(args['voxel_size'])).floor().long()[:, [2, 1, 0]]
     unique, inverse = torch.unique(coords, dim=0, return_inverse=True)

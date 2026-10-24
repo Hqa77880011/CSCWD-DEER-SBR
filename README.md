@@ -211,7 +211,13 @@ Exact executed configurations are stored in [`repro/configs/`](repro/configs/). 
 
 `F` denotes one AB or N2 structure frozen from the complete S0/AB/N2 development runs for all three seeds. It has **not yet been selected**. Development selection, training-only BN handling, and final testing are separate; `latest.rank0.pt`, `selected.pt`, and `budget_epochNNN.pt` retain distinct roles.
 
-External comparisons retain their method-specific modules, objectives, and registered native candidate recipes. L4DR is explicitly a four-channel adaptation with FAD, foreground supervision, bidirectional MME, and MSGF under the project's detection protocol. MDD requires a verified clean training reference. HRCP and REL remain blocked by insufficient verifiable implementation material and have no executable training configurations.
+External comparisons use the V2X-R authors' LiDAR–radar implementations and registered candidate recipes. The `_native` suffix identifies the source of budget/hyperparameters; it does not certify reproduction of the full original paper protocol. The [method audit](docs/13_补充实验方案与实施说明.md#82-原文作者版本与当前适配的核查结论) records the papers, pinned author commits, implementation corrections, shared-protocol adaptations, and remaining evidence gaps.
+
+L4DR is a four-channel adaptation with FAD, foreground supervision, bidirectional MME, and MSGF. FAD scores are detached before hard voxelization, following the author implementation; the foreground loss trains FAD. Its K-Radar candidate uses 35 epochs, batch 3, AdamW (`eps=1e-8`), and the author's per-update cosine schedule with a one-epoch `T_max`. MDD retains its diffusion/reference objective but uses a Normal-frame reference on V2X-R, whereas the author reader removes labeled weather points from the current frame. Real-data MDD-CORR requires verified clear training frames and traceable corruption. Natural rain is not a clean reference.
+
+CoBEVT retains the V2X-R SwapFusion detection adaptation, including masks and spatial padding/cropping. Where2comm and +F share the same V2X-R single-round communication selection and multiscale backbone; this version does not implement the original paper's complete request/multiround and SCM/SPE fusion design. Their existing project epoch-based warmup/cosine schedule is an explicitly registered difference from the author scheduler call chain. No new AP or CUDA performance results are reported. HRCP and REL have no executable configurations pending sufficient implementation evidence.
+
+For independent recipes, omitting `configure --epochs` uses the dataset template: 60 for V2X-R and 30 for V2X-Radar-C/K-Radar. Suites use their matrix budgets; native candidate slots use their source budgets. Method/hypes, variant/module, budget/schedule, and BN-policy mismatches are rejected. Internal execution switches and auxiliary-loss weights are disabled for external methods without a local DEER/SBR module. See [effective configuration and resource units](docs/REPRODUCING.md#01-有效配置参数范围与恢复身份).
 
 After installing the environment, inspect the CLI or run the synthetic CPU check without a dataset or pretrained weights:
 
@@ -226,13 +232,13 @@ The smoke check performs synthetic forward, backward, and inference passes with 
 
 ### Staged Server Training Commands
 
-Run the following stages on a **Linux server with the project environment installed and the datasets prepared**. Set the server paths first, then use the same Bash session throughout. Each `run-suite --execute` command starts real training. Tasks within a suite run sequentially; `--skip-completed` reuses completed pilots only when their configurations match exactly. These commands have been checked locally and await execution on the server.
+Run the following stages on a **Linux server with the project environment installed and the datasets prepared**. Set the server paths first, then use the same Bash session throughout. Each `run-suite --execute` command starts real training. Tasks within a suite run sequentially; `--skip-completed` checks the full configuration, current source/data identities, successful report, and selected-checkpoint identity/role before reusing a pilot. These commands have been checked locally and await execution on the server.
 
 Stage order: environment preflight → optional execution-configuration measurements → S0/AB/N2 with seed 17 → SUP with seed 17 → freeze the training budget from development curves → internal/external three-seed runs → freeze F → M1/M3/M4 → extensions required by the research questions. External methods can run on separate GPUs alongside the internal experiments. Stages that depend on F require complete development evidence from all three seeds.
 
 #### Stage 0: Set Server Paths and Preflight Helpers
 
-Use a new supplemental campaign directory for `RUNS`. `CUDA_VISIBLE_DEVICES` selects the physical GPU; the process uses `DEVICE=cuda:0`. `EPOCHS=60` is the initial pilot candidate. Internal configurations retain FP32, microbatch size 4, gradient accumulation over 2 microbatches, and effective batch size 8. External methods retain their native batch sizes and schedules.
+Use a new supplemental campaign directory for `RUNS`. `CUDA_VISIBLE_DEVICES` selects the physical GPU; the process uses `DEVICE=cuda:0`. `EPOCHS=60` is the initial pilot candidate. Internal configurations retain FP32, microbatch size 4, gradient accumulation over 2 microbatches, and effective batch size 8. External methods retain their method-specific candidate batches and registered schedules. The L4DR corrections require a new supplemental campaign; use the archived entrypoints for the original seven-model release.
 
 ```bash
 # Set these three paths to their actual locations on the Linux server.
@@ -344,7 +350,7 @@ Then compare one factor at a time as needed: prefetch factors 1/2, raw caches of
 EXECUTION_ARGS=(--execution-config "$WINNER")
 ```
 
-Keep execution settings consistent between pilots and repeated runs. This option copies only resource settings, activation checkpointing, and the online-checkpoint interval. Each method retains its registered optimizer, batch size, schedule, and BN policy.
+Keep execution settings consistent between pilots and repeated runs. This option copies only resource settings, supported local activation checkpointing, and the online-checkpoint interval. Each method retains its registered optimizer, batch size, schedule, and BN policy. `preflight` reports per-task loader/cache/prefetch bounds; add them across concurrent jobs and measure the full process tree's RAM. `cpu_threads` limits main-process PyTorch threads; the OMP/MKL/OpenBLAS environment settings above also apply to workers.
 
 #### Stage 2: Run S0 / AB / N2 with Seed 17, Then SUP
 
@@ -403,7 +409,7 @@ Choose the final budget from development curves. A run is a plateau candidate on
 
 #### Stage 3: Run External-Method Pilots with Seed 17
 
-AttFuse, MDD, and L4DR use 30 epochs; CoBEVT uses 40. **Do not pass `--epochs` in this stage.** These runs can use another GPU while retaining the common data/fixed-GT protocol and each method's native recipe.
+AttFuse, MDD, and L4DR use 30 epochs; CoBEVT uses 40. **Do not pass `--epochs` in this stage.** These runs can use another GPU while retaining the common data/fixed-GT protocol and each method's registered source-based candidate.
 
 ```bash
 python scripts/supplement.py plan --suite external_pilot \

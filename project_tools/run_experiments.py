@@ -23,7 +23,7 @@ from opencood.project.config import load_config, validate_config, config_hash, f
 from opencood.project.training import (EpochBatchSampler, TrainState, seed_everything, select_model_inputs, to_device,
     save_checkpoint, load_checkpoint, freeze_batchnorm, consider_checkpoint,
     atomic_torch_save, tensor_state_hash, FP16_INITIAL_SCALE, rng_state, restore_rng,
-    nonfinite_gradients, loss_scalars)
+    nonfinite_gradients, loss_scalars, select_loss_targets)
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -49,19 +49,33 @@ def cuda_memory_snapshot(device):
 
 def batchnorm_snapshot(model):
     """Read small running buffers without changing modes, gradients or RNG."""
+    modules = {name: module for name, module in model.named_modules()
+               if isinstance(module, torch.nn.modules.batchnorm._BatchNorm)}
+    buffers = [(name, key, value.detach().reshape(-1)) for name, module in modules.items()
+               for key in ('running_mean', 'running_var')
+               if (value := getattr(module, key)) is not None]
+    host = {}
+    if buffers:
+        packed = torch.cat([value for _, _, value in buffers]).cpu()
+        offset = 0
+        for name, key, value in buffers:
+            host[name, key] = packed[offset:offset + value.numel()]
+            offset += value.numel()
+    tracked = [(name, module.num_batches_tracked) for name, module in modules.items()
+               if module.num_batches_tracked is not None]
+    # Keep int64 counters separate: a float32 pack loses large update counts.
+    counts = (dict(zip((name for name, _ in tracked),
+                      torch.stack([value.detach() for _, value in tracked]).cpu().tolist())) if tracked else {})
     rows, invalid = {}, []
-    for name, module in model.named_modules():
-        if not isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
-            continue
-        mean = None if module.running_mean is None else module.running_mean.detach().cpu()
-        variance = None if module.running_var is None else module.running_var.detach().cpu()
+    for name in modules:
+        mean, variance = host.get((name, 'running_mean')), host.get((name, 'running_var'))
         finite = mean is not None and variance is not None and bool(torch.isfinite(mean).all()) and bool(torch.isfinite(variance).all())
         negative = int((variance < 0).sum()) if variance is not None else 0
         finite_variance = variance[torch.isfinite(variance)] if variance is not None else torch.empty(0)
         rows[name] = {"finite": finite, "negative_variance_count": negative,
                       "running_var_min": float(finite_variance.min()) if finite_variance.numel() else None,
                       "running_var_max": float(finite_variance.max()) if finite_variance.numel() else None,
-                      "num_batches_tracked": int(module.num_batches_tracked) if module.num_batches_tracked is not None else None}
+                      "num_batches_tracked": counts.get(name)}
         if not finite or negative:
             invalid.append(name)
     minima = [row["running_var_min"] for row in rows.values() if row["running_var_min"] is not None]
@@ -493,6 +507,11 @@ def preflight(config):
               "formal_blockers": formal_blockers(config), "cuda_available": torch.cuda.is_available(),
               "gpu_count": torch.cuda.device_count(), "torch": torch.__version__, "python": platform.python_version(),
               "formal_experiment_started": False}
+    if config['version'] == 5:
+        from opencood.project.supplement import loader_resource_budget
+        report['execution_resource_budget'] = loader_resource_budget(config)
+        report['thread_environment'] = {key: os.environ.get(key) for key in
+            ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS')}
     for name in ("memory.max", "memory.current", "memory.stat", "memory.events", "cpu.max"):
         path = Path("/sys/fs/cgroup") / name
         if path.exists():
@@ -687,7 +706,7 @@ def _run(config, args, resources):
     optimizer = optimizer_class(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"], eps=t["adam_eps"])
     if config['version'] == 5:
         from opencood.project.supplement_runner import scheduler_for
-        scheduler = scheduler_for(optimizer, config)
+        scheduler = scheduler_for(optimizer, config, sampler.total_batches // t['accumulation_steps'])
     else:
         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=t["milestones"], gamma=t["gamma"])
     amp_enabled = t["precision"] != "fp32"
@@ -853,10 +872,10 @@ def _run(config, args, resources):
             if synchronized:
                 _sync(device)
             transfer_start = time.perf_counter()
-            inputs = to_device(select_model_inputs(ego), device)
+            inputs = to_device(select_model_inputs(ego, config), device)
             if config['version'] == 5 and e['method'] == 'mdd':
                 inputs['processed_de_lidar'] = to_device(ego['reference_lidar'], device)
-            targets = to_device(batch.get("train_targets", {}), device)
+            targets = to_device(select_loss_targets(config, batch.get("train_targets", {})), device)
             labels = to_device(ego["label_dict"], device)
             if synchronized:
                 _sync(device)
@@ -883,6 +902,7 @@ def _run(config, args, resources):
             state.samples_seen += t["micro_batch_size"] * world
             if is_last_micro:
                 optimizer_start = time.perf_counter()
+                update_lr = optimizer.param_groups[0]['lr']
                 scaler.unscale_(optimizer)
                 bad_gradients = nonfinite_gradients(model)
                 if bad_gradients:
@@ -892,6 +912,8 @@ def _run(config, args, resources):
                         "precision": t["precision"]}))
                 scaler.step(optimizer)
                 scaler.update()
+                if t.get('scheduler') == 'cosine_update':
+                    scheduler.step()
                 optimizer.zero_grad(set_to_none=True)
                 # One update boundary is needed for honest wall throughput.
                 # Only the diagnostic mode additionally fences each phase.
@@ -916,7 +938,7 @@ def _run(config, args, resources):
                        "update_wall_seconds": update_wall_seconds, "checkpoint_seconds": checkpoint_time,
                        "worker_data_timing": dict(worker_timings), "timing_mode": timing_mode,
                        "phase_semantics": 'synchronized_wall' if synchronized else 'host_dispatch_and_required_waits',
-                       "effective_batch": t["effective_batch_size"], "lr": optimizer.param_groups[0]["lr"],
+                       "effective_batch": t["effective_batch_size"], "lr": update_lr,
                        "clean_reference_agents_last_micro": int(ego['record_len'].sum()) if config['version'] == 5 and e['method'] == 'mdd' else 0,
                        "loss_terms": scalars,
                        "loss_term_aggregation": "mean_across_micro_batches", "counts_scope": "rank_local", "rank": rank,
@@ -951,7 +973,8 @@ def _run(config, args, resources):
         if sampler.next_batch != sampler.total_batches:
             raise RuntimeError("epoch ended before full effective batch budget")
         state.epoch += 1
-        scheduler.step()
+        if t.get('scheduler') != 'cosine_update':
+            scheduler.step()
         sampler.set_epoch(state.epoch)
         if args.mode == "train":
             if world > 1:

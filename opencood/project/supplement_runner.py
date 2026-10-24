@@ -20,6 +20,10 @@ def configure_hypes(config, hypes):
     args.update(lidar_range=list(bounds), voxel_size=voxel, proj_first=True)
     if 'where2comm_fusion' in args:
         args['where2comm_fusion']['voxel_size'] = voxel
+    if config['experiment']['method'] == 'mdd':
+        # The author constructor uses these constants, ignoring the different
+        # values in its YAML. Reflect the unchanged runtime in resolved hypes.
+        args['mdd_block']['diffusion'].update(beta_schedule='linear', beta_start=.005, beta_end=.05)
     hypes['postprocess']['anchor_args']['cav_lidar_range'] = list(bounds)
     hypes['postprocess']['anchor_args']['feature_stride'] = (4 if config['experiment']['method'] in ('cobevt', 'where2comm') else 2)
     return hypes
@@ -77,10 +81,17 @@ def select_device(config, local_rank=0):
     return device
 
 
-def scheduler_for(optimizer, config):
+def scheduler_for(optimizer, config, updates_per_epoch=None):
     t = config['training']
     if t['scheduler'] == 'multistep':
         return torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=t['milestones'], gamma=t['gamma'])
+    if t['scheduler'] == 'cosine_update':
+        if updates_per_epoch is None or updates_per_epoch <= 0:
+            raise ValueError('native K-Radar cosine needs the actual complete updates per epoch')
+        # Author cfg TYPE_TOTAL_ITER='every': T_max is one epoch's updates,
+        # with scheduler.step() after each optimizer update, without a reset.
+        return torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=updates_per_epoch, eta_min=t['min_lr'])
     import math
     def rate(epoch):
         if epoch < t['warmup_epochs']:

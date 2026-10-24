@@ -146,6 +146,7 @@ cd "$REPO"
 conda activate cscwd-repro
 set -euo pipefail
 export PYTHONUTF8=1
+export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export CUDA_VISIBLE_DEVICES=0
 DEVICE=cuda:0
 EPOCHS=60
@@ -173,6 +174,39 @@ git rev-parse HEAD | tee "$CHECKS/repository_commit.txt"
 | 最终评分与统计 | `$RUNS/final_eval/selected_v1/`、`$REPORTS/` |
 
 配置存在且内容相同可复用；内容不同时拒绝覆盖。更换数据、配方或科学源码应使用新批次。已有 JSON 评分、冻结记录和预测也拒绝覆盖，重测时换一个输出子目录，例如 `selected_v2`，不要删除原结果。
+
+### 0.1 有效配置、参数范围与恢复身份
+
+配置只按以下顺序生成一次：schema5 defaults → 数据集YAML → method/variant及原生候选 → 显式路径/预算/科学参数 → `--execution-config`的限定执行字段 → schema校验。CLI省略 `--epochs` 时采用模板预算：V2X-R为60，V2X-Radar-C/K-Radar为30；suite则使用矩阵中的预算，`--native-recipe`/矩阵native槽采用对应作者配置。独立20/30/60/90轮严格匹配[10,15]/[15,23]/[30,45]/[45,68]，不会仅改轮数仍沿用旧schedule。生成后不再静默改科学参数；推理/训练显式 `--device` 改动会进入本次配置身份。
+
+| 字段 | 默认值、单位、适用范围 | 实际消费者/校验 |
+|---|---|---|
+| `model.activation_checkpoint` | 内部组true；Where2comm+局部模块true；无局部模块的外部方法false。S0没有可重算分支 | `PointPillarDeerSbr.fuse_encoded`，仅training且启用grad时重算无BN的DEER/SBR，不重算PFN/backbone、MDD参考分支或FAD |
+| `model.efficient_features` | 内部/Where2comm+局部模块true；其他外部方法false | 路由/残差与 `ProjectLoss` 的等价特征/稀疏辅助loss路径；不控制原生外部网络。无局部模块时开启开关或设置内部loss权重会被拒绝 |
+| `resources.num_workers` | 8个进程/**每loader/每任务**；0表示主进程读取 | `make_loader`；0时resolved config明确将persistent_workers归为false；不会启动worker |
+| `prefetch_factor` / `persistent_workers` / `pin_memory` | 2个batch/worker、true、true | DataLoader参数；prefetch和persistent仅workers>0生效，pin_memory接到loader；`to_device`使用non_blocking，CPU不会因此变成异步CUDA传输 |
+| `raw_cache_gib_per_worker` / `ram_budget_gib` | .5 GiB/worker/loader；64 GiB/**任务**，1GiB=2^30 bytes | `ByteLRU`缓存原始解析数组/标注；workers=0仍有每dataset进程内缓存。schema核算train+全部开发域+BN stream，缓存上限总和≤该任务RAM预算一半 |
+| `cpu_threads` | 主进程PyTorch intra-op线程4；worker PyTorch固定1 | runner `torch.set_num_threads` / `_worker_init`。不是整任务CPU核上限，也不会替你限制NumPy/OMP/MKL/OpenBLAS；启动前设置上面的三个环境变量。preflight和startup记录环境值 |
+| `checkpoint_interval_updates` | 每100个**有效optimizer更新**；内部相当于200个microstep | runner保存online状态；逐epoch验证/保存、selected和budget snapshot独立于该间隔，诊断末尾仍实际保存online checkpoint |
+| `training.batchnorm` | 公共PFN/backbone固定eps=.001、momentum=.01；内部V2X-R固定train重估32样本、microbatch4；外部/真实数据running时refit_samples=0 | 不接受未接线的eps/momentum或未注册的refit采样/epoch/增强配置。L4DR FAD自身保留作者BN默认eps=1e-5、momentum=.1，单点使用已有running统计，不套公共BN参数 |
+| `data.base_hypes` / `model.local_variant` | 内部为baseline_full_data_check；外部为方法对应的NATIVE_HYPES；local_variant仅Where2comm可用 | schema→`configure_hypes`→`SupplementalModel`；错误方法/YAML、变体/模块或comparison标签组合直接拒绝 |
+| `loss.*` / legacy字段 | 内部三权重为.1/.001/.01；无局部模块外部三者为0，MDD/FAD原生额外目标独立保留 | 外部不消费DEER/SBR loss权重。schema5不消费legacy matching/audit：matching只允许保留默认占位、supervision_audit/amp_audit必须null；不伪装成已执行审计 |
+
+其他局部模型参数仅在对应分支/variant存在时起作用，例如rho/attention/support属于SBR，g_min属于multiplicative类型先验；共同配置中的这些字段不表示原生AttFuse、CoBEVT或MDD执行了内部模块。训练预算的FP32/micro4/累积2/有效batch8适用于内部受控组；原生外部候选的batch见下表，执行配置不会覆盖它们。
+
+| `_native`候选 | 轮数/有效batch | optimizer：lr / weight decay / eps | 实际schedule |
+|---|---|---|---|
+| V2X-R AttFuse | 30 / 8 | Adam：.002 / 1e-4 / 1e-10 | MultiStep 10/15，gamma=.1 |
+| V2X-R MDD、L4DR | 30 / 2 | Adam：.002 / 1e-4 / 1e-10 | MultiStep 10/15，gamma=.1 |
+| V2X-R CoBEVT | 40 / 2 | Adam：.001 / 1e-4 / 1e-10 | 项目epoch warmup10+cosine，warmup_lr=2e-4、min_lr=2e-5 |
+| V2X-R Where2comm及+F | 40 / 2 | Adam：2e-4 / .01 / 1e-10 | 同一个项目epoch warmup10+cosine，warmup_lr=2e-5、min_lr=5e-6 |
+| K-Radar L4DR | 35 / 3 | AdamW：.001 / .01 / 1e-8 | 作者 `TYPE_TOTAL_ITER=every`：每有效更新step，T_max=实际完整更新数/epoch，min_lr=.0001，跨轮不重置 |
+
+真实数据上的MDD/CoBEVT等继承所列V2X-R候选的超参数来源并适配目标数据，不能称已取得各目标数据集的原论文配方。`cosine_warmup`的epoch实现与作者timm调用链存在时间单位差异；MDD的参考目标/beta和Where2comm完整论文机制也有明确区别。采用的论文版本、作者commit、A/B/C/D分类和输入/监督/成本边界统一见[方案§8.2](13_补充实验方案与实施说明.md#82-原文作者版本与当前适配的核查结论)，不能仅看 `_native` 后缀判断完成了原生复现。
+
+`run_id`区分dataset/method/variant/budget/seed/native及单因素；它不是所有参数的编码。完整YAML与resolved config保存全部字段，已有不同内容配置拒绝覆盖；data/GT/base-hypes/frozen-F及Python源码身份由artifact metadata绑定。online resume还核对完整配置、角色和状态。`--skip-completed`现要求成功报告、完整配置、当前源码/数据元数据及selected内嵌身份/角色均匹配；不会因为旧selected文件存在就跳过当前配方。新源码或本轮L4DR修正需新批次，不能放宽检查续接旧schema5 checkpoint。
+
+`preflight.execution_resource_budget`报告每任务loader流数、worker/预取batch/原始缓存上界，需按同时运行任务相加；它不包含模型、manifest、pinned队列和系统页缓存字节，不代替进程树/cgroup峰值实测。当前Python源码身份也不证明已安装CUDA扩展二进制与源码一致，服务器须重新确认扩展构建和算子功能。
 
 下面两个终端函数用于逐配置预检和读取两个真实 train 样本。`preflight` 的退出码本身不代表没有阻塞，函数会另外检查 `formal_blockers` 和输入路径；检查通过后才进入训练。它们不执行优化更新。
 
@@ -266,6 +300,8 @@ V2X-R 应已有 `data_manifest.json`、`split_manifest.json`、`weather_manifest
 已经生效的路径为：`make_loader` 的 pin memory/persistent workers/prefetch；`to_device(..., non_blocking=True)`；optimizer 的 `zero_grad(set_to_none=True)`；模型与 loss 的 `efficient_features=True`。`cpu_threads` 进入主进程 `torch.set_num_threads`，worker 的 PyTorch 线程固定为 1。activation checkpoint 只重算无 BN 的局部分支；外部方法保留原生计算和配方。`raw_cache_gib_per_worker` 现同时接入 V2X-R 和两套真实数据 raw reader。
 
 runner 只复用 dataset/loader、manifest、固定预处理器及有界的原始点云/标注缓存；每轮验证前重新核对数据身份，V2X-R 文件哈希检查保留，文件 stat 或预期哈希变化不会命中旧项。真实点云在校准/增强前复制，训练的样本键控天气、扰动、点序和标签每次重新计算。缓存不含模型特征、预测或随机增强后的训练结果；每轮仍用当前权重重新拟合 BN 和评分，退出时回收所有 loader worker。
+
+2026-10-24新增的执行优化只删除Where2comm无用的feature count/.item、在H2D前筛除外部网络/loss未消费的观测图和类型target，以及将BN快照读取合并为浮点buffer/int64计数两批；没有删除有限性拦截、改变多尺度重复前向或BN更新次数。L4DR的detach、插值epsilon与K-Radar optimizer/scheduler修复另计为方法实现更正，不能把它们的训练变化解释为等价提速。CPU已知答案与严格等价范围见[验证记录](VALIDATION.md)；没有本轮真实数据或CUDA提速比。
 
 ```bash
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
@@ -783,6 +819,7 @@ HRCP、REL 当前没有可核查完整适配，不提供虚构运行命令。上
 
 ```powershell
 $env:PYTHONUTF8 = '1'
+$env:CUDA_VISIBLE_DEVICES = '-1'
 $env:MKL_THREADING_LAYER = 'SEQUENTIAL'
 python -m unittest tests.test_supplement tests.test_supplement_integrity tests.test_l4dr_supplement -v
 python scripts/supplement.py smoke --output outputs/supplement_cpu_check.json
