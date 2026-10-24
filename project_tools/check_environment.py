@@ -53,7 +53,22 @@ def check_extensions():
 
 
 def check_spconv():
+    import spconv as spconv_package
     import spconv.pytorch as spconv
+    from opencood.data_utils.pre_processor.sp_voxel_preprocessor import SpVoxelPreprocessor
+
+    params = dict(core_method='SpVoxelPreprocessor', cav_lidar_range=[0., 0., 0., 4., 4., 4.],
+        args=dict(voxel_size=[1., 1., 4.], max_points_per_voxel=2, max_voxel_train=4, max_voxel_test=4))
+    preprocessor = SpVoxelPreprocessor(params, train=False)
+    points = np.array([[.1, .1, .1, 1.], [.2, .2, .1, 2.], [1.1, .1, .1, 3.]], dtype=np.float32)
+    voxels = {k: v.copy() for k, v in preprocessor.preprocess(points).items()}
+    np.testing.assert_array_equal(voxels['voxel_coords'], [[0, 0, 0], [0, 0, 1]])
+    np.testing.assert_array_equal(voxels['voxel_num_points'], [2, 1])
+    np.testing.assert_array_equal(voxels['voxel_features'][0], points[:2])
+    np.testing.assert_array_equal(voxels['voxel_features'][1, 0], points[2])
+    batch = preprocessor.collate_batch([voxels])
+    np.testing.assert_array_equal(batch['voxel_coords'].numpy(), [[0, 0, 0, 0], [0, 0, 0, 1]])
+
     features = torch.randn(3, 4, device='cuda', requires_grad=True)
     indices = torch.tensor([[0, 1, 1, 1], [0, 1, 1, 2], [0, 2, 2, 2]],
                            dtype=torch.int32, device='cuda')
@@ -61,8 +76,59 @@ def check_spconv():
     layer = spconv.SubMConv3d(4, 8, 3, padding=1, bias=False).cuda()
     result = layer(sparse).features
     result.square().mean().backward()
-    assert features.grad is not None and torch.isfinite(features.grad).all()
-    return {'shape': list(result.shape), 'backward': True}
+    assert result.shape == (3, 8) and torch.isfinite(result).all()
+    assert features.grad is not None and torch.isfinite(features.grad).all() and features.grad.abs().sum() > 0
+    assert layer.weight.grad is not None and torch.isfinite(layer.weight.grad).all() and layer.weight.grad.abs().sum() > 0
+    return {'version': getattr(spconv_package, '__version__', None), 'voxelization_known_answer': True,
+            'voxel_collate': True, 'shape': list(result.shape), 'backward': True}
+
+
+def _l4dr_operator_case(device):
+    """Small unique-distance inputs for the operators used by L4DR FAD."""
+    from opencood.project.l4dr import _farthest, _ball
+    xyz = torch.tensor([[0., 0., 0.], [1., 0., 0.], [3., 0., 0.], [7., 0., 0.]], device=device)
+    queries = xyz.new_tensor([[.25, 0., 0.], [5.25, 0., 0.]])
+    fps = _farthest(xyz, 4)
+    ball = _ball(xyz, xyz[[0, 2]], 2., 4)
+    if xyz.is_cuda:
+        from opencood.pcdet_utils.pointnet2.pointnet2_batch.pointnet2_utils import three_nn
+        distance, index = three_nn(queries[None].contiguous(), xyz[None].contiguous())
+        distance, index = distance[0], index[0].long()
+    else:
+        distance, index = torch.cdist(queries[None], xyz[None],
+            compute_mode='donot_use_mm_for_euclid_dist')[0].topk(3, largest=False, sorted=True)
+    # Same gather/weight/reduction and feature autograd as FAD propagation;
+    # L4DR does not use the extension's three_interpolate kernel.
+    features = xyz.new_tensor([[1., 2.], [3., 5.], [7., 11.], [13., 17.]], requires_grad=True)
+    weight = (distance + 1e-8).reciprocal()
+    weight = weight / weight.sum(-1, keepdim=True)
+    interpolated = (features[index] * weight[..., None]).sum(1)
+    interpolated.square().sum().backward()
+    return {k: v.detach().cpu() for k, v in dict(fps=fps, ball=ball, nn_index=index,
+        nn_distance=distance, interpolated=interpolated, feature_gradient=features.grad).items()}
+
+
+def check_l4dr_cuda():
+    """Execute L4DR's actual batch CUDA operators; no optimizer or dataset."""
+    from opencood.project.l4dr import pointnet2_identity
+    cpu, cuda = _l4dr_operator_case('cpu'), _l4dr_operator_case('cuda')
+    expected = dict(fps=torch.tensor([0, 3, 2, 1]),
+        ball=torch.tensor([[0, 1, 0, 0], [2, 2, 2, 2]]),
+        nn_index=torch.tensor([[0, 1, 2], [3, 2, 1]]),
+        nn_distance=torch.tensor([[.25, .75, 2.75], [1.75, 2.25, 4.25]]))
+    for key, answer in expected.items():
+        torch.testing.assert_close(cpu[key], answer, rtol=0, atol=0)
+        torch.testing.assert_close(cuda[key], answer, rtol=0, atol=0)
+    for key in ('interpolated', 'feature_gradient'):
+        # FP32 reciprocal/sum/backward use device-specific arithmetic order.
+        torch.testing.assert_close(cuda[key], cpu[key], rtol=2e-6, atol=1e-7)
+    identity = pointnet2_identity(include_path=True)
+    assert identity['binary']['status'] == 'loaded'
+    return dict(pointnet2_identity=identity, fps_indices=cpu['fps'].tolist(),
+        ball_indices=cpu['ball'].tolist(), three_nn_indices=cpu['nn_index'].tolist(),
+        three_nn_distances=cpu['nn_distance'].tolist(), feature_interpolation_backward=True,
+        index_distance_tolerance=dict(rtol=0, atol=0), feature_tolerance=dict(rtol=2e-6, atol=1e-7),
+        scope='four-point known answers and feature gradients; not full FAD/model or training equivalence')
 
 
 def check_model(checkpoint_path):
@@ -143,31 +209,45 @@ def check_model(checkpoint_path):
             'peak_gpu_mib': round(torch.cuda.max_memory_allocated() / 2**20, 1)}
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=REPO.parent / 'setup/environment_check.json')
-    args = parser.parse_args()
+    parser.add_argument('--checks', nargs='+', choices=['extensions', 'spconv', 'l4dr', 'baseline'],
+                        default=['extensions', 'spconv', 'baseline'],
+                        help='use --checks l4dr spconv for minimal checks without optimizer/checkpoint work')
+    args = parser.parse_args(argv)
     random.seed(17)
     np.random.seed(17)
     torch.manual_seed(17)
     report = {'checked_at_utc': datetime.now(timezone.utc).isoformat(),
               'python': sys.version, 'executable': sys.executable,
               'torch': torch.__version__, 'cuda_runtime': torch.version.cuda,
-              'gpu': torch.cuda.get_device_name(), 'checks': {}, 'status': 'running'}
+              'gpu': torch.cuda.get_device_name() if torch.cuda.is_available() else None,
+              'requested_checks': args.checks, 'baseline_optimizer_check_requested': 'baseline' in args.checks,
+              'dataset_read': False, 'checks': {}, 'status': 'running'}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     try:
-        for module in ('spconv', 'open3d', 'pypcd.pypcd', 'numba', 'mmcv', 'timm',
-                       'opencood.tools.train_utils', 'opencood.data_utils.datasets'):
+        if not torch.cuda.is_available():
+            raise RuntimeError('CUDA GPU is required for these checks; CPU checks cannot validate CUDA operators')
+        modules = ('spconv', 'open3d', 'pypcd.pypcd', 'numba', 'mmcv', 'timm',
+                   'opencood.tools.train_utils', 'opencood.data_utils.datasets')
+        for module in modules if 'baseline' in args.checks else ():
             imported = importlib.import_module(module)
             report['checks'][module] = getattr(imported, '__version__', 'imported')
             print('PASS import', module, flush=True)
-        report['checks']['cuda_extensions'] = check_extensions()
-        print('PASS CUDA IoU / NMS / points-in-boxes', flush=True)
-        report['checks']['spconv_gpu'] = check_spconv()
-        print('PASS spconv GPU forward/backward', flush=True)
-        report['checks']['baseline'] = check_model(args.output.parent / 'synthetic_smoke_checkpoint.pth')
+        if 'extensions' in args.checks:
+            report['checks']['cuda_extensions'] = check_extensions()
+            print('PASS CUDA IoU / NMS / points-in-boxes', flush=True)
+        if 'l4dr' in args.checks:
+            report['checks']['l4dr_cuda'] = check_l4dr_cuda()
+            print('PASS L4DR FPS / ball-query / three_nn and feature backward', flush=True)
+        if 'spconv' in args.checks:
+            report['checks']['spconv_gpu'] = check_spconv()
+            print('PASS spconv voxelization/collate and GPU forward/backward', flush=True)
+        if 'baseline' in args.checks:
+            report['checks']['baseline'] = check_model(args.output.parent / 'synthetic_smoke_checkpoint.pth')
+            print('PASS synthetic baseline forward/backward/optimizer/checkpoint', flush=True)
         report['status'] = 'passed'
-        print('PASS synthetic baseline forward/backward/optimizer/checkpoint', flush=True)
     except Exception as exc:
         report['status'] = 'failed'
         report['error'] = repr(exc)

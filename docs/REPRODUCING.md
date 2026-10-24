@@ -16,6 +16,64 @@ PyTorch 为 2.1.2+cu121、torchvision 为 0.16.2+cu121、NumPy 为 1.26.3，spco
 
 `bash scripts/install.sh` 构建 Cython 与 CUDA 扩展，执行 `pip check`，并运行合成 GPU 前向/反向、IoU/NMS 和 checkpoint 检查。详细结果写入 `outputs/environment_check.json`。环境安装不会启动正式训练。
 
+<a id="minimal-server-validation"></a>
+
+## 拉取最新代码后的最小验证（不训练）
+
+适用于项目环境、CUDA扩展和数据已经准备好的Linux服务器。在已激活的项目环境中修改下面的仓库/数据路径；这些命令不安装、下载、重建manifest或启动训练。只执行小型算子检查和两个train样本的读取/collate，不创建优化器、更新BN或保存checkpoint。
+
+```bash
+set -euo pipefail
+cd /path/to/CSCWD-DEER-SBR
+git pull --ff-only origin main
+
+export CUDA_VISIBLE_DEVICES=0
+export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=1
+CHECKS="outputs/verification/minimal_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$CHECKS"
+
+# L4DR实际batch CUDA算子与spconv；零优化更新，无checkpoint/数据集读取。
+python project_tools/check_environment.py --checks l4dr spconv \
+  --output "$CHECKS/cuda.json"
+
+# V2X-R真实数据：新建检查用配置，不进入runner，不使用旧checkpoint。
+V2XR_DATA=/path/to/datasets/v2xr
+C="$(python scripts/supplement.py configure --dataset v2xr --method l4dr --variant S0 \
+  --data-root "$V2XR_DATA" --manifest-dir "$V2XR_DATA" \
+  --device cuda:0 --output-root "$CHECKS")"
+python scripts/supplement.py check-data --config "$C" --samples 2 \
+  | tee "$CHECKS/data_v2xr.json"
+```
+
+需要覆盖V2X-Radar-C/K-Radar时，在同一Bash会话中仅追加对应数据集的读取；无需重复GPU检查。两者要求新manifest已登记`sensor_sha256`；旧manifest缺证据会按设计拒绝，不自动补写或覆盖。
+
+```bash
+V2XRADAR_DATA=/path/to/v2xradar
+V2XRADAR_META=/path/to/v2xradar_metadata
+C="$(python scripts/supplement.py configure --dataset v2xradar --method l4dr --variant S0 \
+  --data-root "$V2XRADAR_DATA" --manifest-dir "$V2XRADAR_META" \
+  --device cuda:0 --output-root "$CHECKS")"
+python scripts/supplement.py check-data --config "$C" --samples 2 \
+  | tee "$CHECKS/data_v2xradar.json"
+
+KR_DATA=/path/to/kradar
+KR_RADAR=/path/to/official_sparse_radar
+KR_LABEL=/path/to/revised_v2_0_labels
+KR_META=/path/to/kradar_metadata
+C="$(python scripts/supplement.py configure --dataset kradar --method l4dr --variant S0 \
+  --data-root "$KR_DATA" --radar-root "$KR_RADAR" --label-root "$KR_LABEL" \
+  --manifest-dir "$KR_META" --device cuda:0 --output-root "$CHECKS")"
+python scripts/supplement.py check-data --config "$C" --samples 2 \
+  | tee "$CHECKS/data_kradar.json"
+```
+
+通过条件：所有命令退出码为0；`cuda.json.status=passed`，只含`l4dr_cuda`和`spconv_gpu`两项、`baseline_optimizer_check_requested=false`；每个数据JSON给出两个实际train样本、agent/点数/来源与正anchor诊断，且`training_started=false`。空GT/零正anchor样本可合法出现，不据此删除样本。`check-data`只构建模型，不执行forward或loss；V2X-R实际走spconv预处理，两套真实补充数据走其登记的NumpyVoxelizer。
+
+L4DR检查使用无最近邻/FPS最大值并列的4个点：FPS、ball-query（含严格半径边界及首邻点补齐）、three_nn索引与距离用解析已知答案严格比较，`rtol=atol=0`；FAD使用的PyTorch gather/加法epsilon权重/归约及feature梯度比较CPU/CUDA，`rtol=2e-6, atol=1e-7`只覆盖FP32设备运算顺序差异。spconv检查实际项目preprocessor的voxel内容/坐标/计数/collate已知答案，以及CUDA稀疏卷积输出与输入/权重梯度有限且非零。报告保留加载的PointNet++二进制路径、摘要与运行版本；本检查不证明完整FAD、真实字段物理单位、训练轨迹或AP等价，也不测速度。任一步失败即停止；本轮仅在本地检查了入口与CPU已知答案，服务器结果仍待执行。
+
+这里必须保留`--checks l4dr spconv`；省略`--checks`仍使用原完整环境检查，会执行一次合成基线optimizer更新和checkpoint写读。不要把`run_experiments.py --mode smoke`加入本节：它会读取真实train并进行一次更新。
+
 ## 数据
 
 下载源为 [hx24/V2X-R 的固定 revision](https://huggingface.co/datasets/hx24/V2X-R/tree/4c9ff1773b49517464714368d30778b5252bdbd0)，远端文件清单和 LFS SHA256 已保存在 `repro/metadata/remote_files.json`。真实可用的官方划分为 train=8083、validate=829、test=3166；不补造文献中多出的一个训练样本。

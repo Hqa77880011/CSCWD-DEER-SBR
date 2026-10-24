@@ -232,6 +232,8 @@ The smoke check performs synthetic forward, backward, and inference passes with 
 
 ### Staged Server Training Commands
 
+For a minimal check immediately after pulling the latest code, use the [server validation commands without training](docs/REPRODUCING.md#minimal-server-validation). They execute L4DR CUDA known answers, spconv voxelization and forward/backward checks, and two prepared training samples per requested dataset, with no optimizer step or checkpoint creation.
+
 Run the following stages on a **Linux server with the project environment installed and the datasets prepared**. Set the server paths first, then use the same Bash session throughout. Each `run-suite --execute` command starts real training. Tasks within a suite run sequentially; `--skip-completed` checks the full configuration, current source/data identities, successful report, and selected-checkpoint identity/role before reusing a pilot. These commands have been checked locally and await execution on the server.
 
 Stage order: environment preflight → optional execution-configuration measurements → S0/AB/N2 with seed 17 → SUP with seed 17 → freeze the training budget from development curves → internal/external three-seed runs → freeze F → M1/M3/M4 → extensions required by the research questions. External methods can run on separate GPUs alongside the internal experiments. Stages that depend on F require complete development evidence from all three seeds.

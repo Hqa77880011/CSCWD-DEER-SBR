@@ -201,3 +201,9 @@ python scripts/supplement.py smoke
 组合检查中的原生K-Radar scheduler用例最初因其合成runner夹具只提供Python身份、缺新增扩展字段而报错；补齐夹具后只重跑该项，以及新增/修改的2项，3项通过。没有为适配夹具放宽生产身份校验。可核查本地日志位于忽略上传的`outputs/verification/supplement/bounded_regressions.txt`、`bounded_before_after.txt`与`bounded_static.txt`；临时夹具和检查脚本移入Windows回收站，不进入结果目录。
 
 仍需服务器验证的最小项目：L4DR CPU/CUDA FPS、ball-query、three_nn已知答案与梯度；已加载扩展的实际构建对应；spconv下的数据预处理；两套真实数据的字段/标定/manifest读取；受影响方法的真实训练/恢复与正式评分。吞吐、H2D、IO校验成本、显存及重复NMS收益均未测量，不填写估算加速比。MDD/CoBEVT/Where2comm已登记的协议适配结论保持不变。
+
+## 2026-10-24 服务器拉取后的最小验证入口
+
+新增[零优化更新的服务器命令](REPRODUCING.md#minimal-server-validation)。`project_tools/check_environment.py --checks l4dr spconv`只执行L4DR实际batch FPS/ball-query/three_nn的4点已知答案、FAD所用PyTorch插值的feature梯度对照，以及项目spconv体素化/collate和稀疏卷积前后向；记录实际扩展身份，不创建优化器或checkpoint。索引/距离严格相等；feature及其梯度采用`rtol=2e-6, atol=1e-7`，仅覆盖FP32设备运算顺序。原默认完整检查的入口和一次合成基线更新行为保留，最小命令明确排除它。真实数据复用现有`configure`和`check-data --samples 2`，分别给出三套数据路径参数，不调用runner、模型forward、loss或评测。
+
+本地仅完成**6项CPU单元回归，全部通过**：CPU已知答案、错误数值/索引拒绝、最小/默认路由、无CUDA时失败报告，以及三套数据CLI参数和读取分支不调用模型/loss。路由测试模拟GPU能力与检查函数，数据分支使用两个合成样本并替换工厂，不能作为真实CUDA/spconv/数据通过证据。两个新Bash块仅以`bash -n`解析通过；两个Python文件内存编译、README导航及`git diff --check`通过。没有产生临时文件、连接服务器、执行CUDA/spconv检查、读取真实数据、下载或训练。`opencood/`科学实现、全部配置、参考结果、Release/legacy路径无改动；服务器执行结果仍待用户运行命令后核验。
